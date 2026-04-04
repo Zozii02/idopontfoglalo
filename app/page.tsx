@@ -224,8 +224,8 @@ export default function Home() {
           <div className="flex justify-center mb-6">
             <div className="bg-blue-100 text-blue-700 p-4 rounded-full text-4xl border border-blue-200">⚕️</div>
           </div>
-          <h2 className="text-2xl md:text-3xl font-extrabold mb-2 text-center text-slate-900 tracking-tight">MedAssist Portal</h2>
-          <p className="text-center text-slate-600 mb-8 font-bold">Kizárólag belső munkatársak részére</p>
+          <h2 className="text-2xl md:text-3xl font-extrabold mb-2 text-center text-slate-900 tracking-tight">Medical-Aqua Portál</h2>
+          <p className="text-center text-slate-600 mb-8 font-bold">Hogy az időpontok ne tűnjenek el</p>
           <div className="space-y-5">
             <input type="email" placeholder="Email cím" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} className="w-full p-3 border-2 border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all bg-white text-slate-900 font-semibold placeholder:text-slate-400" />
             <input type="password" placeholder="Jelszó" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} className="w-full p-3 border-2 border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all bg-white text-slate-900 font-semibold placeholder:text-slate-400" />
@@ -267,8 +267,8 @@ export default function Home() {
         <div className="flex items-center gap-4">
           <div className="bg-white/10 p-3 rounded-2xl text-2xl border border-white/20 hidden sm:block">🏥</div>
           <div className="text-center md:text-left">
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">MedAssist Előjegyzés</h1>
-            <p className="text-blue-200 font-bold text-sm mt-1">Professzionális Betegirányítási Rendszer</p>
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Medical-Aqua előjegyzés</h1>
+            <p className="text-blue-200 font-bold text-sm mt-1">Professzionális Betegirányítási Rendszer kezdőknek és haladóknak </p>
           </div>
         </div>
         <div className="flex items-center gap-4 md:gap-6 bg-slate-800 py-2 px-5 rounded-full border border-slate-700 shadow-inner w-full md:w-auto justify-center">

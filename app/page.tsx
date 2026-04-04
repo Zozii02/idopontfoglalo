@@ -325,10 +325,10 @@ export default function Home() {
           </div>
         ) : (
           sortedDates.map((date) => {
-            const dayAppointments = groupedByDate[date].sort((a, b) => a.time_slot.localeCompare(b.time_slot));
-            const activeSlots = dayAppointments.filter(a => !a.is_deleted);
-            const bookedCount = activeSlots.filter(a => a.patient_name && a.patient_name.trim() !== "").length;
-            const freeCount = activeSlots.length - bookedCount;
+            const dayAppointments = groupedByDate[date].sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot));
+const activeSlots = dayAppointments.filter((a: any) => !a.is_deleted);
+const bookedCount = activeSlots.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
+const freeCount = activeSlots.length - bookedCount;
 
             return (
               <div key={date} className="mb-10 bg-white rounded-2xl shadow-md border border-slate-300 overflow-hidden">
@@ -406,6 +406,6 @@ export default function Home() {
         </div>
       </div>
     </div>
-    
+
   );
 }

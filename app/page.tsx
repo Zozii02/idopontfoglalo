@@ -123,7 +123,27 @@ export default function Home() {
     }
   };
 
-  useEffect(() => { if (user && !needsProfileName) fetchAppointments(); }, [user, needsProfileName]);
+  // --- AZ ÚJ, ÉLŐ SZINKRONIZÁCIÓS BLOKK ---
+  useEffect(() => { 
+    if (user && !needsProfileName) {
+      fetchAppointments(); // Első betöltés
+      
+      // Feliratkozunk a változásokra
+      const channel = supabase
+        .channel('live-appointments')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, (payload) => {
+            // Ha bárhol, bármelyik gépen módosul a tábla, frissítjük a képernyőt!
+            fetchAppointments();
+        })
+        .subscribe();
+
+      // Takarítás, ha kilép a felhasználó
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } 
+  }, [user, needsProfileName]);
+  // ------------------------------------------
 
   const fetchAppointments = async () => {
     const { data, error } = await supabase.from("appointments").select("*").order("appointment_date", { ascending: true }).order("time_slot", { ascending: true });
@@ -152,23 +172,27 @@ export default function Home() {
     if (!user) return;
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
-    const { error } = await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
-    if (!error) setAppointments(appointments.map((app: any) => app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app));
+    
+    // Először azonnal átírjuk a képernyőn a gyorsaság miatt
+    setAppointments(appointments.map((app: any) => app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app));
+    
+    // Majd elküldjük a Supabase-nek a módosítást
+    await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
   };
 
   const deleteAppointment = async (id: number) => {
     if (!confirm("Biztosan törlöd ezt az időpontot?")) return;
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
-    const { error } = await supabase.from("appointments").update({ is_deleted: true, deleted_by: modifierName, deleted_at: now }).eq("id", id);
-    if (!error) setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app));
+    setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app));
+    await supabase.from("appointments").update({ is_deleted: true, deleted_by: modifierName, deleted_at: now }).eq("id", id);
   };
 
   const restoreAppointment = async (id: number) => {
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
-    const { error } = await supabase.from("appointments").update({ is_deleted: false, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
-    if (!error) setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: false, last_modified_by: modifierName, last_modified_at: now } : app));
+    setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: false, last_modified_by: modifierName, last_modified_at: now } : app));
+    await supabase.from("appointments").update({ is_deleted: false, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
   };
 
   const generateDailySlots = async () => {
@@ -200,21 +224,19 @@ export default function Home() {
       last_modified_by: modifierName, last_modified_at: now, is_deleted: false
     }));
 
-    const { data, error } = await supabase.from("appointments").insert(newAppointments).select();
-    if (error) alert("Hiba generáláskor!");
-    else if (data) setAppointments([...appointments, ...data]);
+    await supabase.from("appointments").insert(newAppointments);
   };
 
   const addSingleAppointment = async () => {
     if (!user || !newTimeSlot.trim() || !selectedDate) return alert("Kérlek, adj meg dátumot és időpontot is!");
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
-    const { data, error } = await supabase.from("appointments").insert([{
+    await supabase.from("appointments").insert([{
       department: activeTab, appointment_date: selectedDate, time_slot: newTimeSlot,
       patient_name: "", taj_szam: "", examination_type: "", notes: "",
       last_modified_by: modifierName, last_modified_at: now, is_deleted: false
-    }]).select();
-    if (!error && data) { setAppointments([...appointments, data[0]]); setNewTimeSlot(""); }
+    }]);
+    setNewTimeSlot("");
   };
 
   if (!user) {

@@ -3,6 +3,14 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabase";
 
+// --- Professzionális Ikonok (Emojik helyett) ---
+const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinelinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
+const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinelinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
+const SettingsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinelinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
+const CalendarIcon = ({ size = 24 }: { size?: number }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinelinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
+const TrashIcon = ({ size = 18 }: { size?: number }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinelinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
+const RestoreIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinelinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>;
+
 // --- Egyedi, Animált Legördülő Menü ---
 function CustomSelect({ options, value, onChange, label }: { options: string[], value: string, onChange: (val: string) => void, label: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -123,27 +131,18 @@ export default function Home() {
     }
   };
 
-  // --- AZ ÚJ, ÉLŐ SZINKRONIZÁCIÓS BLOKK ---
   useEffect(() => { 
     if (user && !needsProfileName) {
-      fetchAppointments(); // Első betöltés
-      
-      // Feliratkozunk a változásokra
+      fetchAppointments();
       const channel = supabase
         .channel('live-appointments')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, (payload) => {
-            // Ha bárhol, bármelyik gépen módosul a tábla, frissítjük a képernyőt!
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
             fetchAppointments();
         })
         .subscribe();
-
-      // Takarítás, ha kilép a felhasználó
-      return () => {
-        supabase.removeChannel(channel);
-      };
+      return () => { supabase.removeChannel(channel); };
     } 
   }, [user, needsProfileName]);
-  // ------------------------------------------
 
   const fetchAppointments = async () => {
     const { data, error } = await supabase.from("appointments").select("*").order("appointment_date", { ascending: true }).order("time_slot", { ascending: true });
@@ -172,11 +171,7 @@ export default function Home() {
     if (!user) return;
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
-    
-    // Először azonnal átírjuk a képernyőn a gyorsaság miatt
     setAppointments(appointments.map((app: any) => app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app));
-    
-    // Majd elküldjük a Supabase-nek a módosítást
     await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
   };
 
@@ -243,8 +238,8 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-200 px-4">
         <div className="bg-white p-8 md:p-10 rounded-3xl shadow-xl w-full max-w-md border border-slate-300">
-          <div className="flex justify-center mb-6">
-            <div className="bg-blue-100 text-blue-700 p-4 rounded-full text-4xl border border-blue-200">⚕️</div>
+          <div className="flex justify-center mb-8">
+            <img src="/logo.png" alt="Medical-Aqua Logo" className="h-28 object-contain" />
           </div>
           <h2 className="text-2xl md:text-3xl font-extrabold mb-2 text-center text-slate-900 tracking-tight">Medical-Aqua Portál</h2>
           <p className="text-center text-slate-600 mb-8 font-bold">Hogy az időpontok ne tűnjenek el</p>
@@ -262,7 +257,7 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-200 px-4">
         <div className="bg-white p-8 md:p-10 rounded-3xl shadow-xl w-full max-w-md border border-slate-300 text-center">
-          <div className="text-5xl mb-4">👋</div>
+          <div className="flex justify-center text-blue-600 mb-6"><UserIcon /></div>
           <h2 className="text-2xl font-extrabold mb-2 text-slate-900">Üdvözlünk a rendszerben!</h2>
           <p className="text-slate-600 mb-8 font-medium">Mivel most lépsz be először, kérjük add meg a nevedet, ahogy a rendszerben meg szeretnél jelenni (pl. Dr. Kovács).</p>
           <input type="text" placeholder="Teljes neved..." value={profileNameInput} onChange={(e) => setProfileNameInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSaveProfileName()} className="w-full p-3 border-2 border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all bg-white text-slate-900 font-semibold placeholder:text-slate-400 mb-5 text-center" />
@@ -287,16 +282,18 @@ export default function Home() {
     <div className="min-h-screen bg-slate-100 pb-16 font-sans">
       <div className="bg-gradient-to-r from-blue-900 to-slate-900 shadow-lg text-white px-4 md:px-8 py-6 mb-8 flex flex-col md:flex-row gap-4 justify-between items-center rounded-b-2xl">
         <div className="flex items-center gap-4">
-          <div className="bg-white/10 p-3 rounded-2xl text-2xl border border-white/20 hidden sm:block">🏥</div>
+          <div className="bg-white p-2 rounded-xl border border-white/20 hidden sm:block shadow-md">
+             <img src="/logo.png" alt="Medical-Aqua Logo" className="h-12 object-contain" />
+          </div>
           <div className="text-center md:text-left">
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Medical-Aqua előjegyzés</h1>
             <p className="text-blue-200 font-bold text-sm mt-1">Professzionális Betegirányítási Rendszer kezdőknek és haladóknak </p>
           </div>
         </div>
         <div className="flex items-center gap-4 md:gap-6 bg-slate-800 py-2 px-5 rounded-full border border-slate-700 shadow-inner w-full md:w-auto justify-center">
-          <div className="flex items-center gap-2"><span className="text-xl md:text-2xl opacity-90">👨‍⚕️</span><span className="font-extrabold text-white text-sm md:text-base">{getDisplayName()}</span></div>
+          <div className="flex items-center gap-2 text-blue-200"><UserIcon /><span className="font-extrabold text-white text-sm md:text-base">{getDisplayName()}</span></div>
           <div className="w-px h-6 bg-slate-600"></div>
-          <button onClick={handleLogout} className="text-blue-300 hover:text-white font-extrabold text-xs md:text-sm uppercase tracking-wider transition-colors">Kijelentkezés</button>
+          <button onClick={handleLogout} className="flex items-center gap-2 text-blue-300 hover:text-white font-extrabold text-xs md:text-sm uppercase tracking-wider transition-colors"><LogoutIcon /> <span>Kijelentkezés</span></button>
         </div>
       </div>
 
@@ -308,7 +305,7 @@ export default function Home() {
               <div className="relative">
                 <input type="checkbox" className="sr-only" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
                 <div className={`block w-14 h-8 rounded-full transition-colors duration-300 border border-slate-300 ${showDeleted ? "bg-rose-500 border-rose-600" : "bg-slate-300 group-hover:bg-slate-400"}`}></div>
-                <div className={`absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform duration-300 shadow-md flex items-center justify-center ${showDeleted ? "translate-x-6" : "translate-x-0"}`}>{showDeleted && <span className="text-[10px]">🗑️</span>}</div>
+                <div className={`absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform duration-300 shadow-md flex items-center justify-center text-rose-500 ${showDeleted ? "translate-x-6" : "translate-x-0"}`}>{showDeleted && <TrashIcon size={12} />}</div>
               </div>
               <div className="flex flex-col"><span className={`font-extrabold transition-colors duration-300 ${showDeleted ? "text-rose-700" : "text-slate-800 group-hover:text-black"}`}>Törölt időpontok</span><span className="text-xs text-slate-500 font-bold hidden sm:block">Láthatóvá teszi a törölt sorokat</span></div>
             </label>
@@ -317,7 +314,7 @@ export default function Home() {
           <div className="w-px h-32 bg-slate-200 hidden xl:block"></div>
 
           <div className="flex-[2] w-full bg-slate-50 p-5 md:p-6 rounded-2xl border border-slate-300 shadow-inner">
-            <h3 className="font-extrabold text-blue-900 mb-5 flex items-center gap-2 text-base md:text-lg"><span>⚙️</span> Napi Előjegyzés Generátor</h3>
+            <h3 className="font-extrabold text-blue-900 mb-5 flex items-center gap-2 text-base md:text-lg"><SettingsIcon /> Napi Előjegyzés Generátor</h3>
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-4 md:gap-5">
               <div className="col-span-2 sm:col-span-1"><label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">Dátum</label><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full border-2 border-slate-300 p-2.5 rounded-xl text-sm focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none font-bold transition-all text-slate-900" /></div>
               <div><label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">Kezdés</label><input type="time" value={genStart} onChange={(e) => setGenStart(e.target.value)} className="w-full border-2 border-slate-300 p-2.5 rounded-xl text-sm focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all font-bold text-slate-900" /></div>
@@ -333,7 +330,7 @@ export default function Home() {
 
         {sortedDates.length === 0 ? (
           <div className="bg-white p-10 md:p-16 text-center rounded-2xl shadow border border-slate-300 flex flex-col items-center">
-            <div className="text-6xl md:text-7xl mb-6 opacity-80">📅</div>
+            <div className="text-slate-300 mb-6"><CalendarIcon size={80} /></div>
             <h3 className="text-xl md:text-2xl font-extrabold text-slate-800 mb-3">Még nincsenek időpontok</h3>
             <p className="text-slate-600 text-base md:text-lg font-medium">Válassz ki egy kategóriát és egy dátumot fent, majd generáld le a napi előjegyzést!</p>
           </div>
@@ -347,7 +344,7 @@ export default function Home() {
             return (
               <div key={date} className="mb-10 bg-white rounded-2xl shadow-md border border-slate-300 overflow-hidden">
                 <div className="bg-blue-100 border-b border-slate-300 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3"><div className="bg-blue-700 text-white p-2 rounded-lg shadow-sm">📅</div><h2 className="text-lg md:text-xl font-extrabold text-blue-900">{date}</h2></div>
+                  <div className="flex items-center gap-3"><div className="bg-blue-700 text-white p-2 rounded-lg shadow-sm"><CalendarIcon size={20} /></div><h2 className="text-lg md:text-xl font-extrabold text-blue-900">{date}</h2></div>
                   <div className="flex flex-wrap items-center gap-2 md:gap-3 bg-white p-1.5 rounded-xl border border-blue-200 shadow-sm w-max">
                     <span className="bg-blue-50 text-blue-800 px-2 md:px-3 py-1 rounded-lg text-xs md:text-sm font-extrabold">Összes: {activeSlots.length}</span>
                     <span className="bg-emerald-50 text-emerald-700 px-2 md:px-3 py-1 rounded-lg text-xs md:text-sm font-extrabold">Szabad: {freeCount}</span>
@@ -356,7 +353,6 @@ export default function Home() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  {/* ASZTALI NÉZET: Táblázat (Mobilon eltűnik -> hidden lg:table) */}
                   <table className="min-w-full text-left border-collapse hidden lg:table">
                     <thead>
                       <tr className="bg-slate-100 border-b-2 border-slate-300">
@@ -397,9 +393,9 @@ export default function Home() {
                             </td>
                             <td className="p-4 text-center align-middle">
                               {isDel ? (
-                                <button onClick={() => restoreAppointment(app.id)} className="bg-amber-500 text-slate-900 px-4 py-2 rounded-xl text-xs font-extrabold hover:bg-amber-600 border border-amber-600 shadow-sm transition-all active:scale-95 uppercase tracking-wide">♻️ Visszaállít</button>
+                                <button onClick={() => restoreAppointment(app.id)} className="bg-amber-500 flex items-center justify-center gap-1 mx-auto text-slate-900 px-4 py-2 rounded-xl text-xs font-extrabold hover:bg-amber-600 border border-amber-600 shadow-sm transition-all active:scale-95 uppercase tracking-wide"><RestoreIcon /> Visszaállít</button>
                               ) : (
-                                <button onClick={() => deleteAppointment(app.id)} className="text-slate-500 hover:text-white bg-slate-100 hover:bg-rose-600 p-2.5 rounded-xl border border-slate-300 transition-all text-xl shadow-sm" title="Időpont törlése">🗑️</button>
+                                <button onClick={() => deleteAppointment(app.id)} className="text-slate-500 hover:text-white bg-slate-100 hover:bg-rose-600 p-2.5 rounded-xl border border-slate-300 transition-all shadow-sm mx-auto flex items-center justify-center" title="Időpont törlése"><TrashIcon size={20} /></button>
                               )}
                             </td>
                           </tr>
@@ -408,7 +404,6 @@ export default function Home() {
                     </tbody>
                   </table>
 
-                  {/* MOBIL NÉZET: Kártyák (Asztali gépen eltűnik -> block lg:hidden) */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 lg:hidden bg-slate-50/50">
                     {dayAppointments.map((app: any) => {
                       const isDel = app.is_deleted === true;
@@ -417,7 +412,6 @@ export default function Home() {
 
                       return (
                         <div key={`mob-${app.id}`} className={`rounded-xl p-4 flex flex-col gap-3 relative transition-all ${cardStyle}`}>
-                          {/* Kártya Fejléc: Időpont, Státusz és Gomb */}
                           <div className="flex justify-between items-start border-b border-slate-200/60 pb-3">
                             <div className="flex flex-col gap-1.5">
                                <span className={`font-extrabold text-xl ${isDel ? "text-slate-500 line-through" : "text-slate-900"}`}>{app.time_slot}</span>
@@ -428,14 +422,13 @@ export default function Home() {
                             </div>
                             <div>
                               {isDel ? (
-                                <button onClick={() => restoreAppointment(app.id)} className="bg-amber-500 text-slate-900 px-3 py-1.5 rounded-lg text-xs font-extrabold hover:bg-amber-600 shadow-sm transition-all uppercase">♻️ Vissza</button>
+                                <button onClick={() => restoreAppointment(app.id)} className="bg-amber-500 flex items-center gap-1 text-slate-900 px-3 py-1.5 rounded-lg text-xs font-extrabold hover:bg-amber-600 shadow-sm transition-all uppercase"><RestoreIcon /> Vissza</button>
                               ) : (
-                                <button onClick={() => deleteAppointment(app.id)} className="bg-slate-100 hover:bg-rose-600 hover:text-white p-2 rounded-lg border border-slate-200 transition-all text-sm shadow-sm">🗑️</button>
+                                <button onClick={() => deleteAppointment(app.id)} className="bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white p-2 rounded-lg border border-slate-200 transition-all shadow-sm"><TrashIcon size={16} /></button>
                               )}
                             </div>
                           </div>
                           
-                          {/* Kártya Adatok (Szerkeszthető Cellák) */}
                           <div className="flex flex-col gap-2.5">
                             <div className="bg-slate-50 p-2 rounded-lg border border-slate-200/60">
                               <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">Páciens neve</span>
@@ -457,7 +450,6 @@ export default function Home() {
                             </div>
                           </div>
                           
-                          {/* Kártya Lábléc: Módosítási infók */}
                           <div className="pt-2 border-t border-slate-200/60 mt-1">
                             {isDel ? (
                               <div className="text-rose-800 text-[10px]"><span className="font-bold">Törölte: {app.deleted_by}</span> ({formatDateTime(app.deleted_at)})</div>

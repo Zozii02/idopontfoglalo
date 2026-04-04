@@ -96,7 +96,6 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   
-  // Új: Profilnév megadása első belépéskor
   const [needsProfileName, setNeedsProfileName] = useState(false);
   const [profileNameInput, setProfileNameInput] = useState("");
   
@@ -154,7 +153,7 @@ export default function Home() {
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
     const { error } = await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
-    if (!error) setAppointments(appointments.map((app) => app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app));
+    if (!error) setAppointments(appointments.map((app: any) => app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app));
   };
 
   const deleteAppointment = async (id: number) => {
@@ -162,14 +161,14 @@ export default function Home() {
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
     const { error } = await supabase.from("appointments").update({ is_deleted: true, deleted_by: modifierName, deleted_at: now }).eq("id", id);
-    if (!error) setAppointments(appointments.map((app) => app.id === id ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app));
+    if (!error) setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app));
   };
 
   const restoreAppointment = async (id: number) => {
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
     const { error } = await supabase.from("appointments").update({ is_deleted: false, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
-    if (!error) setAppointments(appointments.map((app) => app.id === id ? { ...app, is_deleted: false, last_modified_by: modifierName, last_modified_at: now } : app));
+    if (!error) setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: false, last_modified_by: modifierName, last_modified_at: now } : app));
   };
 
   const generateDailySlots = async () => {
@@ -195,7 +194,7 @@ export default function Home() {
 
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
-    const newAppointments = slotsToCreate.map(slot => ({
+    const newAppointments = slotsToCreate.map((slot: string) => ({
       department: activeTab, appointment_date: selectedDate, time_slot: slot,
       patient_name: "", taj_szam: "", examination_type: "", notes: "",
       last_modified_by: modifierName, last_modified_at: now, is_deleted: false
@@ -218,7 +217,6 @@ export default function Home() {
     if (!error && data) { setAppointments([...appointments, data[0]]); setNewTimeSlot(""); }
   };
 
-  // --- Bejelentkezési képernyő (Regisztráció nélkül!) ---
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-200">
@@ -228,7 +226,6 @@ export default function Home() {
           </div>
           <h2 className="text-3xl font-extrabold mb-2 text-center text-slate-900 tracking-tight">MedAssist Portal</h2>
           <p className="text-center text-slate-600 mb-8 font-bold">Kizárólag belső munkatársak részére</p>
-          
           <div className="space-y-5">
             <input type="email" placeholder="Email cím" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} className="w-full p-3 border-2 border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all bg-white text-slate-900 font-semibold placeholder:text-slate-400" />
             <input type="password" placeholder="Jelszó" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} className="w-full p-3 border-2 border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all bg-white text-slate-900 font-semibold placeholder:text-slate-400" />
@@ -242,7 +239,6 @@ export default function Home() {
     );
   }
 
-  // --- Első belépés: Profilnév megadása ---
   if (needsProfileName) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-200">
@@ -250,7 +246,6 @@ export default function Home() {
           <div className="text-5xl mb-4">👋</div>
           <h2 className="text-2xl font-extrabold mb-2 text-slate-900">Üdvözlünk a rendszerben!</h2>
           <p className="text-slate-600 mb-8 font-medium">Mivel most lépsz be először, kérjük add meg a nevedet, ahogy a rendszerben meg szeretnél jelenni (pl. Dr. Kovács).</p>
-          
           <input type="text" placeholder="Teljes neved..." value={profileNameInput} onChange={(e) => setProfileNameInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSaveProfileName()} className="w-full p-3 border-2 border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all bg-white text-slate-900 font-semibold placeholder:text-slate-400 mb-5 text-center" />
           <button onClick={handleSaveProfileName} className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-emerald-700 transition-all active:scale-95">Név mentése és Tovább</button>
         </div>
@@ -258,15 +253,15 @@ export default function Home() {
     );
   }
 
-  let filteredAppointments = appointments.filter((app) => app.department === activeTab);
-  if (!showDeleted) filteredAppointments = filteredAppointments.filter(app => app.is_deleted !== true);
+  let filteredAppointments = appointments.filter((app: any) => app.department === activeTab);
+  if (!showDeleted) filteredAppointments = filteredAppointments.filter((app: any) => app.is_deleted !== true);
   
-  const groupedByDate = filteredAppointments.reduce((acc, app) => {
+  const groupedByDate = filteredAppointments.reduce((acc: any, app: any) => {
     const d = app.appointment_date || "Dátum nélkül";
     if (!acc[d]) acc[d] = [];
     acc[d].push(app);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {});
   const sortedDates = Object.keys(groupedByDate).sort();
 
   return (
@@ -326,9 +321,9 @@ export default function Home() {
         ) : (
           sortedDates.map((date) => {
             const dayAppointments = groupedByDate[date].sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot));
-const activeSlots = dayAppointments.filter((a: any) => !a.is_deleted);
-const bookedCount = activeSlots.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
-const freeCount = activeSlots.length - bookedCount;
+            const activeSlots = dayAppointments.filter((a: any) => !a.is_deleted);
+            const bookedCount = activeSlots.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
+            const freeCount = activeSlots.length - bookedCount;
 
             return (
               <div key={date} className="mb-10 bg-white rounded-2xl shadow-md border border-slate-300 overflow-hidden">
@@ -355,7 +350,7 @@ const freeCount = activeSlots.length - bookedCount;
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
-                      {dayAppointments.map((app) => {
+                      {dayAppointments.map((app: any) => {
                         const isDel = app.is_deleted === true;
                         const isBooked = app.patient_name && app.patient_name.trim() !== "";
                         let rowStyle = isDel ? "bg-rose-50 border-l-4 border-l-rose-400" : isBooked ? "bg-blue-50/40 hover:bg-blue-100/50 border-l-4 border-l-blue-500" : "bg-white hover:bg-slate-50 border-l-4 border-l-emerald-400";
@@ -406,6 +401,5 @@ const freeCount = activeSlots.length - bookedCount;
         </div>
       </div>
     </div>
-
   );
 }

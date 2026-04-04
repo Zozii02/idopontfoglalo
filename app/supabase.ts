@@ -1,8 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Ha a Vercel valamiért nem találja a kulcsot építéskor, berakunk egy "vak" kulcsot, 
-// hogy ne omoljon össze a rendszer, és az építés le tudjon futni!
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://ideiglenes.supabase.co"
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "ideiglenes_kulcs_hogy_ne_szalljon_el_a_build"
+// Fixen beégetjük a publikus kulcsokat, így a Vercel nem tud belekötni!
+const supabaseUrl = "https://smixmicmxxwhvthrttpt.supabase.co"
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtaXhtaWNteHh3aHZ0aHJ0dHB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMDkxMzMsImV4cCI6MjA5MDg4NTEzM30.ytCIj6TLuqBEEYzm_wOR8cMpPgMv8thz05TKLPgirAY"
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)

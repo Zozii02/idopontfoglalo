@@ -13,6 +13,8 @@ const RestoreIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" hei
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 const PrintIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>;
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
+const AlertModalIcon = () => <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
+const QuestionModalIcon = () => <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>;
 
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
@@ -148,6 +150,24 @@ export default function Home() {
 
   const [printingDate, setPrintingDate] = useState<string | null>(null);
 
+  // --- ANIMÁLT OKOS-ABLAK (MODAL) ÁLLAPOTOK ---
+  const [modal, setModal] = useState<{isOpen: boolean, title: string, message: string, type: "alert" | "confirm", confirmText: string, confirmColor: string, onConfirm: () => void}>({
+    isOpen: false, title: "", message: "", type: "alert", confirmText: "Rendben", confirmColor: "bg-slate-900 text-white", onConfirm: () => {}
+  });
+
+  const closeModal = () => setModal(prev => ({ ...prev, isOpen: false }));
+
+  const showAlert = (title: string, message: string) => {
+    setModal({ isOpen: true, title, message, type: "alert", confirmText: "Rendben", confirmColor: "bg-slate-900 text-white hover:bg-black", onConfirm: closeModal });
+  };
+
+  const showConfirm = (title: string, message: string, confirmText: string, confirmColor: string, onConfirmCallback: () => void) => {
+    setModal({
+      isOpen: true, title, message, type: "confirm", confirmText, confirmColor,
+      onConfirm: () => { onConfirmCallback(); closeModal(); }
+    });
+  };
+
   useEffect(() => {
     const handleAfterPrint = () => setPrintingDate(null);
     window.addEventListener('afterprint', handleAfterPrint);
@@ -188,13 +208,13 @@ export default function Home() {
 
   const handleLogin = async () => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) alert("Hiba a belépésnél: Hibás email vagy jelszó.");
+    if (error) return showAlert("Sikertelen belépés", "Hibás e-mail cím vagy jelszó.\nKérlek, ellenőrizd az adataidat és próbáld újra!");
   };
 
   const handleSaveProfileName = async () => {
-    if (!profileNameInput.trim()) return alert("Kérlek, add meg a neved!");
+    if (!profileNameInput.trim()) return showAlert("Hiányzó adat", "Kérlek, add meg a teljes nevedet a folytatáshoz! (Pl. Dr. Kovács)");
     const { data, error } = await supabase.auth.updateUser({ data: { display_name: profileNameInput } });
-    if (error) alert("Hiba a mentés során!");
+    if (error) return showAlert("Hiba", "Nem sikerült elmenteni a nevedet. Kérlek, próbáld újra!");
     else { setUser(data.user); setNeedsProfileName(false); }
   };
 
@@ -209,36 +229,48 @@ export default function Home() {
     await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
   };
 
-  const deleteAppointment = async (id: number) => {
-    if (!confirm("Biztosan törlöd ezt az időpontot?")) return;
+  // --- Animált Törlés ---
+  const confirmDeleteApp = (id: number) => {
+    showConfirm(
+      "Időpont törlése",
+      "Biztosan törlöd ezt az időpontot?\n\nKésőbb a 'Törölt sorok mutatása' gombbal visszaállítható.",
+      "Igen, törlöm",
+      "bg-red-600 hover:bg-red-700 text-white",
+      () => executeDeleteApp(id)
+    );
+  };
+
+  const executeDeleteApp = async (id: number) => {
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
     setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app));
     await supabase.from("appointments").update({ is_deleted: true, deleted_by: modifierName, deleted_at: now }).eq("id", id);
   };
 
-  // ÚJ FUNKCIÓ: TELJES NAP TÖRLÉSE
+  // --- Animált Teljes Nap Törlése ---
   const deleteEntireDay = async (date: string) => {
-    if (!confirm(`Biztosan törlöd a teljes ${date} napot a(z) ${activeTab} szakrendelésen?\n(A törölt sorok a "Törölt sorok mutatása" gombbal később egyesével visszaállíthatók.)`)) return;
-    
-    const modifierName = getDisplayName();
-    const now = new Date().toISOString();
-    
-    // Csak az adott nap és adott részleg aktív időpontjait szedjük össze
     const dayApps = groupedByDate[date].filter((a: any) => !a.is_deleted);
-    const idsToDelete = dayApps.map((a: any) => a.id);
-    
-    if (idsToDelete.length === 0) return;
+    if (dayApps.length === 0) return showAlert("Üres nap", "Ezen a napon nincsenek törölhető időpontok az adott szakrendelésen.");
 
-    // Lokális frissítés azonnal
-    setAppointments(appointments.map((app: any) => 
-      idsToDelete.includes(app.id) ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app
-    ));
+    showConfirm(
+      "Teljes nap törlése",
+      `Biztosan törlöd a teljes ${date} napot a(z) ${activeTab} szakrendelésen?\n\nFigyelem: Ezzel az összes ide beírt páciens is törlésre kerül!`,
+      "Igen, teljes nap törlése",
+      "bg-red-600 hover:bg-red-700 text-white",
+      async () => {
+        const modifierName = getDisplayName();
+        const now = new Date().toISOString();
+        const idsToDelete = dayApps.map((a: any) => a.id);
+        
+        setAppointments(appointments.map((app: any) => 
+          idsToDelete.includes(app.id) ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app
+        ));
 
-    // Adatbázis frissítés
-    await supabase.from("appointments")
-      .update({ is_deleted: true, deleted_by: modifierName, deleted_at: now })
-      .in('id', idsToDelete);
+        await supabase.from("appointments")
+          .update({ is_deleted: true, deleted_by: modifierName, deleted_at: now })
+          .in('id', idsToDelete);
+      }
+    );
   };
 
   const restoreAppointment = async (id: number) => {
@@ -248,9 +280,11 @@ export default function Home() {
     await supabase.from("appointments").update({ is_deleted: false, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
   };
 
+  // --- Animált Generátor ---
   const generateDailySlots = async () => {
-    if (!selectedDate) return alert("Kérlek, válassz ki egy dátumot a naptárból!");
-    if (!genStart || !genEnd || !genDuration) return alert("Minden generátor mezőt ki kell tölteni!");
+    if (!selectedDate) return showAlert("Hiányzó adat", "Kérlek, válassz ki egy dátumot a naptárból!");
+    if (!genStart || !genEnd || !genDuration) return showAlert("Hiányzó adat", "Minden generátor mezőt ki kell tölteni a művelethez!");
+    
     const durationMins = parseInt(genDuration);
     let current = timeToMins(genStart);
     const end = timeToMins(genEnd);
@@ -266,22 +300,29 @@ export default function Home() {
       current = next;
     }
 
-    if (slotsToCreate.length === 0) return alert("A megadott feltételekkel nem jött létre időpont.");
-    if (!confirm(`Generálok ${slotsToCreate.length} db időpontot a ${selectedDate} napra. Mehet?`)) return;
+    if (slotsToCreate.length === 0) return showAlert("Sikertelen generálás", "A megadott feltételekkel (intervallum, szünetek) nem jött létre egyetlen időpont sem.");
+    
+    showConfirm(
+      "Napi előjegyzés generálása",
+      `Sikeresen kiszámoltam ${slotsToCreate.length} db új időpontot a ${selectedDate} napra.\n\nLétrehozhatom őket?`,
+      "Létrehozás",
+      "bg-slate-900 hover:bg-black text-white",
+      async () => {
+        const modifierName = getDisplayName();
+        const now = new Date().toISOString();
+        const newAppointments = slotsToCreate.map((slot: string) => ({
+          department: activeTab, appointment_date: selectedDate, time_slot: slot,
+          patient_name: "", taj_szam: "", phone_number: "", examination_type: "", notes: "", status: "Előjegyzett",
+          last_modified_by: modifierName, last_modified_at: now, is_deleted: false
+        }));
 
-    const modifierName = getDisplayName();
-    const now = new Date().toISOString();
-    const newAppointments = slotsToCreate.map((slot: string) => ({
-      department: activeTab, appointment_date: selectedDate, time_slot: slot,
-      patient_name: "", taj_szam: "", phone_number: "", examination_type: "", notes: "", status: "Előjegyzett",
-      last_modified_by: modifierName, last_modified_at: now, is_deleted: false
-    }));
-
-    await supabase.from("appointments").insert(newAppointments);
+        await supabase.from("appointments").insert(newAppointments);
+      }
+    );
   };
 
   const addSingleAppointment = async () => {
-    if (!user || !newTimeSlot.trim() || !selectedDate) return alert("Kérlek, adj meg dátumot és időpontot is!");
+    if (!user || !newTimeSlot.trim() || !selectedDate) return showAlert("Hiányzó adat", "Kérlek, válassz dátumot és adj meg egy pontos időpontot is (pl. 17:00)!");
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
     await supabase.from("appointments").insert([{
@@ -292,9 +333,36 @@ export default function Home() {
     setNewTimeSlot("");
   };
 
+  // --- KÖZÖS ANIMÁLT ABLAK (MODAL) RENDER ---
+  const customModalUI = (
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${modal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeModal}></div>
+      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] p-6 md:p-8 w-full max-w-sm border border-slate-100 flex flex-col transform transition-all duration-300 ${modal.isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+        <div className="flex justify-center mb-5">
+           {modal.type === 'alert' ? (
+              <div className="bg-red-50 text-red-500 p-4 rounded-full shadow-inner"><AlertModalIcon /></div>
+           ) : (
+              <div className="bg-blue-50 text-blue-500 p-4 rounded-full shadow-inner"><QuestionModalIcon /></div>
+           )}
+        </div>
+        <h3 className="text-xl font-extrabold text-center text-slate-900 mb-3">{modal.title}</h3>
+        <p className="text-slate-600 text-sm font-medium text-center mb-8 whitespace-pre-line leading-relaxed">{modal.message}</p>
+        
+        <div className="flex flex-col gap-3 mt-auto">
+           {modal.type === "confirm" && (
+              <button onClick={closeModal} className="w-full py-3.5 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 transition-all shadow-sm active:scale-95">Mégse</button>
+           )}
+           <button onClick={modal.onConfirm} className={`w-full py-3.5 rounded-xl font-bold shadow-md transition-all active:scale-95 ${modal.confirmColor}`}>{modal.confirmText}</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Védett felületek visszaadása előtt beillesztjük a Modalt, hogy a bejelentkezésnél is működjön!
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
+        {customModalUI}
         <div className="absolute inset-0 bg-slate-100/60 backdrop-blur-2xl z-0 pointer-events-none"></div>
         <div className="relative z-10 bg-white/80 backdrop-blur-xl p-10 md:p-14 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] w-full max-w-md border border-white/50">
           <div className="flex justify-center mb-8"><img src="/logo.png" alt="Medical-Aqua Logo" className="h-28 object-contain select-none pointer-events-none drop-shadow-sm" /></div>
@@ -313,6 +381,7 @@ export default function Home() {
   if (needsProfileName) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
+        {customModalUI}
         <div className="absolute inset-0 bg-slate-100/60 backdrop-blur-2xl z-0 pointer-events-none"></div>
         <div className="relative z-10 bg-white/80 backdrop-blur-xl p-10 md:p-14 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] w-full max-w-md border border-white/50 text-center">
           <div className="flex justify-center text-red-600 mb-6 drop-shadow-sm"><UserIcon /></div>
@@ -360,6 +429,7 @@ export default function Home() {
 
   return (
     <div className={`min-h-screen font-sans pb-20 bg-cover bg-center bg-fixed relative ${printingDate ? 'bg-white print-mode' : ''}`} style={{ backgroundImage: printingDate ? 'none' : `url('${BACKGROUND_IMAGE_URL}')` }}>
+      {customModalUI}
       {!printingDate && <div className="absolute inset-0 bg-slate-100/70 backdrop-blur-2xl z-0 pointer-events-none no-print"></div>}
 
       {/* --- FEJLÉC ÉS KERESŐ --- */}
@@ -504,7 +574,7 @@ export default function Home() {
                         <button onClick={() => handlePrintDay(date)} className="ml-2 bg-slate-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-black transition-all flex items-center gap-1.5 shadow-sm">
                           <PrintIcon /> Nyomtatás
                         </button>
-                        <button onClick={() => deleteEntireDay(date)} className="bg-red-100 text-red-700 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-200 hover:text-red-800 transition-all flex items-center gap-1.5 shadow-sm border border-red-200">
+                        <button onClick={() => deleteEntireDay(date)} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition-all flex items-center gap-1.5 shadow-sm border border-red-200 hover:border-red-600">
                           <TrashIcon /> Nap törlése
                         </button>
                       </>
@@ -512,7 +582,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* A print-overflow-visible osztály engedi a táblázatnak, hogy kimenjen az oldalból nyomtatáskor! */}
                 <div className={`overflow-x-auto ${printingDate ? 'overflow-visible' : ''}`}>
                   <table className="min-w-full text-left border-collapse print-table">
                     <thead>
@@ -580,7 +649,7 @@ export default function Home() {
                                 {isDel ? (
                                   <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 transition-all flex items-center justify-center gap-1.5 mx-auto"><RestoreIcon /> Visszaállít</button>
                                 ) : (
-                                  <button onClick={() => deleteAppointment(app.id)} className="text-black/30 hover:text-red-600 hover:bg-white/80 shadow-sm p-2 rounded-lg transition-all flex items-center justify-center mx-auto" title="Törlés"><TrashIcon /></button>
+                                  <button onClick={() => confirmDeleteApp(app.id)} className="text-black/30 hover:text-red-600 hover:bg-red-50 shadow-sm p-2 rounded-lg transition-all flex items-center justify-center mx-auto" title="Törlés"><TrashIcon /></button>
                                 )}
                               </td>
                             )}
@@ -613,7 +682,7 @@ export default function Home() {
                             {isDel ? (
                               <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 flex items-center gap-1.5"><RestoreIcon /> Vissza</button>
                             ) : (
-                              <button onClick={() => deleteAppointment(app.id)} className="text-black/40 hover:text-red-600 hover:bg-white/80 shadow-sm p-2 rounded-lg"><TrashIcon /></button>
+                              <button onClick={() => confirmDeleteApp(app.id)} className="text-black/40 hover:text-red-600 hover:bg-white/80 shadow-sm p-2 rounded-lg"><TrashIcon /></button>
                             )}
                           </div>
                           
@@ -680,7 +749,7 @@ export default function Home() {
           .no-print { display: none !important; }
           .print-mode { background: white !important; min-height: auto !important; padding: 0 !important; display: block !important; position: static !important; overflow: visible !important; }
           
-          /* EZ JAVÍTJA A TÖBBOLDALAS NYOMTATÁST! Levágások megszüntetése */
+          /* Többoldalas nyomtatás engedélyezése */
           .print-container { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; page-break-after: auto; overflow: visible !important; }
           .overflow-visible { overflow: visible !important; }
           

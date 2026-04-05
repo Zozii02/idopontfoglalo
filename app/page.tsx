@@ -40,7 +40,7 @@ const formatPhone = (val: string) => {
   return cleaned;
 };
 
-// --- OKOS CELLA (Formázó funkcióval és Break-words védelemmel) ---
+// --- OKOS CELLA (Javított szélességgel) ---
 function EditableCell({ value, onSave, disabled = false, highlight = false, formatter }: { value: string; onSave: (val: string) => void; disabled?: boolean; highlight?: boolean; formatter?: (v: string) => string }) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentValue, setCurrentValue] = useState(value || "");
@@ -56,8 +56,13 @@ function EditableCell({ value, onSave, disabled = false, highlight = false, form
 
   if (isEditing) {
     return (
-      <input autoFocus value={currentValue} onChange={(e) => setCurrentValue(e.target.value)} onBlur={handleBlur} onKeyDown={(e) => e.key === "Enter" && handleBlur()}
-        className="w-full bg-white border border-red-400 p-2 rounded-lg focus:outline-none focus:ring-4 focus:ring-red-100 text-slate-900 font-semibold shadow-sm transition-all"
+      <input 
+        autoFocus 
+        value={currentValue} 
+        onChange={(e) => setCurrentValue(e.target.value)} 
+        onBlur={handleBlur} 
+        onKeyDown={(e) => e.key === "Enter" && handleBlur()}
+        className="w-full min-w-0 bg-white border border-red-400 p-2 rounded-lg focus:outline-none focus:ring-4 focus:ring-red-100 text-slate-900 font-semibold shadow-sm transition-all"
       />
     );
   }
@@ -481,17 +486,21 @@ export default function Home() {
                   <table className="min-w-full text-left border-collapse print-table">
                     <thead>
                       <tr className="border-b border-slate-200/60 print-border">
-                        {/* FEJLÉC VÉDELEM: whitespace-nowrap a fix oszlopokon */}
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-24">Időpont</th>
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[150px]">Páciens neve</th>
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">TAJ szám</th>
+                        {/* A fix szélességű oszlopok nem törhetnek sort */}
+                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>
                         
-                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Telefon</th>}
-                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Státusz</th>}
+                        {/* A Páciens nevének adtunk teret, hogy kényelmesen kiférjen */}
+                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[180px]">Páciens neve</th>
                         
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-1/4">Vizsgálat</th>
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-1/4">Megjegyzés</th>
-                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap">Művelet</th>}
+                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">TAJ szám</th>
+                        
+                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Telefon</th>}
+                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Státusz</th>}
+                        
+                        {/* A Vizsgálat és Megjegyzés elvesztette a kötelező w-1/4 szélességet, így csak akkor nőnek, ha muszáj */}
+                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto">Vizsgálat</th>
+                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto">Megjegyzés</th>
+                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap w-min">Művelet</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100/50">
@@ -510,7 +519,6 @@ export default function Home() {
                         return (
                           <tr key={app.id} className={`transition-colors group ${printingDate ? '' : rowStyle}`}>
                             
-                            {/* IDŐPONT - whitespace-nowrap */}
                             <td className="px-4 py-3 align-middle whitespace-nowrap">
                               <div className="flex flex-col gap-1 w-max">
                                 <span className={`font-bold text-base ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
@@ -523,24 +531,21 @@ export default function Home() {
                               {printingDate ? app.patient_name : <EditableCell disabled={isDel} highlight={isBooked} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} />}
                             </td>
                             
-                            {/* TAJ SZÁM - whitespace-nowrap */}
                             <td className={`px-4 py-3 align-middle whitespace-nowrap ${printingDate ? 'text-black font-mono text-sm border-l border-gray-300' : ''}`}>
                               {printingDate ? formatTAJ(app.taj_szam) : <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} />}
                             </td>
                             
                             {!printingDate && (
                               <>
-                                {/* TELEFON ÉS STÁTUSZ - whitespace-nowrap */}
                                 <td className="px-4 py-3 align-middle whitespace-nowrap"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} /></td>
                                 <td className="px-4 py-3 align-middle whitespace-nowrap"><StatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></td>
                               </>
                             )}
                             
-                            {/* VIZSGÁLAT ÉS MEGJEGYZÉS - max-w és break-words VÉDELEM! */}
-                            <td className={`px-4 py-3 align-middle max-w-[150px] break-words ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
+                            <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
                               {printingDate ? app.examination_type : <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} />}
                             </td>
-                            <td className={`px-4 py-3 align-middle max-w-[150px] break-words ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
+                            <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
                               {printingDate ? app.notes : <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} />}
                             </td>
                             

@@ -15,6 +15,9 @@ const PrintIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" heigh
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 const AlertModalIcon = () => <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
 const QuestionModalIcon = () => <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>;
+const ChevronDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
+const ChevronLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>;
+const ChevronRightIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
 
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
@@ -80,32 +83,137 @@ function EditableCell({ value, onSave, disabled = false, highlight = false, form
   );
 }
 
-// --- STÁTUSZ VÁLASZTÓ ---
-function StatusSelect({ value, onChange, disabled }: { value: string, onChange: (val: string) => void, disabled: boolean }) {
+// --- ÚJ: MODERN STÁTUSZ VÁLASZTÓ (Custom Dropdown) ---
+function ModernStatusSelect({ value, onChange, disabled }: { value: string, onChange: (val: string) => void, disabled: boolean }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
   if (disabled) return <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">-</span>;
   
+  const statuses = ["Előjegyzett", "Megérkezett", "Vizsgálaton", "Befejezve", "Nem jelent meg"];
   const statusColors: Record<string, string> = {
-    "Előjegyzett": "bg-slate-100 text-slate-600 border-slate-200",
-    "Megérkezett": "bg-amber-100 text-amber-700 border-amber-200",
-    "Vizsgálaton": "bg-blue-100 text-blue-700 border-blue-200",
-    "Befejezve": "bg-emerald-100 text-emerald-700 border-emerald-200",
-    "Nem jelent meg": "bg-slate-700 text-white border-slate-800"
+    "Előjegyzett": "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200",
+    "Megérkezett": "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200",
+    "Vizsgálaton": "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200",
+    "Befejezve": "bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200",
+    "Nem jelent meg": "bg-slate-800 text-white border-slate-900 hover:bg-slate-900"
   };
 
   const currentStyle = statusColors[value] || statusColors["Előjegyzett"];
 
   return (
-    <select 
-      value={value || "Előjegyzett"} 
-      onChange={(e) => onChange(e.target.value)}
-      className={`text-[10px] uppercase font-bold tracking-widest px-2 py-1.5 rounded-lg outline-none cursor-pointer border shadow-sm transition-all w-full appearance-none text-center ${currentStyle}`}
-    >
-      <option value="Előjegyzett">Előjegyzett</option>
-      <option value="Megérkezett">Megérkezett</option>
-      <option value="Vizsgálaton">Vizsgálaton</option>
-      <option value="Befejezve">Befejezve</option>
-      <option value="Nem jelent meg">Nem jelent meg</option>
-    </select>
+    <div className="relative inline-block w-full">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center justify-between w-full text-[10px] uppercase font-bold tracking-widest px-3 py-2 rounded-lg outline-none cursor-pointer border shadow-sm transition-all ${currentStyle}`}
+      >
+        <span className="truncate">{value || "Előjegyzett"}</span>
+        <ChevronDownIcon />
+      </button>
+      
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
+          <div className="absolute top-full left-0 mt-1.5 w-[140px] bg-white/95 backdrop-blur-xl border border-slate-200 shadow-xl rounded-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 py-1">
+            {statuses.map(status => (
+              <button
+                key={status}
+                onClick={() => { onChange(status); setIsOpen(false); }}
+                className={`w-full text-left px-4 py-2.5 text-[10px] uppercase font-bold tracking-widest transition-colors ${value === status ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// --- ÚJ: MODERN NAPTÁR VÁLASZTÓ (Custom DatePicker) ---
+function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, onChange: (date: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [viewDate, setViewDate] = useState(selectedDate ? new Date(selectedDate) : new Date());
+
+  const monthNames = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
+  const dayNames = ["H", "K", "Sze", "Cs", "P", "Sz", "V"];
+
+  const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (year: number, month: number) => {
+    let day = new Date(year, month, 1).getDay();
+    return day === 0 ? 6 : day - 1; // Hétfő legyen a 0. index
+  };
+
+  const handlePrevMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+  const handleNextMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
+
+  const selectDay = (day: number) => {
+    const y = viewDate.getFullYear();
+    const m = (viewDate.getMonth() + 1).toString().padStart(2, '0');
+    const d = day.toString().padStart(2, '0');
+    onChange(`${y}-${m}-${d}`);
+    setIsOpen(false);
+  };
+
+  const daysInMonth = getDaysInMonth(viewDate.getFullYear(), viewDate.getMonth());
+  const firstDay = getFirstDayOfMonth(viewDate.getFullYear(), viewDate.getMonth());
+  const emptyDays = Array.from({ length: firstDay }, () => null);
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  // Formázott megjelenítés a gombon
+  const displayDate = selectedDate ? `${selectedDate.split('-')[0]}. ${monthNames[parseInt(selectedDate.split('-')[1]) - 1]} ${selectedDate.split('-')[2]}.` : "Válassz dátumot...";
+
+  return (
+    <div className="relative w-full">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm"
+      >
+        <span className="flex items-center gap-2">
+          <span className="text-slate-400"><CalendarIcon size={16} /></span>
+          {displayDate}
+        </span>
+        <span className="text-slate-400"><ChevronDownIcon /></span>
+      </button>
+
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
+          <div className="absolute top-full left-0 mt-2 w-72 bg-white/95 backdrop-blur-xl border border-slate-200 shadow-2xl rounded-2xl z-50 p-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"><ChevronLeftIcon /></button>
+              <div className="font-bold text-slate-800 text-sm">{viewDate.getFullYear()}. {monthNames[viewDate.getMonth()]}</div>
+              <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"><ChevronRightIcon /></button>
+            </div>
+            
+            <div className="grid grid-cols-7 gap-1 text-center mb-2">
+              {dayNames.map(d => <div key={d} className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{d}</div>)}
+            </div>
+            
+            <div className="grid grid-cols-7 gap-1">
+              {emptyDays.map((_, i) => <div key={`empty-${i}`} className="p-2"></div>)}
+              {days.map(day => {
+                const currentDateStr = `${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                const isSelected = currentDateStr === selectedDate;
+                const isToday = currentDateStr === new Date().toISOString().split('T')[0];
+                
+                return (
+                  <button 
+                    key={day} 
+                    onClick={() => selectDay(day)}
+                    className={`p-2 w-full text-sm font-semibold rounded-lg transition-all flex items-center justify-center aspect-square
+                      ${isSelected ? 'bg-red-600 text-white shadow-md' : isToday ? 'bg-red-50 text-red-600 border border-red-200' : 'text-slate-700 hover:bg-slate-100'}
+                    `}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -229,7 +337,6 @@ export default function Home() {
     await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
   };
 
-  // --- Animált Törlés ---
   const confirmDeleteApp = (id: number) => {
     showConfirm(
       "Időpont törlése",
@@ -247,7 +354,6 @@ export default function Home() {
     await supabase.from("appointments").update({ is_deleted: true, deleted_by: modifierName, deleted_at: now }).eq("id", id);
   };
 
-  // --- Animált Teljes Nap Törlése ---
   const deleteEntireDay = async (date: string) => {
     const dayApps = groupedByDate[date].filter((a: any) => !a.is_deleted);
     if (dayApps.length === 0) return showAlert("Üres nap", "Ezen a napon nincsenek törölhető időpontok az adott szakrendelésen.");
@@ -280,7 +386,6 @@ export default function Home() {
     await supabase.from("appointments").update({ is_deleted: false, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
   };
 
-  // --- Animált Generátor ---
   const generateDailySlots = async () => {
     if (!selectedDate) return showAlert("Hiányzó adat", "Kérlek, válassz ki egy dátumot a naptárból!");
     if (!genStart || !genEnd || !genDuration) return showAlert("Hiányzó adat", "Minden generátor mezőt ki kell tölteni a művelethez!");
@@ -304,7 +409,7 @@ export default function Home() {
     
     showConfirm(
       "Napi előjegyzés generálása",
-      `Sikeresen kiszámoltam ${slotsToCreate.length} db új időpontot a ${selectedDate} napra.\n\nLétrehozhatom őket?`,
+      `Sikeresen kiszámoltam ${slotsToCreate.length} db új időpontot a kiválasztott napra.\n\nLétrehozhatom őket?`,
       "Létrehozás",
       "bg-slate-900 hover:bg-black text-white",
       async () => {
@@ -333,7 +438,6 @@ export default function Home() {
     setNewTimeSlot("");
   };
 
-  // --- KÖZÖS ANIMÁLT ABLAK (MODAL) RENDER ---
   const customModalUI = (
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${modal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeModal}></div>
@@ -358,7 +462,6 @@ export default function Home() {
     </div>
   );
 
-  // Védett felületek visszaadása előtt beillesztjük a Modalt, hogy a bejelentkezésnél is működjön!
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
@@ -492,8 +595,16 @@ export default function Home() {
 
               <div className="w-full xl:w-auto flex-1">
                  <div className="flex items-center gap-2 mb-3 text-slate-800 font-bold"><SettingsIcon /> <span>Napi Előjegyzés Generátor</span></div>
+                 
+                 {/* ÚJ GENERÁTOR MODERN NAPTÁRRAL */}
                  <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-end gap-3">
-                    <div className="col-span-2 lg:col-span-1"><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Dátum</label><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
+                    
+                    {/* Modern DatePicker a gyári input date helyett */}
+                    <div className="col-span-2 lg:col-span-1 lg:min-w-[200px] xl:w-[220px]">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Dátum</label>
+                      <ModernDatePicker selectedDate={selectedDate} onChange={setSelectedDate} />
+                    </div>
+
                     <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Kezd</label><input type="time" value={genStart} onChange={(e) => setGenStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
                     <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Vége</label><input type="time" value={genEnd} onChange={(e) => setGenEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
                     <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Perc</label><input type="number" value={genDuration} onChange={(e) => setGenDuration(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none w-full lg:w-16 font-semibold text-slate-800 transition-all shadow-sm" /></div>
@@ -582,7 +693,8 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className={`overflow-x-auto ${printingDate ? 'overflow-visible' : ''}`}>
+                <div className={`overflow-x-auto ${printingDate ? 'overflow-visible' : 'pb-24 -mb-24'}`}>
+                  {/* pb-24 és -mb-24 azért kell, hogy a lenyíló státusz menük ne vágódjanak le a táblázat alján! */}
                   <table className="min-w-full text-left border-collapse print-table">
                     <thead>
                       <tr className="border-b border-slate-200/60 print-border">
@@ -591,14 +703,14 @@ export default function Home() {
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">TAJ szám</th>
                         
                         {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Telefon</th>}
-                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Státusz</th>}
+                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-36">Státusz</th>}
                         
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto">Vizsgálat</th>
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto">Megjegyzés</th>
                         {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap w-min">Művelet</th>}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100/50">
+                    <tbody className="divide-y divide-slate-100/50 relative z-0">
                       {dayAppointments.map((app: any) => {
                         const isDel = app.is_deleted === true;
                         const isBooked = app.patient_name && app.patient_name.trim() !== "";
@@ -633,7 +745,9 @@ export default function Home() {
                             {!printingDate && (
                               <>
                                 <td className="px-4 py-3 align-middle whitespace-nowrap"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} /></td>
-                                <td className="px-4 py-3 align-middle whitespace-nowrap"><StatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></td>
+                                
+                                {/* ÚJ MODERN STÁTUSZ VÁLASZTÓ */}
+                                <td className="px-4 py-3 align-middle whitespace-nowrap"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></td>
                               </>
                             )}
                             
@@ -688,13 +802,13 @@ export default function Home() {
                           
                           <div className="flex flex-col gap-3">
                             <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
-                              <div className="flex justify-between items-center mb-1">
+                              <div className="flex justify-between items-center mb-1 relative z-10">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Páciens neve</span>
-                                <div className="w-1/2"><StatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></div>
+                                <div className="w-[140px]"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></div>
                               </div>
                               <EditableCell disabled={isDel} highlight={isBooked} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} />
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-3 relative z-0">
                               <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">TAJ szám</span>
                                 <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} />
@@ -704,7 +818,7 @@ export default function Home() {
                                 <EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} />
                               </div>
                             </div>
-                            <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
+                            <div className="bg-white/70 p-2.5 rounded-xl border border-white/50 relative z-0">
                               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat & Megjegyzés</span>
                               <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} />
                               <div className="mt-1 border-t border-black/5 pt-1">

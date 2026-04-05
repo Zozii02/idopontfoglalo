@@ -40,7 +40,7 @@ const formatPhone = (val: string) => {
   return cleaned;
 };
 
-// --- OKOS CELLA (Formázó funkcióval) ---
+// --- OKOS CELLA (Formázó funkcióval és Break-words védelemmel) ---
 function EditableCell({ value, onSave, disabled = false, highlight = false, formatter }: { value: string; onSave: (val: string) => void; disabled?: boolean; highlight?: boolean; formatter?: (v: string) => string }) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentValue, setCurrentValue] = useState(value || "");
@@ -52,7 +52,7 @@ function EditableCell({ value, onSave, disabled = false, highlight = false, form
     setCurrentValue(finalVal);
   };
 
-  if (disabled) return <div className="p-2 text-slate-400 font-medium line-through bg-slate-50/50 rounded-lg">{value || "-"}</div>;
+  if (disabled) return <div className="p-2 text-slate-400 font-medium line-through bg-slate-50/50 rounded-lg break-words">{value || "-"}</div>;
 
   if (isEditing) {
     return (
@@ -64,7 +64,7 @@ function EditableCell({ value, onSave, disabled = false, highlight = false, form
 
   return (
     <div onClick={() => { setIsEditing(true); setCurrentValue(value || ""); }}
-      className={`cursor-pointer min-h-[38px] p-2 rounded-lg transition-all border border-transparent hover:bg-white/80 hover:border-slate-200 font-medium
+      className={`cursor-pointer min-h-[38px] p-2 rounded-lg transition-all border border-transparent hover:bg-white/80 hover:border-slate-200 font-medium break-words
         ${highlight ? "text-red-950 font-bold" : "text-emerald-950"}`}
       title="Kattints a szerkesztéshez"
     >
@@ -143,7 +143,6 @@ export default function Home() {
 
   const [printingDate, setPrintingDate] = useState<string | null>(null);
 
-  // Print figyelő
   useEffect(() => {
     const handleAfterPrint = () => setPrintingDate(null);
     window.addEventListener('afterprint', handleAfterPrint);
@@ -152,7 +151,6 @@ export default function Home() {
 
   const handlePrintDay = (date: string) => {
     setPrintingDate(date);
-    // Megnöveltük az időt, hogy a Reactnak legyen ideje "lecsupaszítani" a HTML-t nyomtatás előtt!
     setTimeout(() => { window.print(); }, 250); 
   };
 
@@ -298,21 +296,19 @@ export default function Home() {
     );
   }
 
-  // --- OKOS KERESŐ ÉS SZŰRŐ LOGIKA (Szóköz ignorálás) ---
   let filteredAppointments = appointments;
   
   if (searchTerm.trim() !== "") {
     const term = searchTerm.toLowerCase();
-    const termNoSpace = term.replace(/\s+/g, ''); // Eltávolítja a szóközöket a keresőmezőből
+    const termNoSpace = term.replace(/\s+/g, ''); 
     
     filteredAppointments = filteredAppointments.filter((app: any) => {
       const nameMatch = app.patient_name && app.patient_name.toLowerCase().includes(term);
-      const tajMatch = app.taj_szam && app.taj_szam.replace(/\s+/g, '').includes(termNoSpace); // Tárolt TAJ szóköz nélkül
-      const phoneMatch = app.phone_number && app.phone_number.replace(/\s+/g, '').includes(termNoSpace); // Tárolt telefon szóköz nélkül
+      const tajMatch = app.taj_szam && app.taj_szam.replace(/\s+/g, '').includes(termNoSpace);
+      const phoneMatch = app.phone_number && app.phone_number.replace(/\s+/g, '').includes(termNoSpace);
       return nameMatch || tajMatch || phoneMatch;
     });
   } else {
-    // Ha nem keresünk, marad a kategória szűrés
     filteredAppointments = filteredAppointments.filter((app: any) => app.department === activeTab);
   }
 
@@ -348,7 +344,6 @@ export default function Home() {
              </div>
           </div>
           
-          {/* OKOS KERESŐ MEZŐ */}
           <div className="flex-1 max-w-lg w-full relative">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon /></div>
             <input 
@@ -371,7 +366,7 @@ export default function Home() {
 
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8 relative z-10">
         
-        {/* --- KONTROLL SÁV (Elrejtve nyomtatásnál és keresésnél) --- */}
+        {/* --- KONTROLL SÁV --- */}
         {!printingDate && searchTerm === "" && (
           <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-6 mb-6 no-print">
             <div className="flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between">
@@ -415,7 +410,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* --- KERESÉSI EREDMÉNY CÍMSOR --- */}
         {!printingDate && searchTerm !== "" && (
           <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-2xl mb-6 shadow-sm flex items-center gap-3 no-print">
             <SearchIcon />
@@ -424,7 +418,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* --- GYORSNAPTÁR WIDGET --- */}
         {!printingDate && searchTerm === "" && freeSlotsSummary.length > 0 && (
           <div className="mb-8 no-print">
             <div className="flex items-center gap-2 mb-3 text-slate-700 font-bold uppercase tracking-widest text-xs ml-1">
@@ -449,7 +442,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* --- IDŐPONTOK MEGJELENÍTÉSE --- */}
         {sortedDates.length === 0 ? (
           <div className="bg-white/80 backdrop-blur-xl p-12 md:p-20 text-center rounded-3xl shadow-sm border border-white/60 flex flex-col items-center no-print">
             <div className="text-slate-300 mb-4"><CalendarIcon size={64} /></div>
@@ -458,7 +450,6 @@ export default function Home() {
           </div>
         ) : (
           sortedDates.map((date) => {
-            // Ha épp nyomtatunk, de nem ezt a napot, akkor elrejtjük
             if (printingDate && printingDate !== date) return null;
 
             const dayAppointments = groupedByDate[date].sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot));
@@ -469,7 +460,6 @@ export default function Home() {
             return (
               <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-sm overflow-hidden scroll-mt-24 print-container ${printingDate ? 'bg-white border-0 shadow-none' : 'bg-white/90 backdrop-blur-xl border border-white/60'}`}>
                 
-                {/* Fejléc Dátummal és Nyomtatás gombbal */}
                 <div className={`p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-white/60'}`}>
                   <div className="flex items-center gap-3 text-slate-900">
                     <CalendarIcon size={20} />
@@ -491,17 +481,17 @@ export default function Home() {
                   <table className="min-w-full text-left border-collapse print-table">
                     <thead>
                       <tr className="border-b border-slate-200/60 print-border">
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-24">Időpont</th>
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-1/4">Páciens neve</th>
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest">TAJ szám</th>
+                        {/* FEJLÉC VÉDELEM: whitespace-nowrap a fix oszlopokon */}
+                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-24">Időpont</th>
+                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[150px]">Páciens neve</th>
+                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">TAJ szám</th>
                         
-                        {/* Ezeket kivettük nyomtatáskor a helytakarékosság végett */}
-                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Telefon</th>}
-                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Státusz</th>}
+                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Telefon</th>}
+                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Státusz</th>}
                         
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Vizsgálat</th>
+                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-1/4">Vizsgálat</th>
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-1/4">Megjegyzés</th>
-                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print">Művelet</th>}
+                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap">Művelet</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100/50">
@@ -509,7 +499,6 @@ export default function Home() {
                         const isDel = app.is_deleted === true;
                         const isBooked = app.patient_name && app.patient_name.trim() !== "";
                         
-                        // Nyomtatásba ne kerüljön törölt sor!
                         if (printingDate && isDel) return null; 
 
                         const rowStyle = isDel 
@@ -520,40 +509,43 @@ export default function Home() {
 
                         return (
                           <tr key={app.id} className={`transition-colors group ${printingDate ? '' : rowStyle}`}>
-                            <td className="px-4 py-3 align-middle">
+                            
+                            {/* IDŐPONT - whitespace-nowrap */}
+                            <td className="px-4 py-3 align-middle whitespace-nowrap">
                               <div className="flex flex-col gap-1 w-max">
-                                {/* Nyomtatáskor csak a fekete szöveg kell, nincs stílus/áthúzás stb. */}
                                 <span className={`font-bold text-base ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
-                                
                                 {!printingDate && !isDel && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isBooked ? "bg-red-200/60 text-red-900" : "bg-emerald-200/60 text-emerald-900"}`}>{isBooked ? "Foglalt" : "Szabad"}</span>}
                                 {!printingDate && isDel && <span className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max bg-slate-200 text-slate-700">Törölt</span>}
                               </div>
                             </td>
                             
-                            {/* NYOMTATÁSKOR NINCS OKOS CELLA, CSAK SIMA SZÖVEG -> VILLÁMGYORS BETÖLTÉS! */}
                             <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black font-bold text-sm border-l border-gray-300' : ''}`}>
                               {printingDate ? app.patient_name : <EditableCell disabled={isDel} highlight={isBooked} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} />}
                             </td>
-                            <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black font-mono text-sm border-l border-gray-300' : ''}`}>
+                            
+                            {/* TAJ SZÁM - whitespace-nowrap */}
+                            <td className={`px-4 py-3 align-middle whitespace-nowrap ${printingDate ? 'text-black font-mono text-sm border-l border-gray-300' : ''}`}>
                               {printingDate ? formatTAJ(app.taj_szam) : <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} />}
                             </td>
                             
                             {!printingDate && (
                               <>
-                                <td className="px-4 py-3 align-middle"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} /></td>
-                                <td className="px-4 py-3 align-middle"><StatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></td>
+                                {/* TELEFON ÉS STÁTUSZ - whitespace-nowrap */}
+                                <td className="px-4 py-3 align-middle whitespace-nowrap"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} /></td>
+                                <td className="px-4 py-3 align-middle whitespace-nowrap"><StatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></td>
                               </>
                             )}
                             
-                            <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
+                            {/* VIZSGÁLAT ÉS MEGJEGYZÉS - max-w és break-words VÉDELEM! */}
+                            <td className={`px-4 py-3 align-middle max-w-[150px] break-words ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
                               {printingDate ? app.examination_type : <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} />}
                             </td>
-                            <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
+                            <td className={`px-4 py-3 align-middle max-w-[150px] break-words ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
                               {printingDate ? app.notes : <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} />}
                             </td>
                             
                             {!printingDate && (
-                              <td className="px-4 py-3 align-middle text-center no-print">
+                              <td className="px-4 py-3 align-middle text-center no-print whitespace-nowrap">
                                 {isDel ? (
                                   <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 transition-all flex items-center justify-center gap-1.5 mx-auto"><RestoreIcon /> Visszaállít</button>
                                 ) : (
@@ -567,7 +559,6 @@ export default function Home() {
                     </tbody>
                   </table>
 
-                  {/* MOBIL KÁRTYÁK (Csak képernyőn) */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 lg:hidden no-print">
                     {dayAppointments.map((app: any) => {
                       const isDel = app.is_deleted === true;
@@ -659,9 +650,9 @@ export default function Home() {
           .print-mode { background: white !important; min-height: auto !important; padding: 0 !important; }
           .print-container { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; page-break-after: auto; }
           
-          .print-table { width: 100% !important; border-collapse: collapse !important; margin-top: 10px !important; }
+          .print-table { width: 100% !important; border-collapse: collapse !important; margin-top: 10px !important; table-layout: fixed; }
           .print-table th { border: 1px solid #333 !important; padding: 6px !important; color: black !important; font-size: 11px !important; font-weight: bold !important; background: #f3f4f6 !important; -webkit-print-color-adjust: exact; text-align: left; }
-          .print-table td { border: 1px solid #666 !important; padding: 4px 6px !important; color: black !important; font-size: 11px !important; line-height: 1.2 !important; }
+          .print-table td { border: 1px solid #666 !important; padding: 4px 6px !important; color: black !important; font-size: 11px !important; line-height: 1.2 !important; word-break: break-word; }
           
           .print-header { padding: 0 0 5px 0 !important; margin-bottom: 5px !important; border-bottom: 2px solid black !important; display: flex !important; justify-content: space-between !important; }
           .print-header h2 { font-size: 18px !important; margin: 0 !important; font-weight: bold !important; }

@@ -297,17 +297,19 @@ export default function Home() {
     );
   }
 
-  // --- OKOS KERESŐ ÉS SZŰRŐ LOGIKA ---
+  // --- OKOS KERESŐ ÉS SZŰRŐ LOGIKA (Szóköz ignorálás) ---
   let filteredAppointments = appointments;
   
   if (searchTerm.trim() !== "") {
-    // Ha keresünk, minden osztályon keresünk
     const term = searchTerm.toLowerCase();
-    filteredAppointments = filteredAppointments.filter((app: any) => 
-      (app.patient_name && app.patient_name.toLowerCase().includes(term)) ||
-      (app.taj_szam && app.taj_szam.includes(term)) ||
-      (app.phone_number && app.phone_number.includes(term))
-    );
+    const termNoSpace = term.replace(/\s+/g, ''); // Eltávolítja a szóközöket a keresőmezőből
+    
+    filteredAppointments = filteredAppointments.filter((app: any) => {
+      const nameMatch = app.patient_name && app.patient_name.toLowerCase().includes(term);
+      const tajMatch = app.taj_szam && app.taj_szam.replace(/\s+/g, '').includes(termNoSpace); // Tárolt TAJ szóköz nélkül
+      const phoneMatch = app.phone_number && app.phone_number.replace(/\s+/g, '').includes(termNoSpace); // Tárolt telefon szóköz nélkül
+      return nameMatch || tajMatch || phoneMatch;
+    });
   } else {
     // Ha nem keresünk, marad a kategória szűrés
     filteredAppointments = filteredAppointments.filter((app: any) => app.department === activeTab);
@@ -368,7 +370,7 @@ export default function Home() {
 
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8 relative z-10">
         
-        {/* --- KONTROLL SÁV (Elrejtve nyomtatásnál és keresésnél) --- */}
+        {/* --- KONTROLL SÁV --- */}
         {!printingDate && searchTerm === "" && (
           <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-6 mb-6 no-print">
             <div className="flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between">
@@ -512,7 +514,7 @@ export default function Home() {
                         if (printingDate && isDel) return null; // Nyomtatásba ne kerüljön törölt sor
 
                         return (
-                          <tr key={app.id} className={`transition-colors group ${printingDate ? 'border-b border-gray-300' : rowStyle}`}>
+                          <tr key={app.id} className={`transition-colors group ${printingDate ? '' : rowStyle}`}>
                             <td className="px-4 py-3 align-middle">
                               <div className="flex flex-col gap-1 w-max">
                                 <span className={`font-bold text-base ${isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
@@ -625,18 +627,29 @@ export default function Home() {
         )}
       </div>
       
-      {/* NYOMTATÁSI STÍLUSOK */}
+      {/* NYOMTATÁSI STÍLUSOK (Teljesen újraírva, kompakt A4 nézethez) */}
       <style dangerouslySetContent={{__html: `
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
         @media print {
-          @page { margin: 1cm; size: landscape; }
-          body { background: white !important; color: black !important; }
+          @page { margin: 0.5cm; size: portrait; }
+          body, html { background: white !important; color: black !important; }
           .no-print { display: none !important; }
-          .print-mode { background: white !important; }
-          .print-container { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; }
-          .print-table th, .print-table td { border: 1px solid #ddd !important; padding: 8px !important; color: black !important; }
-          .print-header { padding: 0 0 10px 0 !important; }
+          .print-mode { background: white !important; min-height: auto !important; padding-bottom: 0 !important; }
+          .print-container { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; page-break-after: auto; }
+          
+          .print-table { width: 100% !important; border-collapse: collapse !important; }
+          .print-table th { border: 1px solid #666 !important; padding: 4px !important; color: black !important; font-size: 11px !important; font-weight: bold !important; background: #eee !important; -webkit-print-color-adjust: exact; }
+          .print-table td { border: 1px solid #999 !important; padding: 3px 4px !important; color: black !important; font-size: 11px !important; line-height: 1.1 !important; }
+          
+          .print-header { padding: 0 0 5px 0 !important; margin-bottom: 8px !important; border-bottom: 2px solid black !important; }
+          .print-header h2 { font-size: 16px !important; margin: 0 !important; }
+          .print-header span { border: none !important; background: none !important; padding: 0 !important; margin-right: 10px !important; color: black !important; font-size: 11px !important; }
+          
+          select { appearance: none !important; border: none !important; background: transparent !important; padding: 0 !important; font-size: 11px !important; color: black !important; font-weight: bold !important; text-align: left !important; }
+          .print-hidden { display: none !important; }
+          .group span { background: transparent !important; border: none !important; color: black !important; padding: 0 !important; font-size: 10px !important; }
         }
       `}} />
     </div>

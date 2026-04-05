@@ -12,7 +12,7 @@ const TrashIcon = ({ size = 16 }: { size?: number }) => <svg xmlns="http://www.w
 const RestoreIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>;
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 
-// --- Az "Okos Cella" Prémium Dizájnnal ---
+// --- Az "Okos Cella" ---
 function EditableCell({ value, onSave, disabled = false, highlight = false }: { value: string; onSave: (val: string) => void; disabled?: boolean; highlight?: boolean }) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentValue, setCurrentValue] = useState(value || "");
@@ -31,11 +31,11 @@ function EditableCell({ value, onSave, disabled = false, highlight = false }: { 
 
   return (
     <div onClick={() => setIsEditing(true)}
-      className={`cursor-pointer min-h-[38px] p-2 rounded-lg transition-all border border-transparent hover:bg-slate-50 hover:border-slate-200 font-medium
-        ${highlight ? "text-slate-900 font-bold" : "text-slate-700"}`}
+      className={`cursor-pointer min-h-[38px] p-2 rounded-lg transition-all border border-transparent hover:bg-white/60 hover:border-black/10 font-medium
+        ${highlight ? "text-red-950 font-bold" : "text-emerald-950"}`}
       title="Kattints a szerkesztéshez"
     >
-      {value || <span className="text-slate-300 italic text-sm font-normal">Üres (kattints)</span>}
+      {value || <span className="text-slate-400 italic text-sm font-normal opacity-70">Üres (kattints)</span>}
     </div>
   );
 }
@@ -43,6 +43,10 @@ function EditableCell({ value, onSave, disabled = false, highlight = false }: { 
 const formatDateTime = (isoString: string) => {
   if (!isoString) return "";
   return new Date(isoString).toLocaleString("hu-HU", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+};
+const formatShortDate = (d: string) => {
+  const parts = d.split('-');
+  return parts.length === 3 ? `${parts[1]}. ${parts[2]}.` : d;
 };
 const timeToMins = (t: string) => { const [h, m] = t.split(':'); return parseInt(h) * 60 + parseInt(m); };
 const minsToTime = (m: number) => { const h = Math.floor(m / 60).toString().padStart(2, '0'); const mins = (m % 60).toString().padStart(2, '0'); return `${h}:${mins}`; };
@@ -235,7 +239,7 @@ export default function Home() {
     );
   }
 
-  // --- ADATOK SZŰRÉSE ---
+  // --- ADATOK SZŰRÉSE ÉS NAPTÁR WIDGET ELŐKÉSZÍTÉSE ---
   let filteredAppointments = appointments.filter((app: any) => app.department === activeTab);
   if (!showDeleted) filteredAppointments = filteredAppointments.filter((app: any) => app.is_deleted !== true);
   
@@ -246,6 +250,14 @@ export default function Home() {
     return acc;
   }, {});
   const sortedDates = Object.keys(groupedByDate).sort();
+
+  // Kiszámoljuk a szabad helyeket a naptár widgethez
+  const freeSlotsSummary = sortedDates.map(date => {
+    const dayAppointments = groupedByDate[date].filter((a: any) => !a.is_deleted);
+    const bookedCount = dayAppointments.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
+    const freeCount = dayAppointments.length - bookedCount;
+    return { date, freeCount, total: dayAppointments.length };
+  }).filter(day => day.total > 0); // Csak azokat a napokat mutatjuk, ahol van egyáltalán aktív időpont
 
   // --- 3. FŐ KÉPERNYŐ (DASHBOARD) ---
   return (
@@ -276,10 +288,9 @@ export default function Home() {
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8">
         
         {/* --- KONTROLL SÁV (Kategóriák + Generátor) --- */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
           <div className="flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between">
             
-            {/* Vízszintesen görgethető Kategória Gombok (Modern UI) */}
             <div className="w-full xl:w-1/2">
               <label className="block text-slate-500 font-semibold text-xs uppercase tracking-widest mb-3">Szakrendelés kiválasztása</label>
               <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
@@ -301,7 +312,6 @@ export default function Home() {
 
             <div className="w-px h-24 bg-slate-100 hidden xl:block"></div>
 
-            {/* Letisztult Generátor */}
             <div className="w-full xl:w-auto flex-1">
                <div className="flex items-center gap-2 mb-3 text-slate-800 font-bold"><SettingsIcon /> <span>Napi Előjegyzés Generátor</span></div>
                <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-3">
@@ -314,6 +324,31 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* --- GYORSNAPTÁR WIDGET (Csak akkor látszik, ha vannak napok) --- */}
+        {freeSlotsSummary.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-3 text-slate-600 font-bold uppercase tracking-widest text-xs ml-1">
+              <CalendarIcon size={16} /> <span>Naptár Áttekintés - Kattints a dátumra</span>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
+              {freeSlotsSummary.map((day) => (
+                <button
+                  key={day.date}
+                  onClick={() => document.getElementById(`date-${day.date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  className={`flex-shrink-0 min-w-[130px] p-3 rounded-2xl border transition-all text-left group
+                    ${day.freeCount > 0 ? 'bg-white border-emerald-200 shadow-sm hover:shadow-md hover:border-emerald-400 cursor-pointer' : 'bg-slate-50 border-slate-200 opacity-70 cursor-pointer hover:bg-slate-100'}`}
+                >
+                  <div className="text-slate-800 font-extrabold text-sm mb-1">{formatShortDate(day.date)}</div>
+                  <div className={`text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-lg w-max transition-colors
+                    ${day.freeCount > 0 ? 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100' : 'bg-slate-200 text-slate-600'}`}>
+                    {day.freeCount > 0 ? `${day.freeCount} szabad hely` : 'Megtelt'}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* --- IDŐPONTOK MEGJELENÍTÉSE --- */}
         {sortedDates.length === 0 ? (
@@ -330,7 +365,7 @@ export default function Home() {
             const freeCount = activeSlots.length - bookedCount;
 
             return (
-              <div key={date} className="mb-10 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div id={`date-${date}`} key={date} className="mb-10 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden scroll-mt-24">
                 {/* Fejléc Dátummal */}
                 <div className="bg-slate-50 border-b border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3 text-slate-900"><CalendarIcon size={20} /><h2 className="text-lg font-bold">{date}</h2></div>
@@ -355,17 +390,24 @@ export default function Home() {
                         <th className="px-5 py-4 font-semibold text-slate-400 text-[11px] uppercase tracking-widest text-center">Művelet</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-white/50">
                       {dayAppointments.map((app: any) => {
                         const isDel = app.is_deleted === true;
                         const isBooked = app.patient_name && app.patient_name.trim() !== "";
                         
+                        // SZÍNEZETT SOROK LOGIKÁJA
+                        const rowStyle = isDel 
+                          ? "bg-slate-50/80 opacity-60" 
+                          : isBooked 
+                            ? "bg-red-50/60 hover:bg-red-100/50" 
+                            : "bg-emerald-50/60 hover:bg-emerald-100/50";
+
                         return (
-                          <tr key={app.id} className={`transition-colors group ${isDel ? "bg-slate-50/50" : "hover:bg-slate-50 bg-white"}`}>
+                          <tr key={app.id} className={`transition-colors group ${rowStyle}`}>
                             <td className="px-5 py-3 align-top">
                               <div className="flex flex-col gap-1.5 w-max pt-1">
-                                <span className={`font-bold text-base ${isDel ? "text-slate-400 line-through" : "text-slate-800"}`}>{app.time_slot}</span>
-                                {!isDel && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isBooked ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}>{isBooked ? "Foglalt" : "Szabad"}</span>}
+                                <span className={`font-bold text-base ${isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
+                                {!isDel && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isBooked ? "bg-red-200/50 text-red-800" : "bg-emerald-200/50 text-emerald-800"}`}>{isBooked ? "Foglalt" : "Szabad"}</span>}
                                 {isDel && <span className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max bg-slate-200 text-slate-600">Törölt</span>}
                               </div>
                             </td>
@@ -377,14 +419,14 @@ export default function Home() {
                               {isDel ? (
                                 <div className="text-slate-500 text-xs pt-1"><span className="block font-semibold">Törölte: {app.deleted_by}</span>{formatDateTime(app.deleted_at)}</div>
                               ) : (
-                                <div className="text-slate-400 text-xs pt-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">{app.last_modified_by ? <span className="font-semibold text-slate-600">{app.last_modified_by}</span> : <span>-</span>}{app.last_modified_at && <span>{formatDateTime(app.last_modified_at)}</span>}</div>
+                                <div className={`text-xs pt-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${isBooked ? "text-red-800/60" : "text-emerald-800/60"}`}>{app.last_modified_by ? <span className="font-semibold text-current">{app.last_modified_by}</span> : <span>-</span>}{app.last_modified_at && <span>{formatDateTime(app.last_modified_at)}</span>}</div>
                               )}
                             </td>
                             <td className="px-5 py-3 align-top text-center">
                               {isDel ? (
                                 <button onClick={() => restoreAppointment(app.id)} className="bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-300 transition-all mt-1 flex items-center justify-center gap-1.5 mx-auto"><RestoreIcon /> Visszaállít</button>
                               ) : (
-                                <button onClick={() => deleteAppointment(app.id)} className="text-slate-300 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all mt-1 flex items-center justify-center mx-auto" title="Törlés"><TrashIcon /></button>
+                                <button onClick={() => deleteAppointment(app.id)} className="text-black/20 hover:text-red-600 hover:bg-white/60 p-2 rounded-lg transition-all mt-1 flex items-center justify-center mx-auto" title="Törlés"><TrashIcon /></button>
                               )}
                             </td>
                           </tr>
@@ -398,49 +440,56 @@ export default function Home() {
                     {dayAppointments.map((app: any) => {
                       const isDel = app.is_deleted === true;
                       const isBooked = app.patient_name && app.patient_name.trim() !== "";
+                      
+                      // SZÍNEZETT KÁRTYÁK LOGIKÁJA
+                      const cardStyle = isDel 
+                        ? "bg-slate-50 border-slate-200 opacity-70" 
+                        : isBooked 
+                          ? "bg-red-50/80 border-red-200 shadow-sm" 
+                          : "bg-emerald-50/80 border-emerald-200 shadow-sm";
 
                       return (
-                        <div key={`mob-${app.id}`} className={`rounded-2xl p-5 border transition-all ${isDel ? "bg-slate-50 border-slate-200 opacity-80" : "bg-white border-slate-200 shadow-sm"}`}>
+                        <div key={`mob-${app.id}`} className={`rounded-2xl p-5 border transition-all ${cardStyle}`}>
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex flex-col gap-1">
-                               <span className={`font-bold text-xl ${isDel ? "text-slate-400 line-through" : "text-slate-800"}`}>{app.time_slot}</span>
-                               <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isDel ? "bg-slate-200 text-slate-600" : isBooked ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}>
+                               <span className={`font-bold text-xl ${isDel ? "text-slate-400 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
+                               <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isDel ? "bg-slate-200 text-slate-600" : isBooked ? "bg-red-200/60 text-red-800" : "bg-emerald-200/60 text-emerald-800"}`}>
                                  {isDel ? "Törölt" : isBooked ? "Foglalt" : "Szabad"}
                                </span>
                             </div>
                             {isDel ? (
                               <button onClick={() => restoreAppointment(app.id)} className="bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-300 flex items-center gap-1.5"><RestoreIcon /> Vissza</button>
                             ) : (
-                              <button onClick={() => deleteAppointment(app.id)} className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg"><TrashIcon /></button>
+                              <button onClick={() => deleteAppointment(app.id)} className="text-black/30 hover:text-red-600 hover:bg-white/60 p-2 rounded-lg"><TrashIcon /></button>
                             )}
                           </div>
                           
                           <div className="flex flex-col gap-3">
-                            <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                            <div className="bg-white/60 p-2.5 rounded-xl border border-white/40">
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Páciens neve</span>
                               <EditableCell disabled={isDel} highlight={isBooked} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                              <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                              <div className="bg-white/60 p-2.5 rounded-xl border border-white/40">
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">TAJ szám</span>
                                 <EditableCell disabled={isDel} highlight={isBooked} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} />
                               </div>
-                              <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                              <div className="bg-white/60 p-2.5 rounded-xl border border-white/40">
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Vizsgálat</span>
                                 <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} />
                               </div>
                             </div>
-                            <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                            <div className="bg-white/60 p-2.5 rounded-xl border border-white/40">
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Megjegyzés</span>
                               <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} />
                             </div>
                           </div>
                           
-                          <div className="mt-4 pt-3 border-t border-slate-100 text-[10px] text-slate-400">
+                          <div className="mt-4 pt-3 border-t border-black/5 text-[10px] opacity-60">
                             {isDel ? (
-                              <span>Törölte: <b className="text-slate-600">{app.deleted_by}</b> ({formatDateTime(app.deleted_at)})</span>
+                              <span>Törölte: <b className="font-semibold">{app.deleted_by}</b> ({formatDateTime(app.deleted_at)})</span>
                             ) : app.last_modified_by ? (
-                              <span>Módosította: <b className="text-slate-600">{app.last_modified_by}</b> ({formatDateTime(app.last_modified_at)})</span>
+                              <span>Módosította: <b className="font-semibold">{app.last_modified_by}</b> ({formatDateTime(app.last_modified_at)})</span>
                             ) : null}
                           </div>
                         </div>

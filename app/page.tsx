@@ -152,7 +152,8 @@ export default function Home() {
 
   const handlePrintDay = (date: string) => {
     setPrintingDate(date);
-    setTimeout(() => { window.print(); }, 100);
+    // Megnöveltük az időt, hogy a Reactnak legyen ideje "lecsupaszítani" a HTML-t nyomtatás előtt!
+    setTimeout(() => { window.print(); }, 250); 
   };
 
   useEffect(() => {
@@ -352,7 +353,7 @@ export default function Home() {
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon /></div>
             <input 
               type="text" 
-              placeholder="Keresés név, TAJ vagy telefonszám alapján..." 
+              placeholder="Keresés név, TAJ vagy telefon alapján..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-white/80 border border-white/60 py-2.5 pl-10 pr-4 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 font-semibold text-slate-800 shadow-sm transition-all"
@@ -370,7 +371,7 @@ export default function Home() {
 
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8 relative z-10">
         
-        {/* --- KONTROLL SÁV --- */}
+        {/* --- KONTROLL SÁV (Elrejtve nyomtatásnál és keresésnél) --- */}
         {!printingDate && searchTerm === "" && (
           <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-6 mb-6 no-print">
             <div className="flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between">
@@ -469,7 +470,7 @@ export default function Home() {
               <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-sm overflow-hidden scroll-mt-24 print-container ${printingDate ? 'bg-white border-0 shadow-none' : 'bg-white/90 backdrop-blur-xl border border-white/60'}`}>
                 
                 {/* Fejléc Dátummal és Nyomtatás gombbal */}
-                <div className={`p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-4 px-0' : 'bg-white/50 border-b border-white/60'}`}>
+                <div className={`p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-white/60'}`}>
                   <div className="flex items-center gap-3 text-slate-900">
                     <CalendarIcon size={20} />
                     <h2 className="text-xl font-bold">{date} {searchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}</h2>
@@ -491,13 +492,16 @@ export default function Home() {
                     <thead>
                       <tr className="border-b border-slate-200/60 print-border">
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-24">Időpont</th>
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-1/5">Páciens neve</th>
+                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-1/4">Páciens neve</th>
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest">TAJ szám</th>
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Telefon</th>
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Státusz</th>
+                        
+                        {/* Ezeket kivettük nyomtatáskor a helytakarékosság végett */}
+                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Telefon</th>}
+                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Státusz</th>}
+                        
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Vizsgálat</th>
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-1/6">Megjegyzés</th>
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print">Művelet</th>
+                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-1/4">Megjegyzés</th>
+                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print">Művelet</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100/50">
@@ -505,42 +509,58 @@ export default function Home() {
                         const isDel = app.is_deleted === true;
                         const isBooked = app.patient_name && app.patient_name.trim() !== "";
                         
+                        // Nyomtatásba ne kerüljön törölt sor!
+                        if (printingDate && isDel) return null; 
+
                         const rowStyle = isDel 
                           ? "bg-slate-100/40 opacity-70 print-hidden" 
                           : isBooked 
                             ? "bg-red-50/70 hover:bg-red-100/60" 
                             : "bg-emerald-50/70 hover:bg-emerald-100/60";
 
-                        if (printingDate && isDel) return null; // Nyomtatásba ne kerüljön törölt sor
-
                         return (
                           <tr key={app.id} className={`transition-colors group ${printingDate ? '' : rowStyle}`}>
                             <td className="px-4 py-3 align-middle">
                               <div className="flex flex-col gap-1 w-max">
-                                <span className={`font-bold text-base ${isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
+                                {/* Nyomtatáskor csak a fekete szöveg kell, nincs stílus/áthúzás stb. */}
+                                <span className={`font-bold text-base ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
+                                
                                 {!printingDate && !isDel && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isBooked ? "bg-red-200/60 text-red-900" : "bg-emerald-200/60 text-emerald-900"}`}>{isBooked ? "Foglalt" : "Szabad"}</span>}
                                 {!printingDate && isDel && <span className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max bg-slate-200 text-slate-700">Törölt</span>}
                               </div>
                             </td>
-                            <td className="px-4 py-3 align-middle"><EditableCell disabled={isDel} highlight={isBooked} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} /></td>
-                            <td className="px-4 py-3 align-middle"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} /></td>
-                            <td className="px-4 py-3 align-middle"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} /></td>
-                            <td className="px-4 py-3 align-middle">
-                              {!printingDate ? (
-                                <StatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} />
-                              ) : (
-                                <span className="font-bold text-xs uppercase">{isBooked ? app.status : ''}</span>
-                              )}
+                            
+                            {/* NYOMTATÁSKOR NINCS OKOS CELLA, CSAK SIMA SZÖVEG -> VILLÁMGYORS BETÖLTÉS! */}
+                            <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black font-bold text-sm border-l border-gray-300' : ''}`}>
+                              {printingDate ? app.patient_name : <EditableCell disabled={isDel} highlight={isBooked} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} />}
                             </td>
-                            <td className="px-4 py-3 align-middle"><EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} /></td>
-                            <td className="px-4 py-3 align-middle"><EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} /></td>
-                            <td className="px-4 py-3 align-middle text-center no-print">
-                              {isDel ? (
-                                <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 transition-all flex items-center justify-center gap-1.5 mx-auto"><RestoreIcon /> Visszaállít</button>
-                              ) : (
-                                <button onClick={() => deleteAppointment(app.id)} className="text-black/30 hover:text-red-600 hover:bg-white/80 shadow-sm p-2 rounded-lg transition-all flex items-center justify-center mx-auto" title="Törlés"><TrashIcon /></button>
-                              )}
+                            <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black font-mono text-sm border-l border-gray-300' : ''}`}>
+                              {printingDate ? formatTAJ(app.taj_szam) : <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} />}
                             </td>
+                            
+                            {!printingDate && (
+                              <>
+                                <td className="px-4 py-3 align-middle"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} /></td>
+                                <td className="px-4 py-3 align-middle"><StatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></td>
+                              </>
+                            )}
+                            
+                            <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
+                              {printingDate ? app.examination_type : <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} />}
+                            </td>
+                            <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
+                              {printingDate ? app.notes : <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} />}
+                            </td>
+                            
+                            {!printingDate && (
+                              <td className="px-4 py-3 align-middle text-center no-print">
+                                {isDel ? (
+                                  <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 transition-all flex items-center justify-center gap-1.5 mx-auto"><RestoreIcon /> Visszaállít</button>
+                                ) : (
+                                  <button onClick={() => deleteAppointment(app.id)} className="text-black/30 hover:text-red-600 hover:bg-white/80 shadow-sm p-2 rounded-lg transition-all flex items-center justify-center mx-auto" title="Törlés"><TrashIcon /></button>
+                                )}
+                              </td>
+                            )}
                           </tr>
                         );
                       })}
@@ -627,29 +647,27 @@ export default function Home() {
         )}
       </div>
       
-      {/* NYOMTATÁSI STÍLUSOK (Teljesen újraírva, kompakt A4 nézethez) */}
+      {/* NYOMTATÁSI STÍLUSOK */}
       <style dangerouslySetContent={{__html: `
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
         @media print {
-          @page { margin: 0.5cm; size: portrait; }
-          body, html { background: white !important; color: black !important; }
+          @page { margin: 1cm; size: portrait; }
+          body, html { background: white !important; color: black !important; font-family: sans-serif; }
           .no-print { display: none !important; }
-          .print-mode { background: white !important; min-height: auto !important; padding-bottom: 0 !important; }
+          .print-mode { background: white !important; min-height: auto !important; padding: 0 !important; }
           .print-container { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; page-break-after: auto; }
           
-          .print-table { width: 100% !important; border-collapse: collapse !important; }
-          .print-table th { border: 1px solid #666 !important; padding: 4px !important; color: black !important; font-size: 11px !important; font-weight: bold !important; background: #eee !important; -webkit-print-color-adjust: exact; }
-          .print-table td { border: 1px solid #999 !important; padding: 3px 4px !important; color: black !important; font-size: 11px !important; line-height: 1.1 !important; }
+          .print-table { width: 100% !important; border-collapse: collapse !important; margin-top: 10px !important; }
+          .print-table th { border: 1px solid #333 !important; padding: 6px !important; color: black !important; font-size: 11px !important; font-weight: bold !important; background: #f3f4f6 !important; -webkit-print-color-adjust: exact; text-align: left; }
+          .print-table td { border: 1px solid #666 !important; padding: 4px 6px !important; color: black !important; font-size: 11px !important; line-height: 1.2 !important; }
           
-          .print-header { padding: 0 0 5px 0 !important; margin-bottom: 8px !important; border-bottom: 2px solid black !important; }
-          .print-header h2 { font-size: 16px !important; margin: 0 !important; }
-          .print-header span { border: none !important; background: none !important; padding: 0 !important; margin-right: 10px !important; color: black !important; font-size: 11px !important; }
+          .print-header { padding: 0 0 5px 0 !important; margin-bottom: 5px !important; border-bottom: 2px solid black !important; display: flex !important; justify-content: space-between !important; }
+          .print-header h2 { font-size: 18px !important; margin: 0 !important; font-weight: bold !important; }
+          .print-header span { border: none !important; background: none !important; padding: 0 !important; margin-right: 15px !important; color: black !important; font-size: 12px !important; font-weight: bold !important; }
           
-          select { appearance: none !important; border: none !important; background: transparent !important; padding: 0 !important; font-size: 11px !important; color: black !important; font-weight: bold !important; text-align: left !important; }
           .print-hidden { display: none !important; }
-          .group span { background: transparent !important; border: none !important; color: black !important; padding: 0 !important; font-size: 10px !important; }
         }
       `}} />
     </div>

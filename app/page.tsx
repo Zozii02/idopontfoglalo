@@ -13,7 +13,6 @@ const RestoreIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" hei
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
-// Ez egy tiszta, modern orvosi környezetet ábrázoló fotó az Unsplash-ről
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
 
 // --- Az "Okos Cella" ---
@@ -57,7 +56,6 @@ const minsToTime = (m: number) => { const h = Math.floor(m / 60).toString().padS
 
 // --- Főoldal ---
 export default function Home() {
-  // FEJLESZTŐI ESZKÖZÖK BLOKKOLÁSA
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'F12') e.preventDefault();
@@ -208,16 +206,14 @@ export default function Home() {
     setNewTimeSlot("");
   };
 
-  // --- 1. BEJELENTKEZŐ KÉPERNYŐ (Tejüveg hatással) ---
+  // --- 1. BEJELENTKEZŐ KÉPERNYŐ ---
   if (!user) {
     return (
       <div 
         className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative"
         style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}
       >
-        {/* Homályosító réteg a háttérképen */}
         <div className="absolute inset-0 bg-slate-100/60 backdrop-blur-2xl z-0 pointer-events-none"></div>
-        
         <div className="relative z-10 bg-white/80 backdrop-blur-xl p-10 md:p-14 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] w-full max-w-md border border-white/50">
           <div className="flex justify-center mb-8">
             <img src="/logo.png" alt="Medical-Aqua Logo" className="h-28 object-contain select-none pointer-events-none drop-shadow-sm" />
@@ -234,7 +230,7 @@ export default function Home() {
     );
   }
 
-  // --- 2. PROFILNÉV MEGADÁSA (Tejüveg hatással) ---
+  // --- 2. PROFILNÉV MEGADÁSA ---
   if (needsProfileName) {
     return (
       <div 
@@ -242,7 +238,6 @@ export default function Home() {
         style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}
       >
         <div className="absolute inset-0 bg-slate-100/60 backdrop-blur-2xl z-0 pointer-events-none"></div>
-
         <div className="relative z-10 bg-white/80 backdrop-blur-xl p-10 md:p-14 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] w-full max-w-md border border-white/50 text-center">
           <div className="flex justify-center text-red-600 mb-6 drop-shadow-sm"><UserIcon /></div>
           <h2 className="text-2xl font-bold mb-2 text-slate-900">Üdvözlünk a rendszerben!</h2>
@@ -254,7 +249,6 @@ export default function Home() {
     );
   }
 
-  // --- ADATOK SZŰRÉSE ÉS NAPTÁR WIDGET ELŐKÉSZÍTÉSE ---
   let filteredAppointments = appointments.filter((app: any) => app.department === activeTab);
   if (!showDeleted) filteredAppointments = filteredAppointments.filter((app: any) => app.is_deleted !== true);
   
@@ -273,16 +267,14 @@ export default function Home() {
     return { date, freeCount, total: dayAppointments.length };
   }).filter(day => day.total > 0);
 
-  // --- 3. FŐ KÉPERNYŐ (DASHBOARD) Háttérképpel ---
+  // --- 3. FŐ KÉPERNYŐ (DASHBOARD) ---
   return (
     <div 
       className="min-h-screen font-sans pb-20 bg-cover bg-center bg-fixed relative"
       style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}
     >
-      {/* Homályosító réteg a főoldalon */}
       <div className="absolute inset-0 bg-slate-100/70 backdrop-blur-2xl z-0 pointer-events-none"></div>
 
-      {/* --- PRÉMIUM ÜVEG FEJLÉC --- */}
       <div className="bg-white/70 backdrop-blur-xl sticky top-0 z-40 border-b border-white/50 shadow-sm relative">
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -306,7 +298,7 @@ export default function Home() {
 
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8 relative z-10">
         
-        {/* --- KONTROLL SÁV (Kategóriák + Generátor) --- */}
+        {/* --- KONTROLL SÁV --- */}
         <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-6 mb-6">
           <div className="flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between">
             
@@ -331,14 +323,21 @@ export default function Home() {
 
             <div className="w-px h-24 bg-slate-200/60 hidden xl:block"></div>
 
+            {/* --- GENERÁTOR AZ EBÉDSZÜNETTEL VISSZAÁLLÍTVA --- */}
             <div className="w-full xl:w-auto flex-1">
                <div className="flex items-center gap-2 mb-3 text-slate-800 font-bold"><SettingsIcon /> <span>Napi Előjegyzés Generátor</span></div>
-               <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-3">
-                  <div className="col-span-2 sm:col-span-1"><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Dátum</label><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
+               <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-end gap-3">
+                  <div className="col-span-2 lg:col-span-1"><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Dátum</label><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
                   <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Kezd</label><input type="time" value={genStart} onChange={(e) => setGenStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
                   <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Vége</label><input type="time" value={genEnd} onChange={(e) => setGenEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
-                  <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Perc</label><input type="number" value={genDuration} onChange={(e) => setGenDuration(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none sm:w-20 font-semibold text-slate-800 transition-all shadow-sm" /></div>
-                  <button onClick={generateDailySlots} className="col-span-2 sm:col-span-1 w-full sm:w-auto bg-slate-900 text-white px-6 py-2.5 rounded-xl hover:bg-black font-semibold shadow-md transition-all sm:ml-auto active:scale-95 text-sm flex items-center justify-center gap-2 mt-2 sm:mt-0"><SettingsIcon /> Létrehozás</button>
+                  <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Perc</label><input type="number" value={genDuration} onChange={(e) => setGenDuration(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none w-full lg:w-20 font-semibold text-slate-800 transition-all shadow-sm" /></div>
+                  
+                  {/* Ebédszünet mezők visszakerültek */}
+                  <div className="hidden lg:block w-px h-10 bg-slate-300/50 mx-1 mb-1"></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet Kezd</label><input type="time" value={genBreakStart} onChange={(e) => setGenBreakStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet Vége</label><input type="time" value={genBreakEnd} onChange={(e) => setGenBreakEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
+                  
+                  <button onClick={generateDailySlots} className="col-span-2 lg:col-span-1 w-full lg:w-auto bg-slate-900 text-white px-6 py-2.5 rounded-xl hover:bg-black font-semibold shadow-md transition-all lg:ml-auto active:scale-95 text-sm flex items-center justify-center gap-2 mt-2 lg:mt-0"><SettingsIcon /> Létrehozás</button>
                </div>
             </div>
           </div>
@@ -452,7 +451,6 @@ export default function Home() {
                     </tbody>
                   </table>
 
-                  {/* MOBIL NÉZET KÁRTYÁK */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 lg:hidden">
                     {dayAppointments.map((app: any) => {
                       const isDel = app.is_deleted === true;

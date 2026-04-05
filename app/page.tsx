@@ -12,6 +12,10 @@ const TrashIcon = ({ size = 16 }: { size?: number }) => <svg xmlns="http://www.w
 const RestoreIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>;
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 
+// --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
+// Ez egy tiszta, modern orvosi környezetet ábrázoló fotó az Unsplash-ről
+const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
+
 // --- Az "Okos Cella" ---
 function EditableCell({ value, onSave, disabled = false, highlight = false }: { value: string; onSave: (val: string) => void; disabled?: boolean; highlight?: boolean }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -31,7 +35,7 @@ function EditableCell({ value, onSave, disabled = false, highlight = false }: { 
 
   return (
     <div onClick={() => setIsEditing(true)}
-      className={`cursor-pointer min-h-[38px] p-2 rounded-lg transition-all border border-transparent hover:bg-white/60 hover:border-black/10 font-medium
+      className={`cursor-pointer min-h-[38px] p-2 rounded-lg transition-all border border-transparent hover:bg-white/80 hover:border-slate-200 font-medium
         ${highlight ? "text-red-950 font-bold" : "text-emerald-950"}`}
       title="Kattints a szerkesztéshez"
     >
@@ -204,36 +208,47 @@ export default function Home() {
     setNewTimeSlot("");
   };
 
-  // --- 1. BEJELENTKEZŐ KÉPERNYŐ ---
+  // --- 1. BEJELENTKEZŐ KÉPERNYŐ (Tejüveg hatással) ---
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 font-sans">
-        <div className="bg-white p-10 md:p-14 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full max-w-md border border-slate-100">
+      <div 
+        className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative"
+        style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}
+      >
+        {/* Homályosító réteg a háttérképen */}
+        <div className="absolute inset-0 bg-slate-100/60 backdrop-blur-2xl z-0 pointer-events-none"></div>
+        
+        <div className="relative z-10 bg-white/80 backdrop-blur-xl p-10 md:p-14 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] w-full max-w-md border border-white/50">
           <div className="flex justify-center mb-8">
-            <img src="/logo.png" alt="Medical-Aqua Logo" className="h-28 object-contain select-none pointer-events-none" />
+            <img src="/logo.png" alt="Medical-Aqua Logo" className="h-28 object-contain select-none pointer-events-none drop-shadow-sm" />
           </div>
           <h2 className="text-2xl font-bold mb-2 text-center text-slate-900 tracking-tight">Klinikai Rendszer</h2>
-          <p className="text-center text-slate-500 mb-8 text-sm">Jelentkezz be a folytatáshoz</p>
+          <p className="text-center text-slate-600 mb-8 text-sm font-medium">Jelentkezz be a folytatáshoz</p>
           <div className="space-y-4">
-            <input type="email" placeholder="E-mail cím" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} className="w-full p-3.5 bg-slate-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition-all text-slate-900 font-medium placeholder:text-slate-400" />
-            <input type="password" placeholder="Jelszó" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} className="w-full p-3.5 bg-slate-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition-all text-slate-900 font-medium placeholder:text-slate-400" />
-            <button onClick={handleLogin} className="w-full bg-red-600 text-white py-3.5 rounded-xl font-semibold shadow-sm hover:bg-red-700 hover:shadow transition-all active:scale-95 mt-2">Belépés</button>
+            <input type="email" placeholder="E-mail cím" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} className="w-full p-3.5 bg-white/90 border border-white/50 rounded-xl focus:bg-white focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition-all text-slate-900 font-medium placeholder:text-slate-400 shadow-sm" />
+            <input type="password" placeholder="Jelszó" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} className="w-full p-3.5 bg-white/90 border border-white/50 rounded-xl focus:bg-white focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition-all text-slate-900 font-medium placeholder:text-slate-400 shadow-sm" />
+            <button onClick={handleLogin} className="w-full bg-red-600 text-white py-3.5 rounded-xl font-semibold shadow-md hover:bg-red-700 hover:shadow-lg transition-all active:scale-95 mt-2">Belépés</button>
           </div>
         </div>
       </div>
     );
   }
 
-  // --- 2. PROFILNÉV MEGADÁSA ---
+  // --- 2. PROFILNÉV MEGADÁSA (Tejüveg hatással) ---
   if (needsProfileName) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 font-sans">
-        <div className="bg-white p-10 md:p-14 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full max-w-md border border-slate-100 text-center">
-          <div className="flex justify-center text-red-600 mb-6"><UserIcon /></div>
+      <div 
+        className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative"
+        style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}
+      >
+        <div className="absolute inset-0 bg-slate-100/60 backdrop-blur-2xl z-0 pointer-events-none"></div>
+
+        <div className="relative z-10 bg-white/80 backdrop-blur-xl p-10 md:p-14 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] w-full max-w-md border border-white/50 text-center">
+          <div className="flex justify-center text-red-600 mb-6 drop-shadow-sm"><UserIcon /></div>
           <h2 className="text-2xl font-bold mb-2 text-slate-900">Üdvözlünk a rendszerben!</h2>
-          <p className="text-slate-500 mb-8 text-sm">Kérjük, add meg a teljes nevedet a naplózáshoz (pl. Dr. Kovács).</p>
-          <input type="text" placeholder="Teljes neved..." value={profileNameInput} onChange={(e) => setProfileNameInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSaveProfileName()} className="w-full p-3.5 bg-slate-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition-all text-slate-900 font-medium placeholder:text-slate-400 mb-4 text-center" />
-          <button onClick={handleSaveProfileName} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-semibold shadow-sm hover:bg-black transition-all active:scale-95">Mentés és Tovább</button>
+          <p className="text-slate-600 mb-8 text-sm font-medium">Kérjük, add meg a teljes nevedet a naplózáshoz (pl. Dr. Kovács).</p>
+          <input type="text" placeholder="Teljes neved..." value={profileNameInput} onChange={(e) => setProfileNameInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSaveProfileName()} className="w-full p-3.5 bg-white/90 border border-white/50 rounded-xl focus:bg-white focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition-all text-slate-900 font-medium placeholder:text-slate-400 mb-4 text-center shadow-sm" />
+          <button onClick={handleSaveProfileName} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-semibold shadow-md hover:bg-black transition-all active:scale-95">Mentés és Tovább</button>
         </div>
       </div>
     );
@@ -251,51 +266,55 @@ export default function Home() {
   }, {});
   const sortedDates = Object.keys(groupedByDate).sort();
 
-  // Kiszámoljuk a szabad helyeket a naptár widgethez
   const freeSlotsSummary = sortedDates.map(date => {
     const dayAppointments = groupedByDate[date].filter((a: any) => !a.is_deleted);
     const bookedCount = dayAppointments.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
     const freeCount = dayAppointments.length - bookedCount;
     return { date, freeCount, total: dayAppointments.length };
-  }).filter(day => day.total > 0); // Csak azokat a napokat mutatjuk, ahol van egyáltalán aktív időpont
+  }).filter(day => day.total > 0);
 
-  // --- 3. FŐ KÉPERNYŐ (DASHBOARD) ---
+  // --- 3. FŐ KÉPERNYŐ (DASHBOARD) Háttérképpel ---
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans pb-20">
-      
+    <div 
+      className="min-h-screen font-sans pb-20 bg-cover bg-center bg-fixed relative"
+      style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}
+    >
+      {/* Homályosító réteg a főoldalon */}
+      <div className="absolute inset-0 bg-slate-100/70 backdrop-blur-2xl z-0 pointer-events-none"></div>
+
       {/* --- PRÉMIUM ÜVEG FEJLÉC --- */}
-      <div className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200">
+      <div className="bg-white/70 backdrop-blur-xl sticky top-0 z-40 border-b border-white/50 shadow-sm relative">
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex justify-between items-center">
           <div className="flex items-center gap-4">
-             <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain select-none pointer-events-none hidden sm:block" />
+             <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain select-none pointer-events-none hidden sm:block drop-shadow-sm" />
              <div>
                <h1 className="text-xl font-bold tracking-tight text-slate-900">Medical-Aqua</h1>
-               <p className="text-red-600 font-medium text-[11px] tracking-widest uppercase">Előjegyzési Rendszer</p>
+               <p className="text-red-600 font-medium text-[11px] tracking-widest uppercase drop-shadow-sm">Előjegyzési Rendszer</p>
              </div>
           </div>
           <div className="flex items-center gap-3 sm:gap-5">
-            <div className="flex items-center gap-2 text-slate-700 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200">
+            <div className="flex items-center gap-2 text-slate-800 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/60 shadow-sm">
               <UserIcon />
               <span className="font-semibold text-sm">{getDisplayName()}</span>
             </div>
-            <button onClick={handleLogout} className="text-slate-400 hover:text-red-600 transition-colors p-2" title="Kijelentkezés">
+            <button onClick={handleLogout} className="text-slate-500 hover:text-red-600 transition-colors p-2" title="Kijelentkezés">
               <LogoutIcon />
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8">
+      <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8 relative z-10">
         
         {/* --- KONTROLL SÁV (Kategóriák + Generátor) --- */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+        <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-6 mb-6">
           <div className="flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between">
             
             <div className="w-full xl:w-1/2">
               <label className="block text-slate-500 font-semibold text-xs uppercase tracking-widest mb-3">Szakrendelés kiválasztása</label>
               <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
                 {CATEGORIES.map(c => (
-                  <button key={c} onClick={() => setActiveTab(c)} className={`whitespace-nowrap px-4 py-2 rounded-full font-semibold text-sm transition-all border ${activeTab === c ? 'bg-red-600 border-red-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}>
+                  <button key={c} onClick={() => setActiveTab(c)} className={`whitespace-nowrap px-4 py-2 rounded-full font-semibold text-sm transition-all border ${activeTab === c ? 'bg-red-600 border-red-600 text-white shadow-md' : 'bg-white/80 border-white text-slate-600 hover:bg-white hover:border-slate-200 shadow-sm'}`}>
                     {c}
                   </button>
                 ))}
@@ -310,25 +329,25 @@ export default function Home() {
               </label>
             </div>
 
-            <div className="w-px h-24 bg-slate-100 hidden xl:block"></div>
+            <div className="w-px h-24 bg-slate-200/60 hidden xl:block"></div>
 
             <div className="w-full xl:w-auto flex-1">
                <div className="flex items-center gap-2 mb-3 text-slate-800 font-bold"><SettingsIcon /> <span>Napi Előjegyzés Generátor</span></div>
                <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-3">
-                  <div className="col-span-2 sm:col-span-1"><label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Dátum</label><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all" /></div>
-                  <div><label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Kezd</label><input type="time" value={genStart} onChange={(e) => setGenStart(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all" /></div>
-                  <div><label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Vége</label><input type="time" value={genEnd} onChange={(e) => setGenEnd(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all" /></div>
-                  <div><label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Perc</label><input type="number" value={genDuration} onChange={(e) => setGenDuration(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none sm:w-20 font-semibold text-slate-800 transition-all" /></div>
-                  <button onClick={generateDailySlots} className="col-span-2 sm:col-span-1 w-full sm:w-auto bg-slate-900 text-white px-6 py-2.5 rounded-xl hover:bg-black font-semibold shadow-sm transition-all sm:ml-auto active:scale-95 text-sm flex items-center justify-center gap-2 mt-2 sm:mt-0"><SettingsIcon /> Létrehozás</button>
+                  <div className="col-span-2 sm:col-span-1"><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Dátum</label><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Kezd</label><input type="time" value={genStart} onChange={(e) => setGenStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Vége</label><input type="time" value={genEnd} onChange={(e) => setGenEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Perc</label><input type="number" value={genDuration} onChange={(e) => setGenDuration(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none sm:w-20 font-semibold text-slate-800 transition-all shadow-sm" /></div>
+                  <button onClick={generateDailySlots} className="col-span-2 sm:col-span-1 w-full sm:w-auto bg-slate-900 text-white px-6 py-2.5 rounded-xl hover:bg-black font-semibold shadow-md transition-all sm:ml-auto active:scale-95 text-sm flex items-center justify-center gap-2 mt-2 sm:mt-0"><SettingsIcon /> Létrehozás</button>
                </div>
             </div>
           </div>
         </div>
 
-        {/* --- GYORSNAPTÁR WIDGET (Csak akkor látszik, ha vannak napok) --- */}
+        {/* --- GYORSNAPTÁR WIDGET --- */}
         {freeSlotsSummary.length > 0 && (
           <div className="mb-8">
-            <div className="flex items-center gap-2 mb-3 text-slate-600 font-bold uppercase tracking-widest text-xs ml-1">
+            <div className="flex items-center gap-2 mb-3 text-slate-700 font-bold uppercase tracking-widest text-xs ml-1">
               <CalendarIcon size={16} /> <span>Naptár Áttekintés - Kattints a dátumra</span>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
@@ -336,12 +355,12 @@ export default function Home() {
                 <button
                   key={day.date}
                   onClick={() => document.getElementById(`date-${day.date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                  className={`flex-shrink-0 min-w-[130px] p-3 rounded-2xl border transition-all text-left group
-                    ${day.freeCount > 0 ? 'bg-white border-emerald-200 shadow-sm hover:shadow-md hover:border-emerald-400 cursor-pointer' : 'bg-slate-50 border-slate-200 opacity-70 cursor-pointer hover:bg-slate-100'}`}
+                  className={`flex-shrink-0 min-w-[130px] p-3 rounded-2xl border transition-all text-left group backdrop-blur-md
+                    ${day.freeCount > 0 ? 'bg-white/90 border-white shadow-sm hover:shadow-md hover:border-emerald-200 cursor-pointer' : 'bg-slate-100/80 border-white/50 opacity-80 cursor-pointer hover:bg-white/90'}`}
                 >
                   <div className="text-slate-800 font-extrabold text-sm mb-1">{formatShortDate(day.date)}</div>
                   <div className={`text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-lg w-max transition-colors
-                    ${day.freeCount > 0 ? 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100' : 'bg-slate-200 text-slate-600'}`}>
+                    ${day.freeCount > 0 ? 'bg-emerald-100 text-emerald-800 group-hover:bg-emerald-200' : 'bg-slate-200 text-slate-700'}`}>
                     {day.freeCount > 0 ? `${day.freeCount} szabad hely` : 'Megtelt'}
                   </div>
                 </button>
@@ -352,10 +371,10 @@ export default function Home() {
 
         {/* --- IDŐPONTOK MEGJELENÍTÉSE --- */}
         {sortedDates.length === 0 ? (
-          <div className="bg-white p-12 md:p-20 text-center rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center">
-            <div className="text-slate-200 mb-4"><CalendarIcon size={64} /></div>
+          <div className="bg-white/80 backdrop-blur-xl p-12 md:p-20 text-center rounded-3xl shadow-sm border border-white/60 flex flex-col items-center">
+            <div className="text-slate-300 mb-4"><CalendarIcon size={64} /></div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">Még nincsenek időpontok</h3>
-            <p className="text-slate-500 text-sm">Válassz dátumot a generátorban, és hozd létre a napot!</p>
+            <p className="text-slate-600 text-sm font-medium">Válassz dátumot a generátorban, és hozd létre a napot!</p>
           </div>
         ) : (
           sortedDates.map((date) => {
@@ -365,29 +384,28 @@ export default function Home() {
             const freeCount = activeSlots.length - bookedCount;
 
             return (
-              <div id={`date-${date}`} key={date} className="mb-10 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden scroll-mt-24">
-                {/* Fejléc Dátummal */}
-                <div className="bg-slate-50 border-b border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div id={`date-${date}`} key={date} className="mb-10 bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 overflow-hidden scroll-mt-24">
+                
+                <div className="bg-white/50 border-b border-white/60 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3 text-slate-900"><CalendarIcon size={20} /><h2 className="text-lg font-bold">{date}</h2></div>
                   <div className="flex gap-2">
-                    <span className="bg-slate-200 text-slate-700 px-3 py-1 rounded-full text-xs font-bold">Összes: {activeSlots.length}</span>
-                    <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold">Szabad: {freeCount}</span>
-                    <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">Foglalt: {bookedCount}</span>
+                    <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold border border-white">Összes: {activeSlots.length}</span>
+                    <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold border border-white">Szabad: {freeCount}</span>
+                    <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold border border-white">Foglalt: {bookedCount}</span>
                   </div>
                 </div>
 
                 <div className="overflow-x-auto">
-                  {/* ASZTALI NÉZET */}
                   <table className="min-w-full text-left border-collapse hidden lg:table">
                     <thead>
-                      <tr className="bg-white border-b border-slate-100">
-                        <th className="px-5 py-4 font-semibold text-slate-400 text-[11px] uppercase tracking-widest">Időpont</th>
-                        <th className="px-5 py-4 font-semibold text-slate-400 text-[11px] uppercase tracking-widest w-1/5">Páciens neve</th>
-                        <th className="px-5 py-4 font-semibold text-slate-400 text-[11px] uppercase tracking-widest">TAJ szám</th>
-                        <th className="px-5 py-4 font-semibold text-slate-400 text-[11px] uppercase tracking-widest">Vizsgálat</th>
-                        <th className="px-5 py-4 font-semibold text-slate-400 text-[11px] uppercase tracking-widest w-1/4">Megjegyzés</th>
-                        <th className="px-5 py-4 font-semibold text-slate-400 text-[11px] uppercase tracking-widest">Módosítva</th>
-                        <th className="px-5 py-4 font-semibold text-slate-400 text-[11px] uppercase tracking-widest text-center">Művelet</th>
+                      <tr className="border-b border-slate-100/50">
+                        <th className="px-5 py-4 font-semibold text-slate-500 text-[11px] uppercase tracking-widest">Időpont</th>
+                        <th className="px-5 py-4 font-semibold text-slate-500 text-[11px] uppercase tracking-widest w-1/5">Páciens neve</th>
+                        <th className="px-5 py-4 font-semibold text-slate-500 text-[11px] uppercase tracking-widest">TAJ szám</th>
+                        <th className="px-5 py-4 font-semibold text-slate-500 text-[11px] uppercase tracking-widest">Vizsgálat</th>
+                        <th className="px-5 py-4 font-semibold text-slate-500 text-[11px] uppercase tracking-widest w-1/4">Megjegyzés</th>
+                        <th className="px-5 py-4 font-semibold text-slate-500 text-[11px] uppercase tracking-widest">Módosítva</th>
+                        <th className="px-5 py-4 font-semibold text-slate-500 text-[11px] uppercase tracking-widest text-center">Művelet</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/50">
@@ -395,20 +413,19 @@ export default function Home() {
                         const isDel = app.is_deleted === true;
                         const isBooked = app.patient_name && app.patient_name.trim() !== "";
                         
-                        // SZÍNEZETT SOROK LOGIKÁJA
                         const rowStyle = isDel 
-                          ? "bg-slate-50/80 opacity-60" 
+                          ? "bg-slate-100/40 opacity-70" 
                           : isBooked 
-                            ? "bg-red-50/60 hover:bg-red-100/50" 
-                            : "bg-emerald-50/60 hover:bg-emerald-100/50";
+                            ? "bg-red-50/70 hover:bg-red-100/60" 
+                            : "bg-emerald-50/70 hover:bg-emerald-100/60";
 
                         return (
                           <tr key={app.id} className={`transition-colors group ${rowStyle}`}>
                             <td className="px-5 py-3 align-top">
                               <div className="flex flex-col gap-1.5 w-max pt-1">
                                 <span className={`font-bold text-base ${isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
-                                {!isDel && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isBooked ? "bg-red-200/50 text-red-800" : "bg-emerald-200/50 text-emerald-800"}`}>{isBooked ? "Foglalt" : "Szabad"}</span>}
-                                {isDel && <span className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max bg-slate-200 text-slate-600">Törölt</span>}
+                                {!isDel && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isBooked ? "bg-red-200/60 text-red-900" : "bg-emerald-200/60 text-emerald-900"}`}>{isBooked ? "Foglalt" : "Szabad"}</span>}
+                                {isDel && <span className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max bg-slate-200 text-slate-700">Törölt</span>}
                               </div>
                             </td>
                             <td className="px-5 py-3 align-top"><EditableCell disabled={isDel} highlight={isBooked} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} /></td>
@@ -417,16 +434,16 @@ export default function Home() {
                             <td className="px-5 py-3 align-top"><EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} /></td>
                             <td className="px-5 py-3 align-top">
                               {isDel ? (
-                                <div className="text-slate-500 text-xs pt-1"><span className="block font-semibold">Törölte: {app.deleted_by}</span>{formatDateTime(app.deleted_at)}</div>
+                                <div className="text-slate-600 text-xs pt-1"><span className="block font-semibold">Törölte: {app.deleted_by}</span>{formatDateTime(app.deleted_at)}</div>
                               ) : (
-                                <div className={`text-xs pt-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${isBooked ? "text-red-800/60" : "text-emerald-800/60"}`}>{app.last_modified_by ? <span className="font-semibold text-current">{app.last_modified_by}</span> : <span>-</span>}{app.last_modified_at && <span>{formatDateTime(app.last_modified_at)}</span>}</div>
+                                <div className={`text-xs pt-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${isBooked ? "text-red-900/60" : "text-emerald-900/60"}`}>{app.last_modified_by ? <span className="font-semibold text-current">{app.last_modified_by}</span> : <span>-</span>}{app.last_modified_at && <span>{formatDateTime(app.last_modified_at)}</span>}</div>
                               )}
                             </td>
                             <td className="px-5 py-3 align-top text-center">
                               {isDel ? (
-                                <button onClick={() => restoreAppointment(app.id)} className="bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-300 transition-all mt-1 flex items-center justify-center gap-1.5 mx-auto"><RestoreIcon /> Visszaállít</button>
+                                <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 transition-all mt-1 flex items-center justify-center gap-1.5 mx-auto"><RestoreIcon /> Visszaállít</button>
                               ) : (
-                                <button onClick={() => deleteAppointment(app.id)} className="text-black/20 hover:text-red-600 hover:bg-white/60 p-2 rounded-lg transition-all mt-1 flex items-center justify-center mx-auto" title="Törlés"><TrashIcon /></button>
+                                <button onClick={() => deleteAppointment(app.id)} className="text-black/30 hover:text-red-600 hover:bg-white/80 shadow-sm p-2 rounded-lg transition-all mt-1 flex items-center justify-center mx-auto" title="Törlés"><TrashIcon /></button>
                               )}
                             </td>
                           </tr>
@@ -436,56 +453,55 @@ export default function Home() {
                   </table>
 
                   {/* MOBIL NÉZET KÁRTYÁK */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 lg:hidden bg-slate-50/50">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 lg:hidden">
                     {dayAppointments.map((app: any) => {
                       const isDel = app.is_deleted === true;
                       const isBooked = app.patient_name && app.patient_name.trim() !== "";
                       
-                      // SZÍNEZETT KÁRTYÁK LOGIKÁJA
                       const cardStyle = isDel 
-                        ? "bg-slate-50 border-slate-200 opacity-70" 
+                        ? "bg-slate-100/50 border-slate-200/50 opacity-80" 
                         : isBooked 
-                          ? "bg-red-50/80 border-red-200 shadow-sm" 
-                          : "bg-emerald-50/80 border-emerald-200 shadow-sm";
+                          ? "bg-red-50/90 border-white shadow-sm" 
+                          : "bg-emerald-50/90 border-white shadow-sm";
 
                       return (
                         <div key={`mob-${app.id}`} className={`rounded-2xl p-5 border transition-all ${cardStyle}`}>
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex flex-col gap-1">
-                               <span className={`font-bold text-xl ${isDel ? "text-slate-400 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
-                               <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isDel ? "bg-slate-200 text-slate-600" : isBooked ? "bg-red-200/60 text-red-800" : "bg-emerald-200/60 text-emerald-800"}`}>
+                               <span className={`font-bold text-xl ${isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
+                               <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isDel ? "bg-slate-200 text-slate-700" : isBooked ? "bg-red-200/60 text-red-900" : "bg-emerald-200/60 text-emerald-900"}`}>
                                  {isDel ? "Törölt" : isBooked ? "Foglalt" : "Szabad"}
                                </span>
                             </div>
                             {isDel ? (
-                              <button onClick={() => restoreAppointment(app.id)} className="bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-300 flex items-center gap-1.5"><RestoreIcon /> Vissza</button>
+                              <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 flex items-center gap-1.5"><RestoreIcon /> Vissza</button>
                             ) : (
-                              <button onClick={() => deleteAppointment(app.id)} className="text-black/30 hover:text-red-600 hover:bg-white/60 p-2 rounded-lg"><TrashIcon /></button>
+                              <button onClick={() => deleteAppointment(app.id)} className="text-black/40 hover:text-red-600 hover:bg-white/80 shadow-sm p-2 rounded-lg"><TrashIcon /></button>
                             )}
                           </div>
                           
                           <div className="flex flex-col gap-3">
-                            <div className="bg-white/60 p-2.5 rounded-xl border border-white/40">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Páciens neve</span>
+                            <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Páciens neve</span>
                               <EditableCell disabled={isDel} highlight={isBooked} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                              <div className="bg-white/60 p-2.5 rounded-xl border border-white/40">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">TAJ szám</span>
+                              <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">TAJ szám</span>
                                 <EditableCell disabled={isDel} highlight={isBooked} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} />
                               </div>
-                              <div className="bg-white/60 p-2.5 rounded-xl border border-white/40">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Vizsgálat</span>
+                              <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat</span>
                                 <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} />
                               </div>
                             </div>
-                            <div className="bg-white/60 p-2.5 rounded-xl border border-white/40">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Megjegyzés</span>
+                            <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Megjegyzés</span>
                               <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} />
                             </div>
                           </div>
                           
-                          <div className="mt-4 pt-3 border-t border-black/5 text-[10px] opacity-60">
+                          <div className="mt-4 pt-3 border-t border-black/5 text-[10px] opacity-70">
                             {isDel ? (
                               <span>Törölte: <b className="font-semibold">{app.deleted_by}</b> ({formatDateTime(app.deleted_at)})</span>
                             ) : app.last_modified_by ? (
@@ -502,10 +518,9 @@ export default function Home() {
           })
         )}
 
-        {/* --- EGYEDI IDŐPONT HOZZÁADÁSA --- */}
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-end gap-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 w-full sm:w-max sm:ml-auto">
-          <input type="text" placeholder="pl. 17:00 - 17:15" value={newTimeSlot} onChange={(e) => setNewTimeSlot(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addSingleAppointment()} className="w-full sm:w-40 bg-slate-50 border border-slate-200 p-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500 text-sm font-semibold text-slate-900 transition-all text-center sm:text-left" />
-          <button onClick={addSingleAppointment} className="w-full sm:w-auto bg-white text-slate-700 px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 hover:text-red-600 font-semibold shadow-sm transition-all active:scale-95 text-sm flex items-center justify-center gap-1.5"><PlusIcon /> Új időpont</button>
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-end gap-3 bg-white/90 backdrop-blur-xl p-4 rounded-3xl shadow-sm border border-white/60 w-full sm:w-max sm:ml-auto">
+          <input type="text" placeholder="pl. 17:00 - 17:15" value={newTimeSlot} onChange={(e) => setNewTimeSlot(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addSingleAppointment()} className="w-full sm:w-40 bg-white/80 border border-white p-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500 text-sm font-semibold text-slate-900 transition-all text-center sm:text-left shadow-sm" />
+          <button onClick={addSingleAppointment} className="w-full sm:w-auto bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-black font-semibold shadow-md transition-all active:scale-95 text-sm flex items-center justify-center gap-1.5"><PlusIcon /> Új időpont</button>
         </div>
       </div>
       

@@ -19,6 +19,9 @@ const QuestionModalIcon = () => <svg width="36" height="36" viewBox="0 0 24 24" 
 const ChevronDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
 const ChevronLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>;
 const ChevronRightIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
+const EraserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg>;
+const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>;
+const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><polyline points="12 7 12 12 15 15"></polyline></svg>;
 
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
@@ -35,7 +38,6 @@ const formatPhone = (val: string) => {
   let cleaned = val.replace(/[^\d+]/g, '');
   if (cleaned.startsWith('06')) cleaned = '+36' + cleaned.substring(2);
   else if (cleaned.startsWith('36')) cleaned = '+36' + cleaned.substring(2);
-  
   if (cleaned.startsWith('+36') && cleaned.length > 3) {
     const p1 = cleaned.substring(0, 3);
     const p2 = cleaned.substring(3, 5);
@@ -44,6 +46,20 @@ const formatPhone = (val: string) => {
     return `${p1} ${p2} ${p3} ${p4}`.trim();
   }
   return cleaned;
+};
+
+// Név formázó (Minden szó nagybetűvel kezdődik)
+const formatName = (val: string) => {
+  if (!val) return "";
+  return val.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+};
+
+// Dátum segédek a gyorsgombokhoz
+const getTodayDateStr = () => new Date().toISOString().split('T')[0];
+const getTomorrowDateStr = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split('T')[0];
 };
 
 // --- OKOS CELLA ---
@@ -84,7 +100,7 @@ function EditableCell({ value, onSave, disabled = false, highlight = false, form
   );
 }
 
-// --- ÚJ: BIZTONSÁGOS ÉS MODERN STÁTUSZ VÁLASZTÓ ---
+// --- MODERN STÁTUSZ VÁLASZTÓ ---
 function ModernStatusSelect({ value, onChange, disabled }: { value: string, onChange: (val: string) => void, disabled: boolean }) {
   if (disabled) return <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">-</span>;
   
@@ -118,7 +134,7 @@ function ModernStatusSelect({ value, onChange, disabled }: { value: string, onCh
   );
 }
 
-// --- ÚJ: MODERN NAPTÁR VÁLASZTÓ ---
+// --- MODERN NAPTÁR VÁLASZTÓ ---
 function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, onChange: (date: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(selectedDate ? new Date(selectedDate) : new Date());
@@ -129,7 +145,7 @@ function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, on
   const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
   const getFirstDayOfMonth = (year: number, month: number) => {
     let day = new Date(year, month, 1).getDay();
-    return day === 0 ? 6 : day - 1; // Hétfő legyen a 0. index
+    return day === 0 ? 6 : day - 1; 
   };
 
   const handlePrevMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
@@ -222,9 +238,11 @@ export default function Home() {
     "Reumatológia", "Sebészet", "Ortopédia", "Neurológia"
   ];
 
+  const searchInputRef = useRef<HTMLInputElement>(null); 
+
   const [appointments, setAppointments] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState(CATEGORIES[0]);
-  const [departmentSearch, setDepartmentSearch] = useState(""); // ÚJ: Szakrendelés kereső állapota
+  const [departmentSearch, setDepartmentSearch] = useState(""); 
   const [showDeleted, setShowDeleted] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -245,23 +263,39 @@ export default function Home() {
 
   const [printingDate, setPrintingDate] = useState<string | null>(null);
 
-  // --- ANIMÁLT OKOS-ABLAK (MODAL) ---
+  const [historyModal, setHistoryModal] = useState<{isOpen: boolean, patientName: string, taj: string, data: any[]}>({
+    isOpen: false, patientName: "", taj: "", data: []
+  });
+
   const [modal, setModal] = useState<{isOpen: boolean, title: string, message: string, type: "alert" | "confirm", confirmText: string, confirmColor: string, onConfirm: () => void}>({
     isOpen: false, title: "", message: "", type: "alert", confirmText: "Rendben", confirmColor: "bg-slate-900 text-white", onConfirm: () => {}
   });
 
   const closeModal = () => setModal(prev => ({ ...prev, isOpen: false }));
+  const closeHistoryModal = () => setHistoryModal(prev => ({ ...prev, isOpen: false }));
 
   const showAlert = (title: string, message: string) => {
     setModal({ isOpen: true, title, message, type: "alert", confirmText: "Rendben", confirmColor: "bg-slate-900 text-white hover:bg-black", onConfirm: closeModal });
   };
 
   const showConfirm = (title: string, message: string, confirmText: string, confirmColor: string, onConfirmCallback: () => void) => {
-    setModal({
-      isOpen: true, title, message, type: "confirm", confirmText, confirmColor,
-      onConfirm: () => { onConfirmCallback(); closeModal(); }
-    });
+    setModal({ isOpen: true, title, message, type: "confirm", confirmText, confirmColor, onConfirm: () => { onConfirmCallback(); closeModal(); }});
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      if (e.key === 'Escape') {
+        closeModal();
+        closeHistoryModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const handleAfterPrint = () => setPrintingDate(null);
@@ -324,6 +358,33 @@ export default function Home() {
     await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
   };
 
+  const clearEmptySlots = async (date: string) => {
+    const dayApps = groupedByDate[date] || [];
+    const emptyApps = dayApps.filter((a: any) => !a.is_deleted && (!a.patient_name || a.patient_name.trim() === ""));
+    
+    if (emptyApps.length === 0) return showAlert("Nincs törölhető üres sor", "Ezen a napon nincsenek üres (páciens nélküli) időpontok.");
+
+    showConfirm(
+      "Üres sorok takarítása",
+      `Biztosan törlöd a(z) ${emptyApps.length} db üresen maradt időpontot ezen a napon?`,
+      "Igen, törlés",
+      "bg-amber-500 hover:bg-amber-600 text-white",
+      async () => {
+        const modifierName = getDisplayName();
+        const now = new Date().toISOString();
+        const idsToDelete = emptyApps.map((a: any) => a.id);
+        
+        setAppointments(appointments.map((app: any) => 
+          idsToDelete.includes(app.id) ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app
+        ));
+
+        await supabase.from("appointments")
+          .update({ is_deleted: true, deleted_by: modifierName, deleted_at: now })
+          .in('id', idsToDelete);
+      }
+    );
+  };
+
   const confirmDeleteApp = (id: number) => {
     showConfirm(
       "Időpont törlése",
@@ -373,12 +434,49 @@ export default function Home() {
     await supabase.from("appointments").update({ is_deleted: false, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
   };
 
+  const exportToCSV = (date: string) => {
+    const dayApps = groupedByDate[date]?.filter((a: any) => !a.is_deleted).sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot)) || [];
+    if (dayApps.length === 0) return showAlert("Üres nap", "Nincs letölthető adat ezen a napon.");
+
+    const headers = ["Időpont", "Páciens neve", "TAJ szám", "Telefon", "Státusz", "Vizsgálat", "Megjegyzés"];
+    const rows = dayApps.map((app: any) => [
+      app.time_slot,
+      app.patient_name || "",
+      app.taj_szam || "",
+      app.phone_number || "",
+      app.status || "",
+      app.examination_type || "",
+      app.notes || ""
+    ]);
+
+    const csvContent = [
+      headers.join(";"),
+      ...rows.map((row: any[]) => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(";"))
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `MA_elojegyzes_${activeTab}_${date}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const openPatientHistory = (name: string, taj: string) => {
+    if (!name && !taj) return;
+    let matches = appointments.filter(a => !a.is_deleted && ((taj && a.taj_szam === taj) || (name && a.patient_name === name)));
+    matches = matches.sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime());
+    setHistoryModal({ isOpen: true, patientName: name || taj, taj: taj || "", data: matches });
+  };
+
   const generateDailySlots = async () => {
     if (!selectedDate) return showAlert("Hiányzó adat", "Kérlek, válassz ki egy dátumot a naptárból!");
     if (!genStart || !genEnd || !genDuration) return showAlert("Hiányzó adat", "Minden generátor mezőt ki kell tölteni a művelethez!");
     
     const durationMins = parseInt(genDuration);
-    
     if (isNaN(durationMins) || durationMins <= 0) return showAlert("Hibás érték", "A vizsgálat hossza (perc) nullánál nagyobb kell, hogy legyen!");
 
     let current = timeToMins(genStart);
@@ -452,6 +550,57 @@ export default function Home() {
     </div>
   );
 
+  const patientHistoryModalUI = (
+    <div className={`fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${historyModal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeHistoryModal}></div>
+      <div className={`relative bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-2xl border border-slate-200 flex flex-col transform transition-all duration-300 max-h-[80vh] ${historyModal.isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+        
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-white/50 rounded-t-3xl shrink-0">
+          <div>
+            <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2"><HistoryIcon /> {historyModal.patientName} - Előzmények</h3>
+            {historyModal.taj && <p className="text-sm font-bold text-slate-500 mt-1">TAJ: {formatTAJ(historyModal.taj)}</p>}
+          </div>
+          <button onClick={closeHistoryModal} className="p-2 bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 rounded-xl transition-colors font-bold text-sm">Bezár (Esc)</button>
+        </div>
+
+        <div className="overflow-y-auto p-6 custom-scrollbar h-full">
+          {historyModal.data.length === 0 ? (
+             <p className="text-center text-slate-500 font-medium py-8">Nem található korábbi bejegyzés.</p>
+          ) : (
+            <div className="space-y-4">
+              {historyModal.data.map((app, idx) => (
+                <div key={idx} className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center gap-4 justify-between hover:border-slate-300 transition-colors">
+                   <div>
+                     <div className="flex items-center gap-2 mb-1">
+                        <span className="font-bold text-slate-900">{formatShortDate(app.appointment_date)}</span>
+                        <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-extrabold">{app.time_slot}</span>
+                        <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider border border-blue-100">{app.department}</span>
+                     </div>
+                     <div className="text-sm font-medium text-slate-600 mt-2">
+                        {app.examination_type ? <span>Vizsgálat: <b className="text-slate-800">{app.examination_type}</b></span> : <span className="italic opacity-60">Nincs vizsgálat rögzítve</span>}
+                        {app.notes && <span className="ml-3 border-l pl-3 border-slate-300">Jegyzet: <b className="text-slate-800">{app.notes}</b></span>}
+                     </div>
+                   </div>
+                   <div className="shrink-0">
+                     <span className={`text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-lg border shadow-sm
+                       ${app.status === "Megérkezett" ? "bg-amber-100 text-amber-800 border-amber-200" :
+                         app.status === "Vizsgálaton" ? "bg-blue-100 text-blue-800 border-blue-200" :
+                         app.status === "Befejezve" ? "bg-emerald-100 text-emerald-800 border-emerald-200" :
+                         app.status === "Nem jelent meg" ? "bg-slate-800 text-white border-slate-900" :
+                         "bg-slate-100 text-slate-700 border-slate-200"
+                       }`}>
+                       {app.status || "Előjegyzett"}
+                     </span>
+                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
@@ -487,7 +636,6 @@ export default function Home() {
     );
   }
 
-  // --- ÚJ: Szakrendelés kereső szűrése ---
   const filteredCategories = CATEGORIES.filter(c => c.toLowerCase().includes(departmentSearch.toLowerCase()));
 
   let filteredAppointments = appointments;
@@ -526,6 +674,7 @@ export default function Home() {
   return (
     <div className={`min-h-screen font-sans pb-20 bg-cover bg-center bg-fixed relative ${printingDate ? 'bg-white print-mode' : ''}`} style={{ backgroundImage: printingDate ? 'none' : `url('${BACKGROUND_IMAGE_URL}')` }}>
       {customModalUI}
+      {patientHistoryModalUI}
       {!printingDate && <div className="absolute inset-0 bg-slate-100/70 backdrop-blur-2xl z-0 pointer-events-none no-print"></div>}
 
       {/* --- FEJLÉC ÉS KERESŐ --- */}
@@ -542,8 +691,9 @@ export default function Home() {
           <div className="flex-1 max-w-lg w-full relative">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon size={18} /></div>
             <input 
+              ref={searchInputRef}
               type="text" 
-              placeholder="Keresés név, TAJ vagy telefon alapján..." 
+              placeholder="Keresés név, TAJ vagy telefon... (Ctrl+K)" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-white/80 border border-white/60 py-2.5 pl-10 pr-4 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 font-semibold text-slate-800 shadow-sm transition-all"
@@ -567,8 +717,6 @@ export default function Home() {
             <div className="flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between">
               
               <div className="w-full xl:w-1/2">
-                
-                {/* ÚJ: Szakrendelés fejléc Keresővel */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                   <label className="block text-slate-500 font-semibold text-xs uppercase tracking-widest">Szakrendelés kiválasztása</label>
                   <div className="relative w-full sm:w-48">
@@ -583,7 +731,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* ÚJ: Lecserélt 'no-scrollbar' -> 'custom-scrollbar' */}
                 <div className="flex gap-2 overflow-x-auto pb-3 custom-scrollbar scroll-smooth">
                   {filteredCategories.length > 0 ? (
                     filteredCategories.map(c => (
@@ -618,7 +765,13 @@ export default function Home() {
                  <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-end gap-3">
                     
                     <div className="col-span-2 lg:col-span-1 lg:min-w-[200px] xl:w-[220px]">
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Dátum</label>
+                      <div className="flex justify-between items-center mb-1.5">
+                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Dátum</label>
+                         <div className="flex gap-1">
+                           <button onClick={() => setSelectedDate(getTodayDateStr())} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded transition-colors border border-slate-200">Ma</button>
+                           <button onClick={() => setSelectedDate(getTomorrowDateStr())} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded transition-colors border border-slate-200">Holnap</button>
+                         </div>
+                      </div>
                       <ModernDatePicker selectedDate={selectedDate} onChange={setSelectedDate} />
                     </div>
 
@@ -630,7 +783,7 @@ export default function Home() {
                     <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet Kezd</label><input type="time" value={genBreakStart} onChange={(e) => setGenBreakStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
                     <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet Vége</label><input type="time" value={genBreakEnd} onChange={(e) => setGenBreakEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
                     
-                    <button onClick={generateDailySlots} className="col-span-2 lg:col-span-1 w-full lg:w-auto bg-gradient-to-r from-red-600 to-red-500 text-white px-6 py-2.5 rounded-xl hover:from-red-700 hover:to-red-600 font-bold shadow-md shadow-red-500/30 transition-all lg:ml-auto active:scale-95 text-sm flex items-center justify-center gap-2 mt-2 lg:mt-0">
+                    <button onClick={generateDailySlots} className="col-span-2 lg:col-span-1 w-full lg:w-auto bg-gradient-to-r from-red-600 to-red-500 text-white px-6 py-2.5 rounded-xl hover:from-red-700 hover:to-red-600 font-bold shadow-md shadow-red-500/30 transition-all lg:ml-auto active:scale-95 text-sm flex items-center justify-center gap-2 mt-2 lg:mt-0 h-10">
                       <SparklesIcon /> Lista Generálása
                     </button>
                  </div>
@@ -689,7 +842,7 @@ export default function Home() {
             return (
               <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-sm scroll-mt-24 print-container ${printingDate ? 'bg-white border-0 shadow-none' : 'overflow-hidden bg-white/90 backdrop-blur-xl border border-white/60'}`}>
                 
-                <div className={`p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-white/60'}`}>
+                <div className={`p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-white/60'}`}>
                   <div className="flex items-center gap-3 text-slate-900">
                     <CalendarIcon size={20} />
                     <h2 className="text-xl font-bold">{date} {searchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}</h2>
@@ -701,11 +854,20 @@ export default function Home() {
                     
                     {!printingDate && (
                       <>
-                        <button onClick={() => handlePrintDay(date)} className="ml-2 bg-slate-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-black transition-all flex items-center gap-1.5 shadow-sm">
-                          <PrintIcon /> Nyomtatás
+                        <div className="w-px h-6 bg-slate-300 mx-1 hidden sm:block"></div>
+                        <button onClick={() => clearEmptySlots(date)} className="bg-white hover:bg-amber-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-amber-300 hover:text-amber-700">
+                          <EraserIcon /> <span className="hidden sm:inline">Üres sorok takarítása</span><span className="sm:hidden">Takarít</span>
                         </button>
-                        <button onClick={() => deleteEntireDay(date)} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition-all flex items-center gap-1.5 shadow-sm border border-red-200 hover:border-red-600">
-                          <TrashIcon /> Nap törlése
+                        
+                        <button onClick={() => exportToCSV(date)} className="bg-white hover:bg-blue-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-blue-300 hover:text-blue-700">
+                          <DownloadIcon /> <span className="hidden sm:inline">Excel Export</span><span className="sm:hidden">Excel</span>
+                        </button>
+                        
+                        <button onClick={() => handlePrintDay(date)} className="bg-slate-800 text-white px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-black transition-all flex items-center gap-1.5 shadow-sm border border-slate-800">
+                          <PrintIcon /> <span className="hidden sm:inline">Nyomtatás</span>
+                        </button>
+                        <button onClick={() => deleteEntireDay(date)} className="bg-red-50 text-red-600 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition-all flex items-center gap-1.5 shadow-sm border border-red-200 hover:border-red-600">
+                          <TrashIcon /> <span className="hidden sm:inline">Nap törlése</span>
                         </button>
                       </>
                     )}
@@ -717,7 +879,7 @@ export default function Home() {
                     <thead>
                       <tr className="border-b border-slate-200/60 print-border">
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[180px]">Páciens neve</th>
+                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[200px]">Páciens neve</th>
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">TAJ szám</th>
                         
                         {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Telefon</th>}
@@ -742,7 +904,7 @@ export default function Home() {
                             : "bg-emerald-50/70 hover:bg-emerald-100/60";
 
                         return (
-                          <tr key={app.id} className={`transition-colors group ${printingDate ? '' : rowStyle}`}>
+                          <tr key={app.id} className={`transition-colors group relative ${printingDate ? '' : rowStyle}`}>
                             
                             <td className="px-4 py-3 align-middle whitespace-nowrap">
                               <div className="flex flex-col gap-1 w-max">
@@ -753,7 +915,21 @@ export default function Home() {
                             </td>
                             
                             <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black font-bold text-sm border-l border-gray-300' : ''}`}>
-                              {printingDate ? app.patient_name : <EditableCell disabled={isDel} highlight={isBooked} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} />}
+                              {printingDate ? app.patient_name : (
+                                <div className="relative">
+                                  <EditableCell disabled={isDel} highlight={isBooked} formatter={formatName} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} />
+                                  {/* Előzmények gomb pozícionálva a cella szélére, csak foglalt sornál, hover esetén */}
+                                  {isBooked && !isDel && (
+                                    <button 
+                                      onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} 
+                                      className="absolute right-0 top-1/2 -translate-y-1/2 p-2 bg-white text-slate-500 hover:text-red-600 shadow-sm rounded-lg border border-slate-200 opacity-0 group-hover:opacity-100 transition-all z-10" 
+                                      title="Előzmények / Karton"
+                                    >
+                                      <HistoryIcon />
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </td>
                             
                             <td className={`px-4 py-3 align-middle whitespace-nowrap ${printingDate ? 'text-black font-mono text-sm border-l border-gray-300' : ''}`}>
@@ -821,9 +997,16 @@ export default function Home() {
                             <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
                               <div className="flex justify-between items-center mb-1 relative z-10">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Páciens neve</span>
-                                <div className="w-[140px]"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></div>
+                                <div className="flex items-center gap-2">
+                                  {isBooked && !isDel && (
+                                    <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-1.5 bg-white text-slate-600 shadow-sm rounded-lg border border-slate-200">
+                                      <HistoryIcon />
+                                    </button>
+                                  )}
+                                  <div className="w-[130px]"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></div>
+                                </div>
                               </div>
-                              <EditableCell disabled={isDel} highlight={isBooked} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} />
+                              <EditableCell disabled={isDel} highlight={isBooked} formatter={formatName} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} />
                             </div>
                             <div className="grid grid-cols-2 gap-3 relative z-0">
                               <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
@@ -869,10 +1052,9 @@ export default function Home() {
         )}
       </div>
       
-      {/* NYOMTATÁSI STÍLUSOK - ÉS AZ ÚJ GÖRGŐSÁV */}
+      {/* NYOMTATÁSI ÉS GÖRGŐ STÍLUSOK */}
       <style dangerouslySetInnerHTML={{__html: `
-        /* ÚJ: ELEGÁNS CSÚSZKA */
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.4); border-radius: 10px; margin: 0 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 0.8); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 1); }

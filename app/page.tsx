@@ -40,7 +40,7 @@ const formatPhone = (val: string) => {
   return cleaned;
 };
 
-// --- OKOS CELLA (Javított szélességgel) ---
+// --- OKOS CELLA ---
 function EditableCell({ value, onSave, disabled = false, highlight = false, formatter }: { value: string; onSave: (val: string) => void; disabled?: boolean; highlight?: boolean; formatter?: (v: string) => string }) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentValue, setCurrentValue] = useState(value || "");
@@ -215,6 +215,30 @@ export default function Home() {
     const now = new Date().toISOString();
     setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app));
     await supabase.from("appointments").update({ is_deleted: true, deleted_by: modifierName, deleted_at: now }).eq("id", id);
+  };
+
+  // ÚJ FUNKCIÓ: TELJES NAP TÖRLÉSE
+  const deleteEntireDay = async (date: string) => {
+    if (!confirm(`Biztosan törlöd a teljes ${date} napot a(z) ${activeTab} szakrendelésen?\n(A törölt sorok a "Törölt sorok mutatása" gombbal később egyesével visszaállíthatók.)`)) return;
+    
+    const modifierName = getDisplayName();
+    const now = new Date().toISOString();
+    
+    // Csak az adott nap és adott részleg aktív időpontjait szedjük össze
+    const dayApps = groupedByDate[date].filter((a: any) => !a.is_deleted);
+    const idsToDelete = dayApps.map((a: any) => a.id);
+    
+    if (idsToDelete.length === 0) return;
+
+    // Lokális frissítés azonnal
+    setAppointments(appointments.map((app: any) => 
+      idsToDelete.includes(app.id) ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app
+    ));
+
+    // Adatbázis frissítés
+    await supabase.from("appointments")
+      .update({ is_deleted: true, deleted_by: modifierName, deleted_at: now })
+      .in('id', idsToDelete);
   };
 
   const restoreAppointment = async (id: number) => {
@@ -463,41 +487,43 @@ export default function Home() {
             const freeCount = activeSlots.length - bookedCount;
 
             return (
-              <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-sm overflow-hidden scroll-mt-24 print-container ${printingDate ? 'bg-white border-0 shadow-none' : 'bg-white/90 backdrop-blur-xl border border-white/60'}`}>
+              <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-sm scroll-mt-24 print-container ${printingDate ? 'bg-white border-0 shadow-none' : 'overflow-hidden bg-white/90 backdrop-blur-xl border border-white/60'}`}>
                 
                 <div className={`p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-white/60'}`}>
                   <div className="flex items-center gap-3 text-slate-900">
                     <CalendarIcon size={20} />
                     <h2 className="text-xl font-bold">{date} {searchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}</h2>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center flex-wrap gap-2">
                     <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold border border-slate-200">Összes: {activeSlots.length}</span>
                     <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold border border-emerald-200">Szabad: {freeCount}</span>
                     <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold border border-red-200">Foglalt: {bookedCount}</span>
+                    
                     {!printingDate && (
-                      <button onClick={() => handlePrintDay(date)} className="ml-2 bg-slate-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-black transition-all flex items-center gap-1.5 shadow-sm">
-                        <PrintIcon /> Nyomtatás
-                      </button>
+                      <>
+                        <button onClick={() => handlePrintDay(date)} className="ml-2 bg-slate-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-black transition-all flex items-center gap-1.5 shadow-sm">
+                          <PrintIcon /> Nyomtatás
+                        </button>
+                        <button onClick={() => deleteEntireDay(date)} className="bg-red-100 text-red-700 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-200 hover:text-red-800 transition-all flex items-center gap-1.5 shadow-sm border border-red-200">
+                          <TrashIcon /> Nap törlése
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
+                {/* A print-overflow-visible osztály engedi a táblázatnak, hogy kimenjen az oldalból nyomtatáskor! */}
+                <div className={`overflow-x-auto ${printingDate ? 'overflow-visible' : ''}`}>
                   <table className="min-w-full text-left border-collapse print-table">
                     <thead>
                       <tr className="border-b border-slate-200/60 print-border">
-                        {/* A fix szélességű oszlopok nem törhetnek sort */}
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>
-                        
-                        {/* A Páciens nevének adtunk teret, hogy kényelmesen kiférjen */}
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[180px]">Páciens neve</th>
-                        
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">TAJ szám</th>
                         
                         {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Telefon</th>}
                         {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Státusz</th>}
                         
-                        {/* A Vizsgálat és Megjegyzés elvesztette a kötelező w-1/4 szélességet, így csak akkor nőnek, ha muszáj */}
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto">Vizsgálat</th>
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto">Megjegyzés</th>
                         {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap w-min">Művelet</th>}
@@ -650,12 +676,18 @@ export default function Home() {
         
         @media print {
           @page { margin: 1cm; size: portrait; }
-          body, html { background: white !important; color: black !important; font-family: sans-serif; }
+          body, html { background: white !important; color: black !important; font-family: sans-serif; height: auto !important; overflow: visible !important; }
           .no-print { display: none !important; }
-          .print-mode { background: white !important; min-height: auto !important; padding: 0 !important; }
-          .print-container { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; page-break-after: auto; }
+          .print-mode { background: white !important; min-height: auto !important; padding: 0 !important; display: block !important; position: static !important; overflow: visible !important; }
           
-          .print-table { width: 100% !important; border-collapse: collapse !important; margin-top: 10px !important; table-layout: fixed; }
+          /* EZ JAVÍTJA A TÖBBOLDALAS NYOMTATÁST! Levágások megszüntetése */
+          .print-container { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; page-break-after: auto; overflow: visible !important; }
+          .overflow-visible { overflow: visible !important; }
+          
+          .print-table { width: 100% !important; border-collapse: collapse !important; margin-top: 10px !important; table-layout: fixed; page-break-inside: auto; }
+          .print-table thead { display: table-header-group; }
+          .print-table tr { page-break-inside: avoid; page-break-after: auto; }
+          
           .print-table th { border: 1px solid #333 !important; padding: 6px !important; color: black !important; font-size: 11px !important; font-weight: bold !important; background: #f3f4f6 !important; -webkit-print-color-adjust: exact; text-align: left; }
           .print-table td { border: 1px solid #666 !important; padding: 4px 6px !important; color: black !important; font-size: 11px !important; line-height: 1.2 !important; word-break: break-word; }
           

@@ -303,10 +303,14 @@ export default function Home() {
   if (searchTerm.trim() !== "") {
     // Ha keresünk, minden osztályon keresünk
     const term = searchTerm.toLowerCase();
+    const termDigitsOnly = term.replace(/\s/g, "");
+    const isNumericSearch = /^\d+$/.test(termDigitsOnly);
     filteredAppointments = filteredAppointments.filter((app: any) => 
       (app.patient_name && app.patient_name.toLowerCase().includes(term)) ||
-      (app.taj_szam && app.taj_szam.includes(term)) ||
-      (app.phone_number && app.phone_number.includes(term))
+      (isNumericSearch && app.taj_szam && app.taj_szam.replace(/\s/g, "").includes(termDigitsOnly)) ||
+      (!isNumericSearch && app.taj_szam && app.taj_szam.includes(term)) ||
+      (isNumericSearch && app.phone_number && app.phone_number.replace(/\s/g, "").includes(termDigitsOnly)) ||
+      (!isNumericSearch && app.phone_number && app.phone_number.includes(term))
     );
   } else {
     // Ha nem keresünk, marad a kategória szűrés
@@ -630,13 +634,16 @@ export default function Home() {
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @media print {
-          @page { margin: 1cm; size: landscape; }
-          body { background: white !important; color: black !important; }
+          @page { margin: 0.5cm; size: portrait; }
+          body { background: white !important; color: black !important; font-size: 10pt !important; }
           .no-print { display: none !important; }
           .print-mode { background: white !important; }
           .print-container { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; }
-          .print-table th, .print-table td { border: 1px solid #ddd !important; padding: 8px !important; color: black !important; }
-          .print-header { padding: 0 0 10px 0 !important; }
+          .print-table { width: 100% !important; border-collapse: collapse !important; }
+          .print-table th, .print-table td { border: 1px solid #ccc !important; padding: 4px !important; font-size: 10px !important; line-height: 1.2 !important; color: black !important; }
+          .print-header { padding: 0 0 4px 0 !important; }
+          .print-header h2 { font-size: 14pt !important; margin-bottom: 4px !important; }
+          .print-table select { appearance: none; border: none; background: transparent; padding: 0; }
         }
       `}} />
     </div>

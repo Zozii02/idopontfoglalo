@@ -13,7 +13,7 @@ const TrashIcon = ({ size = 16 }: { size?: number }) => <svg xmlns="http://www.w
 const RestoreIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>;
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 const PrintIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>;
-const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
+const SearchIcon = ({ size = 18 }: { size?: number }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 const AlertModalIcon = () => <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
 const QuestionModalIcon = () => <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>;
 const ChevronDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
@@ -224,6 +224,7 @@ export default function Home() {
 
   const [appointments, setAppointments] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState(CATEGORIES[0]);
+  const [departmentSearch, setDepartmentSearch] = useState(""); // ÚJ: Szakrendelés kereső állapota
   const [showDeleted, setShowDeleted] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -378,7 +379,6 @@ export default function Home() {
     
     const durationMins = parseInt(genDuration);
     
-    // Biztonsági védelem végtelen ciklus ellen, ha valaki 0 vagy mínusz percet adna meg!
     if (isNaN(durationMins) || durationMins <= 0) return showAlert("Hibás érték", "A vizsgálat hossza (perc) nullánál nagyobb kell, hogy legyen!");
 
     let current = timeToMins(genStart);
@@ -487,6 +487,9 @@ export default function Home() {
     );
   }
 
+  // --- ÚJ: Szakrendelés kereső szűrése ---
+  const filteredCategories = CATEGORIES.filter(c => c.toLowerCase().includes(departmentSearch.toLowerCase()));
+
   let filteredAppointments = appointments;
   
   if (searchTerm.trim() !== "") {
@@ -537,7 +540,7 @@ export default function Home() {
           </div>
           
           <div className="flex-1 max-w-lg w-full relative">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon /></div>
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon size={18} /></div>
             <input 
               type="text" 
               placeholder="Keresés név, TAJ vagy telefon alapján..." 
@@ -562,16 +565,38 @@ export default function Home() {
         {!printingDate && searchTerm === "" && (
           <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-6 mb-6 no-print">
             <div className="flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between">
+              
               <div className="w-full xl:w-1/2">
-                <label className="block text-slate-500 font-semibold text-xs uppercase tracking-widest mb-3">Szakrendelés kiválasztása</label>
-                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
-                  {CATEGORIES.map(c => (
-                    <button key={c} onClick={() => setActiveTab(c)} className={`whitespace-nowrap px-4 py-2 rounded-full font-semibold text-sm transition-all border ${activeTab === c ? 'bg-red-600 border-red-600 text-white shadow-md' : 'bg-white/80 border-white text-slate-600 hover:bg-white hover:border-slate-200 shadow-sm'}`}>
-                      {c}
-                    </button>
-                  ))}
+                
+                {/* ÚJ: Szakrendelés fejléc Keresővel */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                  <label className="block text-slate-500 font-semibold text-xs uppercase tracking-widest">Szakrendelés kiválasztása</label>
+                  <div className="relative w-full sm:w-48">
+                    <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon size={14} /></div>
+                    <input 
+                      type="text" 
+                      placeholder="Szakrendelés keresése..." 
+                      value={departmentSearch} 
+                      onChange={(e) => setDepartmentSearch(e.target.value)} 
+                      className="w-full bg-white/90 border border-slate-200 py-1.5 pl-8 pr-3 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 font-semibold text-slate-700 transition-all shadow-sm" 
+                    />
+                  </div>
                 </div>
-                <label className="mt-4 flex items-center gap-3 cursor-pointer group w-max">
+
+                {/* ÚJ: Lecserélt 'no-scrollbar' -> 'custom-scrollbar' */}
+                <div className="flex gap-2 overflow-x-auto pb-3 custom-scrollbar scroll-smooth">
+                  {filteredCategories.length > 0 ? (
+                    filteredCategories.map(c => (
+                      <button key={c} onClick={() => setActiveTab(c)} className={`whitespace-nowrap px-4 py-2 rounded-full font-semibold text-sm transition-all border ${activeTab === c ? 'bg-red-600 border-red-600 text-white shadow-md' : 'bg-white/80 border-white text-slate-600 hover:bg-white hover:border-slate-200 shadow-sm'}`}>
+                        {c}
+                      </button>
+                    ))
+                  ) : (
+                    <span className="text-sm font-medium text-slate-400 italic py-2">Nincs találat a keresésre...</span>
+                  )}
+                </div>
+                
+                <label className="mt-3 flex items-center gap-3 cursor-pointer group w-max">
                   <div className="relative">
                     <input type="checkbox" className="sr-only" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
                     <div className={`block w-10 h-6 rounded-full transition-colors duration-300 border ${showDeleted ? "bg-slate-800 border-slate-800" : "bg-slate-200 border-slate-300 group-hover:bg-slate-300"}`}></div>
@@ -585,7 +610,6 @@ export default function Home() {
 
               <div className="w-full xl:w-auto flex-1">
                  
-                 {/* ÚJ CÍMSOR ÉS IKON */}
                  <div className="flex items-center gap-2.5 mb-4 text-slate-800 font-extrabold text-lg">
                     <div className="bg-red-100 text-red-600 p-1.5 rounded-lg shadow-sm"><ListPlusIcon /></div>
                     <span>Napi előjegyzési lista létrehozása</span>
@@ -606,7 +630,6 @@ export default function Home() {
                     <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet Kezd</label><input type="time" value={genBreakStart} onChange={(e) => setGenBreakStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
                     <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet Vége</label><input type="time" value={genBreakEnd} onChange={(e) => setGenBreakEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
                     
-                    {/* ÚJ PRÉMIUM GENERÁLÓ GOMB */}
                     <button onClick={generateDailySlots} className="col-span-2 lg:col-span-1 w-full lg:w-auto bg-gradient-to-r from-red-600 to-red-500 text-white px-6 py-2.5 rounded-xl hover:from-red-700 hover:to-red-600 font-bold shadow-md shadow-red-500/30 transition-all lg:ml-auto active:scale-95 text-sm flex items-center justify-center gap-2 mt-2 lg:mt-0">
                       <SparklesIcon /> Lista Generálása
                     </button>
@@ -618,7 +641,7 @@ export default function Home() {
 
         {!printingDate && searchTerm !== "" && (
           <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-2xl mb-6 shadow-sm flex items-center gap-3 no-print">
-            <SearchIcon />
+            <SearchIcon size={18} />
             <span className="font-bold">Keresési eredmények a következőre: "{searchTerm}"</span>
             <span className="ml-auto bg-blue-200 text-blue-900 px-3 py-1 rounded-full text-xs font-extrabold">{filteredAppointments.length} találat</span>
           </div>
@@ -629,7 +652,7 @@ export default function Home() {
             <div className="flex items-center gap-2 mb-3 text-slate-700 font-bold uppercase tracking-widest text-xs ml-1">
               <CalendarIcon size={16} /> <span>Naptár Áttekintés - Kattints a dátumra</span>
             </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
+            <div className="flex gap-3 overflow-x-auto pb-3 custom-scrollbar scroll-smooth">
               {freeSlotsSummary.map((day) => (
                 <button
                   key={day.date}
@@ -689,7 +712,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className={`overflow-x-auto ${printingDate ? 'overflow-visible' : ''}`}>
+                <div className={`overflow-x-auto custom-scrollbar ${printingDate ? 'overflow-visible' : ''}`}>
                   <table className="min-w-full text-left border-collapse print-table">
                     <thead>
                       <tr className="border-b border-slate-200/60 print-border">
@@ -846,8 +869,14 @@ export default function Home() {
         )}
       </div>
       
-      {/* NYOMTATÁSI STÍLUSOK - A HIBÁS KÓD JAVÍTVA */}
+      {/* NYOMTATÁSI STÍLUSOK - ÉS AZ ÚJ GÖRGŐSÁV */}
       <style dangerouslySetInnerHTML={{__html: `
+        /* ÚJ: ELEGÁNS CSÚSZKA */
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.4); border-radius: 10px; margin: 0 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 0.8); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 1); }
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         

@@ -98,7 +98,6 @@ function ModernStatusSelect({ value, onChange, disabled }: { value: string, onCh
 
   const currentStyle = statusColors[value] || statusColors["Előjegyzett"];
 
-  // Native select használata custom formázással: sosem vágja le az overflow-x-auto!
   return (
     <div className="relative inline-block w-[140px]">
       <select 
@@ -119,7 +118,7 @@ function ModernStatusSelect({ value, onChange, disabled }: { value: string, onCh
   );
 }
 
-// --- ÚJ: MODERN NAPTÁR VÁLASZTÓ (Custom DatePicker) ---
+// --- ÚJ: MODERN NAPTÁR VÁLASZTÓ ---
 function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, onChange: (date: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(selectedDate ? new Date(selectedDate) : new Date());
@@ -146,8 +145,8 @@ function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, on
 
   const daysInMonth = getDaysInMonth(viewDate.getFullYear(), viewDate.getMonth());
   const firstDay = getFirstDayOfMonth(viewDate.getFullYear(), viewDate.getMonth());
-  const emptyDays = Array.from({ length: firstDay }, () => null);
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const emptyDays = Array.from({ length: firstDay >= 0 ? firstDay : 0 }, () => null);
+  const days = Array.from({ length: daysInMonth > 0 ? daysInMonth : 0 }, (_, i) => i + 1);
 
   const displayDate = selectedDate ? `${selectedDate.split('-')[0]}. ${monthNames[parseInt(selectedDate.split('-')[1]) - 1]} ${selectedDate.split('-')[2]}.` : "Válassz dátumot...";
 
@@ -183,14 +182,13 @@ function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, on
               {days.map(day => {
                 const currentDateStr = `${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
                 const isSelected = currentDateStr === selectedDate;
-                const isToday = currentDateStr === new Date().toISOString().split('T')[0];
                 
                 return (
                   <button 
                     key={day} 
                     onClick={() => selectDay(day)}
                     className={`p-2 w-full text-sm font-semibold rounded-lg transition-all flex items-center justify-center aspect-square
-                      ${isSelected ? 'bg-red-600 text-white shadow-md' : isToday ? 'bg-red-50 text-red-600 border border-red-200' : 'text-slate-700 hover:bg-slate-100'}
+                      ${isSelected ? 'bg-red-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}
                     `}
                   >
                     {day}
@@ -204,6 +202,17 @@ function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, on
     </div>
   );
 }
+
+const formatDateTime = (isoString: string) => {
+  if (!isoString) return "";
+  return new Date(isoString).toLocaleString("hu-HU", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+};
+const formatShortDate = (d: string) => {
+  const parts = d.split('-');
+  return parts.length === 3 ? `${parts[1]}. ${parts[2]}.` : d;
+};
+const timeToMins = (t: string) => { const [h, m] = t.split(':'); return parseInt(h) * 60 + parseInt(m); };
+const minsToTime = (m: number) => { const h = Math.floor(m / 60).toString().padStart(2, '0'); const mins = (m % 60).toString().padStart(2, '0'); return `${h}:${mins}`; };
 
 // --- Főoldal ---
 export default function Home() {
@@ -235,7 +244,7 @@ export default function Home() {
 
   const [printingDate, setPrintingDate] = useState<string | null>(null);
 
-  // --- ANIMÁLT OKOS-ABLAK (MODAL) ÁLLAPOTOK ---
+  // --- ANIMÁLT OKOS-ABLAK (MODAL) ---
   const [modal, setModal] = useState<{isOpen: boolean, title: string, message: string, type: "alert" | "confirm", confirmText: string, confirmColor: string, onConfirm: () => void}>({
     isOpen: false, title: "", message: "", type: "alert", confirmText: "Rendben", confirmColor: "bg-slate-900 text-white", onConfirm: () => {}
   });
@@ -368,6 +377,10 @@ export default function Home() {
     if (!genStart || !genEnd || !genDuration) return showAlert("Hiányzó adat", "Minden generátor mezőt ki kell tölteni a művelethez!");
     
     const durationMins = parseInt(genDuration);
+    
+    // Biztonsági védelem végtelen ciklus ellen, ha valaki 0 vagy mínusz percet adna meg!
+    if (isNaN(durationMins) || durationMins <= 0) return showAlert("Hibás érték", "A vizsgálat hossza (perc) nullánál nagyobb kell, hogy legyen!");
+
     let current = timeToMins(genStart);
     const end = timeToMins(genEnd);
     const bStart = genBreakStart ? timeToMins(genBreakStart) : null;
@@ -728,7 +741,6 @@ export default function Home() {
                               <>
                                 <td className="px-4 py-3 align-middle whitespace-nowrap"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} /></td>
                                 
-                                {/* ÚJ MODERN STÁTUSZ VÁLASZTÓ */}
                                 <td className="px-4 py-3 align-middle whitespace-nowrap"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></td>
                               </>
                             )}
@@ -784,13 +796,13 @@ export default function Home() {
                           
                           <div className="flex flex-col gap-3">
                             <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
-                              <div className="flex justify-between items-center mb-1">
+                              <div className="flex justify-between items-center mb-1 relative z-10">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Páciens neve</span>
                                 <div className="w-[140px]"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></div>
                               </div>
                               <EditableCell disabled={isDel} highlight={isBooked} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} />
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-3 relative z-0">
                               <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">TAJ szám</span>
                                 <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} />
@@ -800,7 +812,7 @@ export default function Home() {
                                 <EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} />
                               </div>
                             </div>
-                            <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
+                            <div className="bg-white/70 p-2.5 rounded-xl border border-white/50 relative z-0">
                               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat & Megjegyzés</span>
                               <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} />
                               <div className="mt-1 border-t border-black/5 pt-1">
@@ -834,8 +846,8 @@ export default function Home() {
         )}
       </div>
       
-      {/* NYOMTATÁSI STÍLUSOK */}
-      <style dangerouslySetContent={{__html: `
+      {/* NYOMTATÁSI STÍLUSOK - A HIBÁS KÓD JAVÍTVA */}
+      <style dangerouslySetInnerHTML={{__html: `
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         

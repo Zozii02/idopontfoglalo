@@ -1239,8 +1239,8 @@ export default function Home() {
 
                 <div className={`overflow-x-auto custom-scrollbar ${printingDate ? 'overflow-visible' : ''}`}>
                   <table className="min-w-full text-left border-collapse print-table">
-                    <thead className={`${printingDate ? '' : 'sticky top-[73px] z-20 bg-slate-50/95 backdrop-blur-xl shadow-sm border-b border-slate-200'}`}>
-                      <tr className="print-border">
+                    <thead>
+                      <tr className="border-b border-slate-200/60 print-border">
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[200px]">Páciens neve</th>
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">TAJ szám</th>

@@ -369,6 +369,25 @@ export default function Home() {
     setIsPriceModalOpen(true);
   };
 
+  // ÚJ: Megnyitja az árlistát egy specifikus szakrendeléshez az értesítésből
+  const handleNotificationClick = (msg: string) => {
+    const parts = msg.split("módosította az árlistát: ");
+    if (parts.length === 2) {
+      const dept = parts[1].trim();
+      
+      // Beállítjuk az aktív fület a háttérben
+      if (CATEGORIES.includes(dept)) {
+        setActiveTab(dept);
+      }
+      
+      // Megnyitjuk a modált a kért árakkal
+      const deptPrices = allPrices.filter(p => p.department === dept);
+      setCurrentPrices(deptPrices.length > 0 ? deptPrices : []);
+      setIsPriceModalOpen(true);
+      setIsNotifOpen(false); // Becsukjuk a harang menüt
+    }
+  };
+
   const addPriceItem = () => setCurrentPrices([...currentPrices, { id: Date.now().toString(), name: "", price: "" }]);
   const updatePriceItem = (id: string, field: "name" | "price", value: string) => setCurrentPrices(currentPrices.map(item => item.id === id ? { ...item, [field]: value } : item));
   const removePriceItem = (id: string) => setCurrentPrices(currentPrices.filter(item => item.id !== id));
@@ -1082,15 +1101,24 @@ export default function Home() {
                         {notifications.length === 0 ? (
                            <div className="p-6 text-center text-sm font-medium text-slate-400">Nincsenek még értesítések.</div>
                         ) : (
-                           notifications.map(n => (
-                              <div key={n.id} className="p-3.5 border-b border-slate-50 hover:bg-slate-50 transition-colors flex gap-3 items-start">
-                                 <div className="bg-emerald-100 text-emerald-600 p-1.5 rounded-xl mt-0.5 shrink-0 shadow-sm"><TagIcon /></div>
-                                 <div>
-                                   <p className="text-sm text-slate-800 font-medium leading-snug">{n.message}</p>
-                                   <p className="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-widest">{formatDateTime(n.created_at)}</p>
-                                 </div>
-                              </div>
-                           ))
+                           notifications.map(n => {
+                             const isPriceMod = n.message.includes("módosította az árlistát:");
+                             return (
+                               <div 
+                                 key={n.id} 
+                                 onClick={() => isPriceMod ? handleNotificationClick(n.message) : null}
+                                 className={`p-3.5 border-b border-slate-50 transition-colors flex gap-3 items-start ${isPriceMod ? 'cursor-pointer hover:bg-slate-100' : 'hover:bg-slate-50'}`}
+                                 title={isPriceMod ? "Kattints a megtekintéshez" : ""}
+                               >
+                                  <div className="bg-emerald-100 text-emerald-600 p-1.5 rounded-xl mt-0.5 shrink-0 shadow-sm"><TagIcon /></div>
+                                  <div className="flex-1">
+                                    <p className="text-sm text-slate-800 font-medium leading-snug">{n.message}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-widest">{formatDateTime(n.created_at)}</p>
+                                  </div>
+                                  {isPriceMod && <div className="mt-2 text-slate-400"><ChevronRightIcon /></div>}
+                               </div>
+                             );
+                           })
                         )}
                      </div>
                    </div>

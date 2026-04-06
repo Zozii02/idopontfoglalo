@@ -24,6 +24,7 @@ const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" hei
 const ArrowUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>;
 const MailIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>;
 const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
+const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>;
 
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
@@ -50,13 +51,11 @@ const formatPhone = (val: string) => {
   return cleaned;
 };
 
-// Név formázó (Minden szó nagybetűvel kezdődik)
 const formatName = (val: string) => {
   if (!val) return "";
   return val.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 };
 
-// Dátum segédek a gyorsgombokhoz
 const getTodayDateStr = () => new Date().toISOString().split('T')[0];
 const getTomorrowDateStr = () => {
   const d = new Date();
@@ -136,7 +135,7 @@ function ModernStatusSelect({ value, onChange, disabled }: { value: string, onCh
   );
 }
 
-// --- MODERN NAPTÁR VÁLASZTÓ (JAVÍTOTT MÉRET & Z-INDEX) ---
+// --- MODERN NAPTÁR VÁLASZTÓ ---
 function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, onChange: (date: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(selectedDate ? new Date(selectedDate) : new Date());
@@ -264,9 +263,12 @@ export default function Home() {
   const [genBreakEnd, setGenBreakEnd] = useState("13:00");
 
   const [printingDate, setPrintingDate] = useState<string | null>(null);
-  
-  // Állapot a "Scroll to top" gombhoz
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // --- Árlista Állapotok ---
+  const [pricesByDept, setPricesByDept] = useState<Record<string, {id: string, name: string, price: string}[]>>({});
+  const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
+  const [currentPrices, setCurrentPrices] = useState<{id: string, name: string, price: string}[]>([]);
 
   const [historyModal, setHistoryModal] = useState<{isOpen: boolean, patientName: string, taj: string, data: any[]}>({
     isOpen: false, patientName: "", taj: "", data: []
@@ -275,6 +277,38 @@ export default function Home() {
   const [modal, setModal] = useState<{isOpen: boolean, title: string, message: string, type: "alert" | "confirm", confirmText: string, confirmColor: string, onConfirm: () => void}>({
     isOpen: false, title: "", message: "", type: "alert", confirmText: "Rendben", confirmColor: "bg-slate-900 text-white", onConfirm: () => {}
   });
+
+  // Árak betöltése a böngésző memóriájából
+  useEffect(() => {
+    const savedPrices = localStorage.getItem("ma_department_prices");
+    if (savedPrices) {
+      try { setPricesByDept(JSON.parse(savedPrices)); } catch (e) { console.error("Hiba az árak betöltésekor", e); }
+    }
+  }, []);
+
+  const openPriceModal = () => {
+    setCurrentPrices(pricesByDept[activeTab] || []);
+    setIsPriceModalOpen(true);
+  };
+
+  const savePrices = () => {
+    const newPricesByDept = { ...pricesByDept, [activeTab]: currentPrices };
+    setPricesByDept(newPricesByDept);
+    localStorage.setItem("ma_department_prices", JSON.stringify(newPricesByDept));
+    setIsPriceModalOpen(false);
+  };
+
+  const addPriceItem = () => {
+    setCurrentPrices([...currentPrices, { id: Date.now().toString(), name: "", price: "" }]);
+  };
+
+  const updatePriceItem = (id: string, field: "name" | "price", value: string) => {
+    setCurrentPrices(currentPrices.map(item => item.id === id ? { ...item, [field]: value } : item));
+  };
+
+  const removePriceItem = (id: string) => {
+    setCurrentPrices(currentPrices.filter(item => item.id !== id));
+  };
 
   const closeModal = () => setModal(prev => ({ ...prev, isOpen: false }));
   const closeHistoryModal = () => setHistoryModal(prev => ({ ...prev, isOpen: false }));
@@ -287,29 +321,18 @@ export default function Home() {
     setModal({ isOpen: true, title, message, type: "confirm", confirmText, confirmColor, onConfirm: () => { onConfirmCallback(); closeModal(); }});
   };
 
-  // Felgörgetés figyelő
   useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
-    };
+    const handleScroll = () => setShowScrollTop(window.scrollY > 300);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-      if (e.key === 'Escape') {
-        closeModal();
-        closeHistoryModal();
-      }
+      if (e.ctrlKey && e.key.toLowerCase() === 'k') { e.preventDefault(); searchInputRef.current?.focus(); }
+      if (e.key === 'Escape') { closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -546,6 +569,7 @@ export default function Home() {
     setNewTimeSlot("");
   };
 
+  // --- UI MODÁLOK ---
   const customModalUI = (
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${modal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeModal}></div>
@@ -565,6 +589,61 @@ export default function Home() {
               <button onClick={closeModal} className="w-full py-3.5 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 transition-all shadow-sm active:scale-95">Mégse</button>
            )}
            <button onClick={modal.onConfirm} className={`w-full py-3.5 rounded-xl font-bold shadow-md transition-all active:scale-95 ${modal.confirmColor}`}>{modal.confirmText}</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const priceModalUI = (
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${isPriceModalOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsPriceModalOpen(false)}></div>
+      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-2xl border border-slate-200 flex flex-col transform transition-all duration-300 max-h-[80vh] ${isPriceModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+        
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="bg-emerald-100 text-emerald-600 p-2.5 rounded-xl"><TagIcon /></div>
+            <div>
+              <h3 className="text-xl font-extrabold text-slate-900">Árlista</h3>
+              <p className="text-sm font-bold text-emerald-600 uppercase tracking-widest">{activeTab}</p>
+            </div>
+          </div>
+          <button onClick={() => setIsPriceModalOpen(false)} className="p-2 bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 rounded-xl transition-colors font-bold text-sm">Bezár (Esc)</button>
+        </div>
+
+        <div className="overflow-y-auto p-6 custom-scrollbar flex-1 bg-slate-50/50">
+          {currentPrices.length === 0 ? (
+            <div className="text-center text-slate-500 font-medium py-10 border-2 border-dashed border-slate-200 rounded-2xl">
+              Nincsenek még árak felvéve ehhez a szakrendeléshez.<br/>Kattints az "Új tétel hozzáadása" gombra!
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {currentPrices.map((item) => (
+                <div key={item.id} className="flex flex-col sm:flex-row gap-3 bg-white p-3 rounded-2xl shadow-sm border border-slate-200 hover:border-slate-300 transition-all items-center">
+                  <div className="w-full sm:flex-1">
+                    <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest block mb-1">Vizsgálat megnevezése</label>
+                    <input type="text" value={item.name} onChange={(e) => updatePriceItem(item.id, 'name', e.target.value)} placeholder="pl. Hasi ultrahang" className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none font-semibold text-slate-800 transition-all" />
+                  </div>
+                  <div className="w-full sm:w-40">
+                    <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest block mb-1">Ár</label>
+                    <input type="text" value={item.price} onChange={(e) => updatePriceItem(item.id, 'price', e.target.value)} placeholder="pl. 15.000 Ft" className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none font-semibold text-slate-800 transition-all" />
+                  </div>
+                  <button onClick={() => removePriceItem(item.id)} className="w-full sm:w-auto mt-4 sm:mt-5 p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors flex justify-center" title="Tétel törlése">
+                    <TrashIcon />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <button onClick={addPriceItem} className="mt-4 w-full border-2 border-dashed border-slate-300 text-slate-600 hover:border-emerald-500 hover:text-emerald-700 bg-white py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
+            <PlusIcon /> Új tétel hozzáadása
+          </button>
+        </div>
+
+        <div className="p-6 border-t border-slate-100 shrink-0 bg-white rounded-b-3xl">
+           <button onClick={savePrices} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-md hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-2">
+             Mentés és Bezárás
+           </button>
         </div>
       </div>
     </div>
@@ -719,6 +798,7 @@ export default function Home() {
     <div className={`min-h-screen font-sans pb-10 bg-cover bg-center bg-fixed relative ${printingDate ? 'bg-white print-mode' : ''}`} style={{ backgroundImage: printingDate ? 'none' : `url('${BACKGROUND_IMAGE_URL}')` }}>
       {customModalUI}
       {patientHistoryModalUI}
+      {priceModalUI}
       {!printingDate && <div className="absolute inset-0 bg-slate-100/70 backdrop-blur-2xl z-0 pointer-events-none no-print"></div>}
 
       {/* --- FEJLÉC ÉS KERESŐ --- */}
@@ -763,15 +843,22 @@ export default function Home() {
               <div className="w-full xl:w-1/2">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                   <label className="block text-slate-500 font-semibold text-xs uppercase tracking-widest">Szakrendelés kiválasztása</label>
-                  <div className="relative w-full sm:w-48">
-                    <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon size={14} /></div>
-                    <input 
-                      type="text" 
-                      placeholder="Szakrendelés keresése..." 
-                      value={departmentSearch} 
-                      onChange={(e) => setDepartmentSearch(e.target.value)} 
-                      className="w-full bg-white/90 border border-slate-200 py-1.5 pl-8 pr-3 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 font-semibold text-slate-700 transition-all shadow-sm" 
-                    />
+                  
+                  <div className="flex items-center gap-3">
+                    <button onClick={openPriceModal} className="text-xs font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm active:scale-95">
+                      <TagIcon /> {activeTab} árak
+                    </button>
+                    
+                    <div className="relative w-full sm:w-40">
+                      <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon size={14} /></div>
+                      <input 
+                        type="text" 
+                        placeholder="Keresés..." 
+                        value={departmentSearch} 
+                        onChange={(e) => setDepartmentSearch(e.target.value)} 
+                        className="w-full bg-white/90 border border-slate-200 py-1.5 pl-8 pr-3 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 font-semibold text-slate-700 transition-all shadow-sm" 
+                      />
+                    </div>
                   </div>
                 </div>
 

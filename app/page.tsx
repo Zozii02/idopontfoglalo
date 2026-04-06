@@ -26,6 +26,7 @@ const MailIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height
 const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
 const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>;
 const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
+const RefreshIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>;
 
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
@@ -225,6 +226,11 @@ const formatDateTime = (isoString: string) => {
   if (!isoString) return "";
   return new Date(isoString).toLocaleString("hu-HU", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 };
+const formatTimeOnly = (isoString: string) => {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+};
 const formatShortDate = (d: string) => {
   const parts = d.split('-');
   return parts.length === 3 ? `${parts[1]}. ${parts[2]}.` : d;
@@ -266,7 +272,7 @@ export default function Home() {
   const [printingDate, setPrintingDate] = useState<string | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // --- Árlista Állapotok ---
+  // --- Globális Árlista Állapotok ---
   const [allPrices, setAllPrices] = useState<any[]>([]);
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
   const [currentPrices, setCurrentPrices] = useState<{id: string, name: string, price: string}[]>([]);
@@ -276,15 +282,41 @@ export default function Home() {
     isOpen: false, patientName: "", taj: "", data: []
   });
 
-  const [appInfoModal, setAppInfoModal] = useState<{isOpen: boolean, data: any}>({
-    isOpen: false, data: null
+  const [appInfoModal, setAppInfoModal] = useState<{isOpen: boolean, data: any, logs: any[], loading: boolean}>({
+    isOpen: false, data: null, logs: [], loading: false
   });
 
   const [modal, setModal] = useState<{isOpen: boolean, title: string, message: string, type: "alert" | "confirm", confirmText: string, confirmColor: string, onConfirm: () => void}>({
     isOpen: false, title: "", message: "", type: "alert", confirmText: "Rendben", confirmColor: "bg-slate-900 text-white", onConfirm: () => {}
   });
 
-  // Árak megnyitása
+  // Naplózó segédfüggvény
+  const logAction = async (appId: number, action: string, details: string) => {
+    const modifierName = getDisplayName();
+    try {
+      await supabase.from('appointment_logs').insert([{
+        appointment_id: appId,
+        modified_by: modifierName,
+        action: action,
+        details: details
+      }]);
+    } catch (e) {
+      console.error("Naplózási hiba", e);
+    }
+  };
+
+  // Infó modál megnyitása és adatletöltés
+  const openAppInfoModal = async (app: any) => {
+    setAppInfoModal({ isOpen: true, data: app, logs: [], loading: true });
+    const { data, error } = await supabase
+      .from('appointment_logs')
+      .select('*')
+      .eq('appointment_id', app.id)
+      .order('modified_at', { ascending: false });
+    
+    setAppInfoModal({ isOpen: true, data: app, logs: data || [], loading: false });
+  };
+
   const openPriceModal = () => {
     const deptPrices = allPrices.filter(p => p.department === activeTab);
     setCurrentPrices(deptPrices.length > 0 ? deptPrices : []);
@@ -339,11 +371,6 @@ export default function Home() {
     window.addEventListener('afterprint', handleAfterPrint);
     return () => window.removeEventListener('afterprint', handleAfterPrint);
   }, []);
-
-  const handlePrintDay = (date: string) => {
-    setPrintingDate(date);
-    setTimeout(() => { window.print(); }, 250); 
-  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => checkUserAndProfile(session?.user));
@@ -401,10 +428,32 @@ export default function Home() {
 
   const updateAppointment = async (id: number, field: string, newValue: string) => {
     if (!user) return;
-    const modifierName = getDisplayName();
-    const now = new Date().toISOString();
-    setAppointments(appointments.map((app: any) => app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app));
-    await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
+    
+    // Megkeressük a régi értéket
+    const oldApp = appointments.find(a => a.id === id);
+    const oldValue = oldApp ? oldApp[field] : "";
+    
+    // Csak akkor naplózunk és mentünk, ha tényleg változott valami
+    if (oldValue !== newValue) {
+      const modifierName = getDisplayName();
+      const now = new Date().toISOString();
+      
+      const fieldNames: Record<string, string> = {
+        patient_name: "Páciens neve", taj_szam: "TAJ szám", phone_number: "Telefon", 
+        status: "Státusz", examination_type: "Vizsgálat", notes: "Megjegyzés"
+      };
+      const fieldLabel = fieldNames[field] || field;
+      
+      // Megformázzuk a napló bejegyzést
+      const oldDisp = oldValue ? oldValue : "(üres)";
+      const newDisp = newValue ? newValue : "(üres)";
+      const details = `${fieldLabel}: "${oldDisp}" ➔ "${newDisp}"`;
+
+      setAppointments(appointments.map((app: any) => app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app));
+      
+      await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
+      await logAction(id, "Módosítás", details);
+    }
   };
 
   const clearEmptySlots = async (date: string) => {
@@ -430,6 +479,12 @@ export default function Home() {
         await supabase.from("appointments")
           .update({ is_deleted: true, deleted_by: modifierName, deleted_at: now })
           .in('id', idsToDelete);
+          
+        // Naplózás minden törölt sornak
+        const logs = idsToDelete.map((id: number) => ({
+           appointment_id: id, modified_by: modifierName, action: "Törlés", details: "Üres sor automatikus takarítása"
+        }));
+        await supabase.from('appointment_logs').insert(logs);
       }
     );
   };
@@ -449,6 +504,7 @@ export default function Home() {
     const now = new Date().toISOString();
     setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app));
     await supabase.from("appointments").update({ is_deleted: true, deleted_by: modifierName, deleted_at: now }).eq("id", id);
+    await logAction(id, "Törlés", "Időpont törölve a listából");
   };
 
   const deleteEntireDay = async (date: string) => {
@@ -472,6 +528,11 @@ export default function Home() {
         await supabase.from("appointments")
           .update({ is_deleted: true, deleted_by: modifierName, deleted_at: now })
           .in('id', idsToDelete);
+          
+        const logs = idsToDelete.map((id: number) => ({
+           appointment_id: id, modified_by: modifierName, action: "Törlés", details: "Teljes nap csoportos törlése"
+        }));
+        await supabase.from('appointment_logs').insert(logs);
       }
     );
   };
@@ -481,6 +542,7 @@ export default function Home() {
     const now = new Date().toISOString();
     setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: false, last_modified_by: modifierName, last_modified_at: now } : app));
     await supabase.from("appointments").update({ is_deleted: false, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
+    await logAction(id, "Visszaállítás", "Törölt időpont visszaállítva");
   };
 
   const exportToCSV = (date: string) => {
@@ -560,7 +622,14 @@ export default function Home() {
           last_modified_by: modifierName, last_modified_at: now, is_deleted: false
         }));
 
-        await supabase.from("appointments").insert(newAppointments);
+        const { data } = await supabase.from("appointments").insert(newAppointments).select();
+        
+        if (data) {
+           const logs = data.map((app: any) => ({
+              appointment_id: app.id, modified_by: modifierName, action: "Létrehozás", details: "Napi lista generálással létrehozva"
+           }));
+           await supabase.from('appointment_logs').insert(logs);
+        }
       }
     );
   };
@@ -569,11 +638,15 @@ export default function Home() {
     if (!user || !newTimeSlot.trim() || !selectedDate) return showAlert("Hiányzó adat", "Kérlek, válassz dátumot és adj meg egy pontos időpontot is (pl. 17:00)!");
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
-    await supabase.from("appointments").insert([{
+    const { data } = await supabase.from("appointments").insert([{
       department: activeTab, appointment_date: selectedDate, time_slot: newTimeSlot,
       patient_name: "", taj_szam: "", phone_number: "", examination_type: "", notes: "", status: "Előjegyzett",
       last_modified_by: modifierName, last_modified_at: now, is_deleted: false
-    }]);
+    }]).select();
+    
+    if (data && data[0]) {
+       await logAction(data[0].id, "Létrehozás", "Egyedi időpont manuálisan hozzáadva");
+    }
     setNewTimeSlot("");
   };
 
@@ -672,7 +745,7 @@ export default function Home() {
 
         <div className="overflow-y-auto p-6 custom-scrollbar h-full">
           {historyModal.data.length === 0 ? (
-             <p className="text-center text-slate-500 font-medium py-8">Nem található korábbi bejegyzés ehhez a TAJ számhoz.</p>
+             <p className="text-center text-slate-500 font-medium py-8">Nem tal��lható korábbi bejegyzés ehhez a TAJ számhoz.</p>
           ) : (
             <div className="space-y-4">
               {historyModal.data.map((app, idx) => (
@@ -711,37 +784,49 @@ export default function Home() {
   const infoModalUI = (
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${appInfoModal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeAppInfoModal}></div>
-      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] p-6 md:p-8 w-full max-w-sm border border-slate-100 flex flex-col transform transition-all duration-300 ${appInfoModal.isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] w-full max-w-lg border border-slate-100 flex flex-col transform transition-all duration-300 max-h-[80vh] ${appInfoModal.isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
         
-        <div className="flex justify-center mb-4">
-           <div className="bg-blue-50 text-blue-500 p-4 rounded-full shadow-inner"><InfoIcon /></div>
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl shrink-0">
+           <div className="flex items-center gap-3">
+             <div className="bg-blue-100 text-blue-600 p-2.5 rounded-xl"><InfoIcon /></div>
+             <div>
+               <h3 className="text-xl font-extrabold text-slate-900">Napló</h3>
+               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{appInfoModal.data?.time_slot} {appInfoModal.data?.patient_name && `• ${appInfoModal.data.patient_name}`}</p>
+             </div>
+           </div>
+           <button onClick={closeAppInfoModal} className="p-2 bg-white hover:bg-slate-200 text-slate-600 rounded-xl transition-colors font-bold shadow-sm border border-slate-200"><TrashIcon size={14}/></button>
         </div>
-        <h3 className="text-xl font-extrabold text-center text-slate-900 mb-1">Módosítási Adatok</h3>
-        <p className="text-center text-slate-500 font-bold text-sm mb-6">{appInfoModal.data?.time_slot} {appInfoModal.data?.patient_name && `- ${appInfoModal.data.patient_name}`}</p>
         
-        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 mb-6 space-y-4">
-          {appInfoModal.data?.is_deleted ? (
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Törlés információk</p>
-              <p className="text-sm text-slate-800"><span className="font-bold">{appInfoModal.data.deleted_by || "Ismeretlen"}</span></p>
-              <p className="text-xs text-slate-500 mt-0.5">{appInfoModal.data.deleted_at ? formatDateTime(appInfoModal.data.deleted_at) : "-"}</p>
-            </div>
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
+          {appInfoModal.loading ? (
+             <div className="flex justify-center items-center py-10 opacity-50 animate-pulse"><RefreshIcon /></div>
+          ) : appInfoModal.logs.length === 0 ? (
+             <p className="text-center text-slate-500 text-sm font-medium py-6 italic">Nincs még bejegyzés erről az időpontról.</p>
           ) : (
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Utolsó módosítás</p>
-              {appInfoModal.data?.last_modified_by ? (
-                <>
-                  <p className="text-sm text-slate-800"><span className="font-bold">{appInfoModal.data.last_modified_by}</span></p>
-                  <p className="text-xs text-slate-500 mt-0.5">{formatDateTime(appInfoModal.data.last_modified_at)}</p>
-                </>
-              ) : (
-                <p className="text-sm text-slate-500 italic">Még nem lett módosítva.</p>
-              )}
+            <div className="relative border-l-2 border-slate-200 ml-4 space-y-6 pb-4">
+              {appInfoModal.logs.map((log, idx) => {
+                 let bgColor = "bg-blue-100 border-blue-200 text-blue-600";
+                 if (log.action === "Törlés") bgColor = "bg-red-100 border-red-200 text-red-600";
+                 if (log.action === "Létrehozás") bgColor = "bg-emerald-100 border-emerald-200 text-emerald-600";
+                 if (log.action === "Visszaállítás") bgColor = "bg-amber-100 border-amber-200 text-amber-600";
+                 
+                 return (
+                   <div key={idx} className="relative pl-6">
+                      <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${bgColor.split(" ")[0]}`}></div>
+                      <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl shadow-sm">
+                         <div className="flex justify-between items-center mb-1.5 gap-2">
+                           <span className={`text-[10px] uppercase font-extrabold tracking-widest px-2 py-0.5 rounded ${bgColor}`}>{log.action}</span>
+                           <span className="text-xs font-bold text-slate-400">{formatDateTime(log.modified_at)}</span>
+                         </div>
+                         <p className="text-sm font-bold text-slate-800 mb-1">{log.modified_by}</p>
+                         <p className="text-xs text-slate-600 leading-relaxed font-medium bg-white p-2 rounded-xl border border-slate-100">{log.details}</p>
+                      </div>
+                   </div>
+                 );
+              })}
             </div>
           )}
         </div>
-        
-        <button onClick={closeAppInfoModal} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-md hover:bg-black transition-all active:scale-95">Bezárás</button>
       </div>
     </div>
   );
@@ -1155,7 +1240,7 @@ export default function Home() {
                                     <button onClick={() => confirmDeleteApp(app.id)} className="text-black/30 hover:text-red-600 hover:bg-red-50 shadow-sm p-2 rounded-lg transition-all" title="Törlés"><TrashIcon /></button>
                                   )}
                                   
-                                  <button onClick={() => setAppInfoModal({isOpen: true, data: app})} className="text-blue-400 hover:text-blue-600 hover:bg-blue-50 shadow-sm p-2 rounded-lg transition-all" title="Módosítási infók">
+                                  <button onClick={() => openAppInfoModal(app)} className="text-blue-400 hover:text-blue-600 hover:bg-blue-50 shadow-sm p-2 rounded-lg transition-all" title="Módosítási infók">
                                     <InfoIcon />
                                   </button>
                                 </div>
@@ -1190,7 +1275,7 @@ export default function Home() {
                             </div>
                             
                             <div className="flex items-center gap-1">
-                              <button onClick={() => setAppInfoModal({isOpen: true, data: app})} className="text-blue-400 hover:text-blue-600 hover:bg-white/80 shadow-sm p-2 rounded-lg" title="Infó"><InfoIcon /></button>
+                              <button onClick={() => openAppInfoModal(app)} className="text-blue-400 hover:text-blue-600 hover:bg-white/80 shadow-sm p-2 rounded-lg" title="Infó"><InfoIcon /></button>
                               
                               {isDel ? (
                                 <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 flex items-center gap-1.5"><RestoreIcon /> Vissza</button>

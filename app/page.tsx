@@ -21,6 +21,7 @@ const ChevronRightIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18
 const EraserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg>;
 const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>;
 const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><polyline points="12 7 12 12 15 15"></polyline></svg>;
+const ArrowUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>;
 
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
@@ -133,7 +134,7 @@ function ModernStatusSelect({ value, onChange, disabled }: { value: string, onCh
   );
 }
 
-// --- MODERN NAPTÁR VÁLASZTÓ (JAVÍTOTT MÉRET & Z-INDEX) ---
+// --- MODERN NAPTÁR VÁLASZTÓ ---
 function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, onChange: (date: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(selectedDate ? new Date(selectedDate) : new Date());
@@ -181,7 +182,6 @@ function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, on
       {isOpen && (
         <>
           <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)}></div>
-          {/* Javított naptár-doboz: kisebb magasság, ultra-magas z-index, hogy soha ne lógjon ki vagy takaródjon el */}
           <div className="absolute top-full left-0 mt-2 w-64 bg-white/95 backdrop-blur-xl border border-slate-200 shadow-2xl rounded-2xl z-[999] p-3 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-3">
               <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"><ChevronLeftIcon /></button>
@@ -262,6 +262,9 @@ export default function Home() {
   const [genBreakEnd, setGenBreakEnd] = useState("13:00");
 
   const [printingDate, setPrintingDate] = useState<string | null>(null);
+  
+  // Állapot a "Scroll to top" gombhoz
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const [historyModal, setHistoryModal] = useState<{isOpen: boolean, patientName: string, taj: string, data: any[]}>({
     isOpen: false, patientName: "", taj: "", data: []
@@ -280,6 +283,19 @@ export default function Home() {
 
   const showConfirm = (title: string, message: string, confirmText: string, confirmColor: string, onConfirmCallback: () => void) => {
     setModal({ isOpen: true, title, message, type: "confirm", confirmText, confirmColor, onConfirm: () => { onConfirmCallback(); closeModal(); }});
+  };
+
+  // Felgörgetés figyelő
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -674,7 +690,7 @@ export default function Home() {
   }).filter(day => day.total > 0);
 
   return (
-    <div className={`min-h-screen font-sans pb-20 bg-cover bg-center bg-fixed relative ${printingDate ? 'bg-white print-mode' : ''}`} style={{ backgroundImage: printingDate ? 'none' : `url('${BACKGROUND_IMAGE_URL}')` }}>
+    <div className={`min-h-screen font-sans pb-10 bg-cover bg-center bg-fixed relative ${printingDate ? 'bg-white print-mode' : ''}`} style={{ backgroundImage: printingDate ? 'none' : `url('${BACKGROUND_IMAGE_URL}')` }}>
       {customModalUI}
       {patientHistoryModalUI}
       {!printingDate && <div className="absolute inset-0 bg-slate-100/70 backdrop-blur-2xl z-0 pointer-events-none no-print"></div>}
@@ -711,7 +727,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8 relative z-10">
+      <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8 relative z-10 min-h-[80vh]">
         
         {/* --- KONTROLL SÁV --- */}
         {!printingDate && searchTerm === "" && (
@@ -757,7 +773,6 @@ export default function Home() {
 
               <div className="w-px h-24 bg-slate-200/60 hidden xl:block"></div>
 
-              {/* JAVÍTOTT: A Generátor 2 fix sorba rendezve */}
               <div className="w-full xl:w-auto flex-1">
                  <div className="flex items-center gap-2.5 mb-4 text-slate-800 font-extrabold text-lg">
                     <div className="bg-red-100 text-red-600 p-1.5 rounded-lg shadow-sm"><ListPlusIcon /></div>
@@ -765,7 +780,6 @@ export default function Home() {
                  </div>
                  
                  <div className="flex flex-col gap-3 w-full">
-                    {/* ELSŐ SOR */}
                     <div className="flex flex-wrap items-end gap-3">
                       <div className="w-full sm:w-auto sm:flex-1 md:w-[220px] md:flex-none">
                         <div className="flex justify-between items-center mb-1.5">
@@ -792,7 +806,6 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* MÁSODIK SOR */}
                     <div className="flex flex-wrap items-end gap-3">
                       <div className="w-[calc(50%-0.375rem)] sm:w-28">
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet Kezd</label>
@@ -1074,6 +1087,24 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* --- LÁBLÉC (COPYRIGHT) --- */}
+      {!printingDate && (
+        <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6 text-right text-slate-600/70 text-xs font-bold no-print relative z-10">
+          &copy; 2026 Created by Zozi
+        </div>
+      )}
+
+      {/* --- SCROLL TO TOP GOMB --- */}
+      {!printingDate && showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-50 bg-slate-900/90 backdrop-blur-md text-white p-3.5 rounded-full shadow-2xl hover:bg-black transition-all hover:scale-110 active:scale-95 animate-in fade-in slide-in-from-bottom-6 border border-slate-700"
+          title="Ugrás az oldal tetejére"
+        >
+          <ArrowUpIcon />
+        </button>
+      )}
       
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }

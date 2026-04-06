@@ -29,6 +29,7 @@ const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height
 const RefreshIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>;
 const CheckCircleIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
 const XCircleIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
+const BellIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>;
 
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
@@ -308,6 +309,11 @@ export default function Home() {
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
   const [currentPrices, setCurrentPrices] = useState<{id: string, name: string, price: string}[]>([]);
 
+  // --- Értesítések Állapotai ---
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+
   // --- Modálok és Toastok ---
   const [historyModal, setHistoryModal] = useState<{isOpen: boolean, patientName: string, taj: string, data: any[]}>({
     isOpen: false, patientName: "", taj: "", data: []
@@ -374,6 +380,12 @@ export default function Home() {
       const inserts = validPrices.map(p => ({ department: activeTab, name: p.name, price: p.price }));
       await supabase.from("prices").insert(inserts);
     }
+    
+    // Globális értesítés beküldése a többieknek
+    await supabase.from("notifications").insert([{
+      message: `${getDisplayName()} módosította az árlistát: ${activeTab}`
+    }]);
+
     setIsPriceModalOpen(false);
     showToast(`${activeTab} árak sikeresen elmentve!`);
   };
@@ -401,7 +413,7 @@ export default function Home() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key.toLowerCase() === 'k') { e.preventDefault(); searchInputRef.current?.focus(); }
-      if (e.key === 'Escape') { closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); closeAppInfoModal(); }
+      if (e.key === 'Escape') { closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); closeAppInfoModal(); setIsNotifOpen(false); }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -430,10 +442,40 @@ export default function Home() {
     if (!error && data) setAllPrices(data);
   };
 
+  const fetchNotifications = async () => {
+    const { data } = await supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(20);
+    if (data) {
+      setNotifications(data);
+      updateUnreadCount(data);
+    }
+  };
+
+  const updateUnreadCount = (notifs: any[]) => {
+    if (!user) return;
+    const lastRead = localStorage.getItem(`medaqua_notif_${user.email}`);
+    if (!lastRead) {
+      setUnreadCount(notifs.length);
+    } else {
+      const count = notifs.filter(n => new Date(n.created_at) > new Date(lastRead)).length;
+      setUnreadCount(count);
+    }
+  };
+
+  const toggleNotif = () => {
+    const opening = !isNotifOpen;
+    setIsNotifOpen(opening);
+    if (opening && user) {
+      const now = new Date().toISOString();
+      localStorage.setItem(`medaqua_notif_${user.email}`, now);
+      setUnreadCount(0);
+    }
+  };
+
   useEffect(() => { 
     if (user && !needsProfileName) {
       fetchAppointments();
       fetchAllPrices();
+      fetchNotifications();
 
       const channel = supabase.channel('live-appointments')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => fetchAppointments())
@@ -443,7 +485,11 @@ export default function Home() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'prices' }, () => fetchAllPrices())
         .subscribe();
 
-      return () => { supabase.removeChannel(channel); supabase.removeChannel(pricesChannel); };
+      const notifChannel = supabase.channel('live-notifs')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, () => fetchNotifications())
+        .subscribe();
+
+      return () => { supabase.removeChannel(channel); supabase.removeChannel(pricesChannel); supabase.removeChannel(notifChannel); };
     } 
   }, [user, needsProfileName]);
 
@@ -545,6 +591,11 @@ export default function Home() {
     await supabase.from("appointments").update({ is_deleted: true, deleted_by: modifierName, deleted_at: now }).eq("id", id);
     await logAction(id, "Törlés", "Időpont törölve a listából");
     showToast("Időpont törölve");
+  };
+
+  const handlePrintDay = (date: string) => {
+    setPrintingDate(date);
+    setTimeout(() => { window.print(); }, 300);
   };
 
   const deleteEntireDay = async (date: string) => {
@@ -1012,10 +1063,45 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-3 sm:gap-5 w-full md:w-auto justify-end">
-            <div className="flex items-center gap-2 text-slate-800 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/60 shadow-sm">
+            
+            {/* --- ÉRTESÍTÉSEK --- */}
+            <div className="relative">
+              <button onClick={toggleNotif} className="relative p-2 text-slate-500 hover:text-red-600 transition-colors">
+                <BellIcon />
+                {unreadCount > 0 && <span className="absolute top-0 right-0 translate-x-1 -translate-y-1 bg-red-500 text-white text-[10px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full border-2 border-white shadow-sm">{unreadCount}</span>}
+              </button>
+              {isNotifOpen && (
+                 <>
+                   <div className="fixed inset-0 z-40" onClick={() => setIsNotifOpen(false)}></div>
+                   <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                     <div className="p-3.5 border-b border-slate-100 bg-slate-50/80 font-bold text-sm text-slate-800 flex items-center justify-between">
+                       <span>Értesítések</span>
+                       {unreadCount > 0 && <span className="text-[10px] bg-red-100 text-red-600 px-2.5 py-0.5 rounded-full uppercase tracking-wider">{unreadCount} új</span>}
+                     </div>
+                     <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
+                        {notifications.length === 0 ? (
+                           <div className="p-6 text-center text-sm font-medium text-slate-400">Nincsenek még értesítések.</div>
+                        ) : (
+                           notifications.map(n => (
+                              <div key={n.id} className="p-3.5 border-b border-slate-50 hover:bg-slate-50 transition-colors flex gap-3 items-start">
+                                 <div className="bg-emerald-100 text-emerald-600 p-1.5 rounded-xl mt-0.5 shrink-0 shadow-sm"><TagIcon /></div>
+                                 <div>
+                                   <p className="text-sm text-slate-800 font-medium leading-snug">{n.message}</p>
+                                   <p className="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-widest">{formatDateTime(n.created_at)}</p>
+                                 </div>
+                              </div>
+                           ))
+                        )}
+                     </div>
+                   </div>
+                 </>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 text-slate-800 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/60 shadow-sm z-10 relative">
               <UserIcon /><span className="font-semibold text-sm">{getDisplayName()}</span>
             </div>
-            <button onClick={handleLogout} className="text-slate-500 hover:text-red-600 transition-colors p-2" title="Kijelentkezés"><LogoutIcon /></button>
+            <button onClick={handleLogout} className="text-slate-500 hover:text-red-600 transition-colors p-2 z-10 relative" title="Kijelentkezés"><LogoutIcon /></button>
           </div>
         </div>
       </div>

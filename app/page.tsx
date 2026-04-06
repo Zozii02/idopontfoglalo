@@ -25,6 +25,7 @@ const ArrowUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" hei
 const MailIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>;
 const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
 const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>;
+const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
 
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
@@ -265,13 +266,18 @@ export default function Home() {
   const [printingDate, setPrintingDate] = useState<string | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // --- Globális Árlista Állapotok ---
+  // --- Árlista Állapotok ---
   const [allPrices, setAllPrices] = useState<any[]>([]);
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
   const [currentPrices, setCurrentPrices] = useState<{id: string, name: string, price: string}[]>([]);
 
+  // --- Modálok ---
   const [historyModal, setHistoryModal] = useState<{isOpen: boolean, patientName: string, taj: string, data: any[]}>({
     isOpen: false, patientName: "", taj: "", data: []
+  });
+
+  const [appInfoModal, setAppInfoModal] = useState<{isOpen: boolean, data: any}>({
+    isOpen: false, data: null
   });
 
   const [modal, setModal] = useState<{isOpen: boolean, title: string, message: string, type: "alert" | "confirm", confirmText: string, confirmColor: string, onConfirm: () => void}>({
@@ -285,41 +291,23 @@ export default function Home() {
     setIsPriceModalOpen(true);
   };
 
-  // Új tétel hozzáadása a listához (még csak a memóriában)
-  const addPriceItem = () => {
-    setCurrentPrices([...currentPrices, { id: Date.now().toString(), name: "", price: "" }]);
-  };
+  const addPriceItem = () => setCurrentPrices([...currentPrices, { id: Date.now().toString(), name: "", price: "" }]);
+  const updatePriceItem = (id: string, field: "name" | "price", value: string) => setCurrentPrices(currentPrices.map(item => item.id === id ? { ...item, [field]: value } : item));
+  const removePriceItem = (id: string) => setCurrentPrices(currentPrices.filter(item => item.id !== id));
 
-  const updatePriceItem = (id: string, field: "name" | "price", value: string) => {
-    setCurrentPrices(currentPrices.map(item => item.id === id ? { ...item, [field]: value } : item));
-  };
-
-  const removePriceItem = (id: string) => {
-    setCurrentPrices(currentPrices.filter(item => item.id !== id));
-  };
-
-  // Árak mentése a Supabase-be
   const savePrices = async () => {
-    // 1. Töröljük a jelenlegi árakat ennél a szakrendelésnél
     await supabase.from("prices").delete().eq("department", activeTab);
-
-    // 2. Csak azokat mentsük el, amik nincsenek teljesen üresen hagyva
     const validPrices = currentPrices.filter(p => p.name.trim() !== "" || p.price.trim() !== "");
-    
     if (validPrices.length > 0) {
-      const inserts = validPrices.map(p => ({
-        department: activeTab,
-        name: p.name,
-        price: p.price
-      }));
+      const inserts = validPrices.map(p => ({ department: activeTab, name: p.name, price: p.price }));
       await supabase.from("prices").insert(inserts);
     }
-    
     setIsPriceModalOpen(false);
   };
 
   const closeModal = () => setModal(prev => ({ ...prev, isOpen: false }));
   const closeHistoryModal = () => setHistoryModal(prev => ({ ...prev, isOpen: false }));
+  const closeAppInfoModal = () => setAppInfoModal(prev => ({ ...prev, isOpen: false }));
 
   const showAlert = (title: string, message: string) => {
     setModal({ isOpen: true, title, message, type: "alert", confirmText: "Rendben", confirmColor: "bg-slate-900 text-white hover:bg-black", onConfirm: closeModal });
@@ -340,7 +328,7 @@ export default function Home() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key.toLowerCase() === 'k') { e.preventDefault(); searchInputRef.current?.focus(); }
-      if (e.key === 'Escape') { closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); }
+      if (e.key === 'Escape') { closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); closeAppInfoModal(); }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -379,12 +367,10 @@ export default function Home() {
       fetchAppointments();
       fetchAllPrices();
 
-      // Előjegyzések élő figyelése
       const channel = supabase.channel('live-appointments')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => fetchAppointments())
         .subscribe();
       
-      // Árak élő figyelése
       const pricesChannel = supabase.channel('live-prices')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'prices' }, () => fetchAllPrices())
         .subscribe();
@@ -722,6 +708,44 @@ export default function Home() {
     </div>
   );
 
+  const infoModalUI = (
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${appInfoModal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeAppInfoModal}></div>
+      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] p-6 md:p-8 w-full max-w-sm border border-slate-100 flex flex-col transform transition-all duration-300 ${appInfoModal.isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+        
+        <div className="flex justify-center mb-4">
+           <div className="bg-blue-50 text-blue-500 p-4 rounded-full shadow-inner"><InfoIcon /></div>
+        </div>
+        <h3 className="text-xl font-extrabold text-center text-slate-900 mb-1">Módosítási Adatok</h3>
+        <p className="text-center text-slate-500 font-bold text-sm mb-6">{appInfoModal.data?.time_slot} {appInfoModal.data?.patient_name && `- ${appInfoModal.data.patient_name}`}</p>
+        
+        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 mb-6 space-y-4">
+          {appInfoModal.data?.is_deleted ? (
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Törlés információk</p>
+              <p className="text-sm text-slate-800"><span className="font-bold">{appInfoModal.data.deleted_by || "Ismeretlen"}</span></p>
+              <p className="text-xs text-slate-500 mt-0.5">{appInfoModal.data.deleted_at ? formatDateTime(appInfoModal.data.deleted_at) : "-"}</p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Utolsó módosítás</p>
+              {appInfoModal.data?.last_modified_by ? (
+                <>
+                  <p className="text-sm text-slate-800"><span className="font-bold">{appInfoModal.data.last_modified_by}</span></p>
+                  <p className="text-xs text-slate-500 mt-0.5">{formatDateTime(appInfoModal.data.last_modified_at)}</p>
+                </>
+              ) : (
+                <p className="text-sm text-slate-500 italic">Még nem lett módosítva.</p>
+              )}
+            </div>
+          )}
+        </div>
+        
+        <button onClick={closeAppInfoModal} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-md hover:bg-black transition-all active:scale-95">Bezárás</button>
+      </div>
+    </div>
+  );
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
@@ -821,6 +845,7 @@ export default function Home() {
       {customModalUI}
       {patientHistoryModalUI}
       {priceModalUI}
+      {infoModalUI}
       {!printingDate && <div className="absolute inset-0 bg-slate-100/70 backdrop-blur-2xl z-0 pointer-events-none no-print"></div>}
 
       {/* --- FEJLÉC ÉS KERESŐ --- */}
@@ -1123,11 +1148,17 @@ export default function Home() {
                             
                             {!printingDate && (
                               <td className="px-4 py-3 align-middle text-center no-print whitespace-nowrap">
-                                {isDel ? (
-                                  <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 transition-all flex items-center justify-center gap-1.5 mx-auto"><RestoreIcon /> Visszaállít</button>
-                                ) : (
-                                  <button onClick={() => confirmDeleteApp(app.id)} className="text-black/30 hover:text-red-600 hover:bg-red-50 shadow-sm p-2 rounded-lg transition-all flex items-center justify-center mx-auto" title="Törlés"><TrashIcon /></button>
-                                )}
+                                <div className="flex items-center justify-center gap-1">
+                                  {isDel ? (
+                                    <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 transition-all flex items-center justify-center gap-1.5"><RestoreIcon /> Visszaállít</button>
+                                  ) : (
+                                    <button onClick={() => confirmDeleteApp(app.id)} className="text-black/30 hover:text-red-600 hover:bg-red-50 shadow-sm p-2 rounded-lg transition-all" title="Törlés"><TrashIcon /></button>
+                                  )}
+                                  
+                                  <button onClick={() => setAppInfoModal({isOpen: true, data: app})} className="text-blue-400 hover:text-blue-600 hover:bg-blue-50 shadow-sm p-2 rounded-lg transition-all" title="Módosítási infók">
+                                    <InfoIcon />
+                                  </button>
+                                </div>
                               </td>
                             )}
                           </tr>
@@ -1157,11 +1188,16 @@ export default function Home() {
                                  {isDel ? "Törölt" : isBooked ? "Foglalt" : "Szabad"}
                                </span>
                             </div>
-                            {isDel ? (
-                              <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 flex items-center gap-1.5"><RestoreIcon /> Vissza</button>
-                            ) : (
-                              <button onClick={() => confirmDeleteApp(app.id)} className="text-black/40 hover:text-red-600 hover:bg-white/80 shadow-sm p-2 rounded-lg"><TrashIcon /></button>
-                            )}
+                            
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => setAppInfoModal({isOpen: true, data: app})} className="text-blue-400 hover:text-blue-600 hover:bg-white/80 shadow-sm p-2 rounded-lg" title="Infó"><InfoIcon /></button>
+                              
+                              {isDel ? (
+                                <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 flex items-center gap-1.5"><RestoreIcon /> Vissza</button>
+                              ) : (
+                                <button onClick={() => confirmDeleteApp(app.id)} className="text-black/40 hover:text-red-600 hover:bg-white/80 shadow-sm p-2 rounded-lg"><TrashIcon /></button>
+                              )}
+                            </div>
                           </div>
                           
                           <div className="flex flex-col gap-3">
@@ -1196,14 +1232,6 @@ export default function Home() {
                                 <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} />
                               </div>
                             </div>
-                          </div>
-                          
-                          <div className="mt-4 pt-3 border-t border-black/5 text-[10px] opacity-70 flex justify-between">
-                            {isDel ? (
-                              <span>Törölte: <b className="font-semibold">{app.deleted_by}</b> ({formatDateTime(app.deleted_at)})</span>
-                            ) : app.last_modified_by ? (
-                              <span>Mód: <b className="font-semibold">{app.last_modified_by}</b> ({formatDateTime(app.last_modified_at)})</span>
-                            ) : <span>-</span>}
                           </div>
                         </div>
                       );

@@ -30,6 +30,7 @@ const RefreshIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" hei
 const CheckCircleIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
 const XCircleIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
 const BellIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>;
+const SettingsIcon = ({ size = 16 }: { size?: number }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 1.7l-.15.82a6.8 6.8 0 0 1-2.12 1.22l-.78-.37a2 2 0 0 0-2.67.73l-.22.38a2 2 0 0 0 .73 2.67l.78.37a6.8 6.8 0 0 1 0 2.45l-.78.37a2 2 0 0 0-.73 2.67l.22.38a2 2 0 0 0 2.67.73l.78-.37a6.8 6.8 0 0 1 2.12 1.22l.15.82a2 2 0 0 0 2 1.7h.44a2 2 0 0 0 2-1.7l.15-.82a6.8 6.8 0 0 1 2.12-1.22l.78.37a2 2 0 0 0 2.67-.73l.22-.38a2 2 0 0 0-.73-2.67l-.78-.37a6.8 6.8 0 0 1 0-2.45l.78-.37a2 2 0 0 0 .73-2.67l-.22-.38a2 2 0 0 0-2.67-.73l-.78.37a6.8 6.8 0 0 1-2.12-1.22l-.15-.82A2 2 0 0 0 12.22 2z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
 
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
@@ -68,7 +69,6 @@ const getTomorrowDateStr = () => {
   return d.toISOString().split('T')[0];
 };
 
-// Vizuális szövegkiemelő
 const HighlightText = ({ text, highlight }: { text: string, highlight: string }) => {
   if (!highlight.trim()) return <>{text}</>;
   const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
@@ -252,17 +252,14 @@ const formatShortDate = (d: string) => {
 const timeToMins = (t: string) => { const [h, m] = t.split(':'); return parseInt(h) * 60 + parseInt(m); };
 const minsToTime = (m: number) => { const h = Math.floor(m / 60).toString().padStart(2, '0'); const mins = (m % 60).toString().padStart(2, '0'); return `${h}:${mins}`; };
 
-// Várható bevétel számító függvény
 const getDailyRevenue = (dayApps: any[], deptPrices: any[]) => {
   let total = 0;
   dayApps.forEach(app => {
     if (app.is_deleted || !app.patient_name || !app.examination_type) return;
     const examText = app.examination_type.toLowerCase();
-    
-    // Megnézzük, hogy a beírt vizsgálat tartalmazza-e az árlista valamelyik elemét
     const matchedPrice = deptPrices.find(p => examText.includes(p.name.toLowerCase()));
     if (matchedPrice) {
-       const numStr = matchedPrice.price.replace(/\D/g, ''); // Kiszűrjük a számokat a "15.000 Ft"-ból
+       const numStr = matchedPrice.price.replace(/\D/g, ''); 
        if (numStr) total += parseInt(numStr, 10);
     }
   });
@@ -272,16 +269,12 @@ const getDailyRevenue = (dayApps: any[], deptPrices: any[]) => {
 
 // --- Főoldal ---
 export default function Home() {
-  const CATEGORIES = [
-    "Belgyógyászat", "Ultrahang", "Kardiológia", "Bőrgyógyászat", 
-    "Szemészet", "Fül-orr-gégészet", "Nőgyógyászat", "Urológia", 
-    "Reumatológia", "Sebészet", "Ortopédia", "Neurológia"
-  ];
-
   const searchInputRef = useRef<HTMLInputElement>(null); 
 
+  const [categories, setCategories] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState("");
+  
   const [appointments, setAppointments] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState(CATEGORIES[0]);
   const [departmentSearch, setDepartmentSearch] = useState(""); 
   const [showDeleted, setShowDeleted] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -304,10 +297,13 @@ export default function Home() {
   const [printingDate, setPrintingDate] = useState<string | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // --- Globális Árlista Állapotok ---
+  // --- Globális Árlista & Szakrendelések Állapotok ---
   const [allPrices, setAllPrices] = useState<any[]>([]);
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
   const [currentPrices, setCurrentPrices] = useState<{id: string, name: string, price: string}[]>([]);
+
+  const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
+  const [newDeptName, setNewDeptName] = useState("");
 
   // --- Értesítések Állapotai ---
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -336,30 +332,18 @@ export default function Home() {
     setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3500);
   };
 
-  // Naplózó segédfüggvény
   const logAction = async (appId: number, action: string, details: string) => {
     const modifierName = getDisplayName();
     try {
-      await supabase.from('appointment_logs').insert([{
-        appointment_id: appId,
-        modified_by: modifierName,
-        action: action,
-        details: details
-      }]);
+      await supabase.from('appointment_logs').insert([{ appointment_id: appId, modified_by: modifierName, action: action, details: details }]);
     } catch (e) {
       console.error("Naplózási hiba", e);
     }
   };
 
-  // Infó modál megnyitása és adatletöltés
   const openAppInfoModal = async (app: any) => {
     setAppInfoModal({ isOpen: true, data: app, logs: [], loading: true });
-    const { data, error } = await supabase
-      .from('appointment_logs')
-      .select('*')
-      .eq('appointment_id', app.id)
-      .order('modified_at', { ascending: false });
-    
+    const { data } = await supabase.from('appointment_logs').select('*').eq('appointment_id', app.id).order('modified_at', { ascending: false });
     setAppInfoModal({ isOpen: true, data: app, logs: data || [], loading: false });
   };
 
@@ -369,22 +353,15 @@ export default function Home() {
     setIsPriceModalOpen(true);
   };
 
-  // ÚJ: Megnyitja az árlistát egy specifikus szakrendeléshez az értesítésből
   const handleNotificationClick = (msg: string) => {
     const parts = msg.split("módosította az árlistát: ");
     if (parts.length === 2) {
       const dept = parts[1].trim();
-      
-      // Beállítjuk az aktív fület a háttérben
-      if (CATEGORIES.includes(dept)) {
-        setActiveTab(dept);
-      }
-      
-      // Megnyitjuk a modált a kért árakkal
+      if (categories.includes(dept)) setActiveTab(dept);
       const deptPrices = allPrices.filter(p => p.department === dept);
       setCurrentPrices(deptPrices.length > 0 ? deptPrices : []);
       setIsPriceModalOpen(true);
-      setIsNotifOpen(false); // Becsukjuk a harang menüt
+      setIsNotifOpen(false);
     }
   };
 
@@ -399,14 +376,35 @@ export default function Home() {
       const inserts = validPrices.map(p => ({ department: activeTab, name: p.name, price: p.price }));
       await supabase.from("prices").insert(inserts);
     }
-    
-    // Globális értesítés beküldése a többieknek
-    await supabase.from("notifications").insert([{
-      message: `${getDisplayName()} módosította az árlistát: ${activeTab}`
-    }]);
-
+    await supabase.from("notifications").insert([{ message: `${getDisplayName()} módosította az árlistát: ${activeTab}` }]);
     setIsPriceModalOpen(false);
     showToast(`${activeTab} árak sikeresen elmentve!`);
+  };
+
+  // ÚJ: Szakrendelés hozzáadása
+  const handleAddDepartment = async () => {
+    const trimmed = newDeptName.trim();
+    if (!trimmed) return;
+    if (categories.includes(trimmed)) return showAlert("Hiba", "Ez a szakrendelés már létezik!");
+    
+    await supabase.from("departments").insert([{ name: trimmed }]);
+    setNewDeptName("");
+    showToast("Szakrendelés sikeresen hozzáadva!");
+  };
+
+  // ÚJ: Szakrendelés törlése
+  const handleDeleteDepartment = (name: string) => {
+    showConfirm(
+      "Szakrendelés törlése",
+      `Biztosan törlöd a(z) ${name} szakrendelést a listából?\n\n(A már rögzített időpontok és páciensek megmaradnak az adatbázisban, csak ez a fül tűnik el.)`,
+      "Igen, törlés",
+      "bg-red-600 hover:bg-red-700 text-white",
+      async () => {
+        await supabase.from("departments").delete().eq("name", name);
+        if (activeTab === name) setActiveTab(categories[0] || "");
+        showToast("Szakrendelés törölve!");
+      }
+    );
   };
 
   const closeModal = () => setModal(prev => ({ ...prev, isOpen: false }));
@@ -432,7 +430,7 @@ export default function Home() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key.toLowerCase() === 'k') { e.preventDefault(); searchInputRef.current?.focus(); }
-      if (e.key === 'Escape') { closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); closeAppInfoModal(); setIsNotifOpen(false); }
+      if (e.key === 'Escape') { closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); closeAppInfoModal(); setIsNotifOpen(false); setIsDeptModalOpen(false); }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -456,9 +454,18 @@ export default function Home() {
     else setNeedsProfileName(false);
   };
 
+  const fetchCategories = async () => {
+    const { data } = await supabase.from('departments').select('name').order('name');
+    if (data) {
+      const catList = data.map(d => d.name);
+      setCategories(catList);
+      setActiveTab(prev => (prev && catList.includes(prev)) ? prev : (catList[0] || ""));
+    }
+  };
+
   const fetchAllPrices = async () => {
-    const { data, error } = await supabase.from("prices").select("*");
-    if (!error && data) setAllPrices(data);
+    const { data } = await supabase.from("prices").select("*");
+    if (data) setAllPrices(data);
   };
 
   const fetchNotifications = async () => {
@@ -492,6 +499,7 @@ export default function Home() {
 
   useEffect(() => { 
     if (user && !needsProfileName) {
+      fetchCategories();
       fetchAppointments();
       fetchAllPrices();
       fetchNotifications();
@@ -508,7 +516,11 @@ export default function Home() {
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, () => fetchNotifications())
         .subscribe();
 
-      return () => { supabase.removeChannel(channel); supabase.removeChannel(pricesChannel); supabase.removeChannel(notifChannel); };
+      const deptChannel = supabase.channel('live-departments')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'departments' }, () => fetchCategories())
+        .subscribe();
+
+      return () => { supabase.removeChannel(channel); supabase.removeChannel(pricesChannel); supabase.removeChannel(notifChannel); supabase.removeChannel(deptChannel); };
     } 
   }, [user, needsProfileName]);
 
@@ -844,6 +856,58 @@ export default function Home() {
     </div>
   );
 
+  const deptModalUI = (
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${isDeptModalOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsDeptModalOpen(false)}></div>
+      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-lg border border-slate-200 flex flex-col transform transition-all duration-300 max-h-[80vh] ${isDeptModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+        
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="bg-slate-100 text-slate-600 p-2.5 rounded-xl"><SettingsIcon size={20} /></div>
+            <div>
+              <h3 className="text-xl font-extrabold text-slate-900">Szakrendelések kezelése</h3>
+              <p className="text-sm font-bold text-slate-500">Új hozzáadása vagy meglévő törlése</p>
+            </div>
+          </div>
+          <button onClick={() => setIsDeptModalOpen(false)} className="p-2 bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 rounded-xl transition-colors font-bold text-sm">Bezár</button>
+        </div>
+
+        <div className="overflow-y-auto p-6 custom-scrollbar flex-1 bg-slate-50/50">
+          {categories.length === 0 ? (
+            <p className="text-center text-slate-500 font-medium py-4">Nincs még szakrendelés a rendszerben.</p>
+          ) : (
+            <div className="space-y-2">
+              {categories.map((cat) => (
+                <div key={cat} className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                  <span className="font-bold text-slate-800">{cat}</span>
+                  <button onClick={() => handleDeleteDepartment(cat)} className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors" title="Törlés">
+                    <TrashIcon />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 border-t border-slate-100 shrink-0 bg-white rounded-b-3xl">
+           <div className="flex flex-col sm:flex-row gap-3">
+             <input 
+               type="text" 
+               placeholder="Új szakrendelés neve..." 
+               value={newDeptName} 
+               onChange={(e) => setNewDeptName(e.target.value)} 
+               onKeyDown={(e) => e.key === "Enter" && handleAddDepartment()}
+               className="flex-1 bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-slate-200 focus:border-slate-500 outline-none font-semibold text-slate-800 transition-all"
+             />
+             <button onClick={handleAddDepartment} className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-2">
+               <PlusIcon /> Hozzáadás
+             </button>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const patientHistoryModalUI = (
     <div className={`fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${historyModal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeHistoryModal}></div>
@@ -1014,7 +1078,7 @@ export default function Home() {
     );
   }
 
-  const filteredCategories = CATEGORIES.filter(c => c.toLowerCase().includes(departmentSearch.toLowerCase()));
+  const filteredCategories = categories.filter(c => c.toLowerCase().includes(departmentSearch.toLowerCase()));
 
   let filteredAppointments = appointments;
   
@@ -1055,6 +1119,7 @@ export default function Home() {
       {patientHistoryModalUI}
       {priceModalUI}
       {infoModalUI}
+      {deptModalUI}
       {toastUI}
       {!printingDate && <div className="absolute inset-0 bg-slate-100/70 backdrop-blur-2xl z-0 pointer-events-none no-print"></div>}
 
@@ -1143,12 +1208,19 @@ export default function Home() {
               
               <div className="w-full xl:w-1/2">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                  <label className="block text-slate-500 font-semibold text-xs uppercase tracking-widest">Szakrendelés kiválasztása</label>
+                  <div className="flex items-center gap-2">
+                    <label className="block text-slate-500 font-semibold text-xs uppercase tracking-widest">Szakrendelés kiválasztása</label>
+                    <button onClick={() => setIsDeptModalOpen(true)} className="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-200/50 rounded-lg transition-colors" title="Szakrendelések kezelése (Hozzáadás/Törlés)">
+                      <SettingsIcon size={14} />
+                    </button>
+                  </div>
                   
                   <div className="flex items-center gap-3">
-                    <button onClick={openPriceModal} className="text-xs font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm active:scale-95">
-                      <TagIcon /> {activeTab} árak
-                    </button>
+                    {activeTab && (
+                      <button onClick={openPriceModal} className="text-xs font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm active:scale-95">
+                        <TagIcon /> {activeTab} árak
+                      </button>
+                    )}
                     
                     <div className="relative w-full sm:w-40 group">
                       <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-400"><SearchIcon size={14} /></div>
@@ -1163,7 +1235,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="flex gap-2 overflow-x-auto pb-3 custom-scrollbar scroll-smooth">
+                <div className="flex gap-2 overflow-x-auto pb-3 custom-scrollbar scroll-smooth min-h-[46px]">
                   {filteredCategories.length > 0 ? (
                     filteredCategories.map(c => (
                       <button key={c} onClick={() => setActiveTab(c)} className={`whitespace-nowrap px-4 py-2 rounded-full font-semibold text-sm transition-all border ${activeTab === c ? 'bg-red-600 border-red-600 text-white shadow-md' : 'bg-white/80 border-white text-slate-600 hover:bg-white hover:border-slate-200 shadow-sm'}`}>
@@ -1171,7 +1243,7 @@ export default function Home() {
                       </button>
                     ))
                   ) : (
-                    <span className="text-sm font-medium text-slate-400 italic py-2">Nincs találat a keresésre...</span>
+                    <span className="text-sm font-medium text-slate-400 italic py-2">Nincs megjeleníthető szakrendelés...</span>
                   )}
                 </div>
                 

@@ -31,6 +31,7 @@ const CheckCircleIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fi
 const XCircleIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
 const BellIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>;
 const SettingsIcon = ({ size = 16 }: { size?: number }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 1.7l-.15.82a6.8 6.8 0 0 1-2.12 1.22l-.78-.37a2 2 0 0 0-2.67.73l-.22.38a2 2 0 0 0 .73 2.67l.78.37a6.8 6.8 0 0 1 0 2.45l-.78.37a2 2 0 0 0-.73 2.67l.22.38a2 2 0 0 0 2.67.73l.78-.37a6.8 6.8 0 0 1 2.12 1.22l.15.82a2 2 0 0 0 2 1.7h.44a2 2 0 0 0 2-1.7l.15-.82a6.8 6.8 0 0 1 2.12-1.22l.78.37a2 2 0 0 0 2.67-.73l.22-.38a2 2 0 0 0-.73-2.67l-.78-.37a6.8 6.8 0 0 1 0-2.45l.78-.37a2 2 0 0 0 .73-2.67l-.22-.38a2 2 0 0 0-2.67-.73l-.78.37a6.8 6.8 0 0 1-2.12-1.22l-.15-.82A2 2 0 0 0 12.22 2z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
+const BugIcon = ({ size = 20 }: { size?: number }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M17.47 9c1.93-.2 3.53-1.9 3.53-3.9"/><path d="m6.53 15-3.5-2"/><path d="m17.47 15 3.5-2"/><path d="m6.53 20-3.5 2"/><path d="m17.47 20 3.5 2"/></svg>;
 
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
@@ -319,7 +320,13 @@ export default function Home() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const notifRef = useRef<HTMLDivElement>(null); // Az értesítések okos kattintás figyelője
+  const notifRef = useRef<HTMLDivElement>(null); 
+
+  // --- Hibabejelentő Állapotok ---
+  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
+  const [bugDescription, setBugDescription] = useState("");
+  const [bugFile, setBugFile] = useState<File | null>(null);
+  const [isSubmittingBug, setIsSubmittingBug] = useState(false);
 
   // --- Modálok és Toastok ---
   const [historyModal, setHistoryModal] = useState<{isOpen: boolean, patientName: string, taj: string, data: any[]}>({
@@ -416,6 +423,42 @@ export default function Home() {
     );
   };
 
+  // --- HIBABEJELENTŐ KÜLDÉSE (E-MAIL) ---
+  const handleBugSubmit = async () => {
+    if (!bugDescription.trim()) return showAlert("Hiányzó adat", "Kérlek írd le röviden a problémát vagy az ötletedet!");
+    setIsSubmittingBug(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append("Bejelentő neve", getDisplayName() || "Ismeretlen");
+      formData.append("Bejelentő email", user?.email || "Ismeretlen");
+      formData.append("Leírás", bugDescription);
+      if (bugFile) formData.append("Csatolmány", bugFile);
+      
+      formData.append("_subject", "Új hibabejelentés: Medical-Aqua");
+      formData.append("_captcha", "false");
+
+      // ! --- IDE ÍRD BE A SAJÁT E-MAIL CÍMEDET --- !
+      const response = await fetch("https://formsubmit.co/ajax/kovacs.zoltan1998@gmail.com", {
+        method: "POST",
+        body: formData
+      });
+
+      if (response.ok) {
+        showToast("Hibabejelentés sikeresen elküldve!");
+        setIsBugModalOpen(false);
+        setBugDescription("");
+        setBugFile(null);
+      } else {
+        showAlert("Hiba", "Nem sikerült elküldeni az e-mailt. Próbáld újra később.");
+      }
+    } catch (error) {
+      showAlert("Hálózati Hiba", "Ellenőrizd az internetkapcsolatot!");
+    }
+    
+    setIsSubmittingBug(false);
+  };
+
   const closeModal = () => setModal(prev => ({ ...prev, isOpen: false }));
   const closeHistoryModal = () => setHistoryModal(prev => ({ ...prev, isOpen: false }));
   const closeAppInfoModal = () => setAppInfoModal(prev => ({ ...prev, isOpen: false }));
@@ -428,7 +471,6 @@ export default function Home() {
     setModal({ isOpen: true, title, message, type: "confirm", confirmText, confirmColor, onConfirm: () => { onConfirmCallback(); closeModal(); }});
   };
 
-  // Értesítés okos kattintás figyelője
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
@@ -450,7 +492,11 @@ export default function Home() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key.toLowerCase() === 'k') { e.preventDefault(); searchInputRef.current?.focus(); }
-      if (e.key === 'Escape') { closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); closeAppInfoModal(); setIsNotifOpen(false); setIsDeptModalOpen(false); }
+      if (e.key === 'Escape') { 
+        closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); 
+        closeAppInfoModal(); setIsNotifOpen(false); setIsDeptModalOpen(false);
+        setIsBugModalOpen(false);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -928,6 +974,59 @@ export default function Home() {
     </div>
   );
 
+  const bugModalUI = (
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${isBugModalOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !isSubmittingBug && setIsBugModalOpen(false)}></div>
+      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-lg border border-slate-200 flex flex-col transform transition-all duration-300 ${isBugModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+        
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50 rounded-t-3xl shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="bg-amber-100 text-amber-600 p-2.5 rounded-xl"><BugIcon /></div>
+            <div>
+              <h3 className="text-xl font-extrabold text-slate-900">Hibabejelentő</h3>
+              <p className="text-sm font-bold text-slate-500">Közvetlenül a fejlesztőnek</p>
+            </div>
+          </div>
+          <button disabled={isSubmittingBug} onClick={() => setIsBugModalOpen(false)} className="p-2 bg-white border border-slate-200 hover:bg-red-50 hover:text-red-600 text-slate-600 rounded-xl transition-colors font-bold text-sm shadow-sm disabled:opacity-50">Mégsem</button>
+        </div>
+
+        <div className="p-6 flex-1 bg-white">
+          <div className="mb-4">
+            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest block mb-2">Mit tapasztaltál? Milyen ötleted van?</label>
+            <textarea 
+              value={bugDescription}
+              onChange={(e) => setBugDescription(e.target.value)}
+              placeholder="Írd le ide részletesen..."
+              rows={4}
+              disabled={isSubmittingBug}
+              className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-amber-100 focus:border-amber-500 outline-none font-medium text-slate-800 transition-all custom-scrollbar resize-none"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest block mb-2">Kép csatolása (Opcionális)</label>
+            <input 
+              type="file" 
+              accept="image/png, image/jpeg, image/jpg"
+              onChange={(e) => setBugFile(e.target.files ? e.target.files[0] : null)}
+              disabled={isSubmittingBug}
+              className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 transition-all cursor-pointer"
+            />
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-slate-100 shrink-0 bg-white rounded-b-3xl">
+           <button 
+             onClick={handleBugSubmit} 
+             disabled={isSubmittingBug}
+             className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-md hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed"
+           >
+             {isSubmittingBug ? <span className="flex items-center gap-2 animate-pulse"><RefreshIcon /> Küldés folyamatban...</span> : "E-mail küldése"}
+           </button>
+        </div>
+      </div>
+    </div>
+  );
+
   const patientHistoryModalUI = (
     <div className={`fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${historyModal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeHistoryModal}></div>
@@ -1140,6 +1239,7 @@ export default function Home() {
       {priceModalUI}
       {infoModalUI}
       {deptModalUI}
+      {bugModalUI}
       {toastUI}
       {!printingDate && <div className="absolute inset-0 bg-slate-100/70 backdrop-blur-2xl z-0 pointer-events-none no-print"></div>}
 
@@ -1166,8 +1266,13 @@ export default function Home() {
             />
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-5 w-full md:w-auto justify-end">
+          <div className="flex items-center gap-2 sm:gap-4 w-full md:w-auto justify-end">
             
+            {/* --- HIBABEJELENTŐ IKON --- */}
+            <button onClick={() => setIsBugModalOpen(true)} className="p-2 text-slate-500 hover:text-amber-600 transition-colors relative group" title="Hibabejelentés / Ötlet">
+              <BugIcon />
+            </button>
+
             {/* --- ÉRTESÍTÉSEK --- */}
             <div className="relative" ref={notifRef}>
               <button onClick={toggleNotif} className="relative p-2 text-slate-500 hover:text-red-600 transition-colors">
@@ -1208,7 +1313,7 @@ export default function Home() {
               )}
             </div>
 
-            <div className="flex items-center gap-2 text-slate-800 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/60 shadow-sm z-10 relative">
+            <div className="flex items-center gap-2 text-slate-800 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/60 shadow-sm z-10 relative ml-1">
               <UserIcon /><span className="font-semibold text-sm">{getDisplayName()}</span>
             </div>
             <button onClick={handleLogout} className="text-slate-500 hover:text-red-600 transition-colors p-2 z-10 relative" title="Kijelentkezés"><LogoutIcon /></button>

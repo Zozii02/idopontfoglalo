@@ -265,8 +265,8 @@ export default function Home() {
   const [printingDate, setPrintingDate] = useState<string | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // --- Árlista Állapotok ---
-  const [pricesByDept, setPricesByDept] = useState<Record<string, {id: string, name: string, price: string}[]>>({});
+  // --- Globális Árlista Állapotok ---
+  const [allPrices, setAllPrices] = useState<any[]>([]);
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
   const [currentPrices, setCurrentPrices] = useState<{id: string, name: string, price: string}[]>([]);
 
@@ -278,26 +278,14 @@ export default function Home() {
     isOpen: false, title: "", message: "", type: "alert", confirmText: "Rendben", confirmColor: "bg-slate-900 text-white", onConfirm: () => {}
   });
 
-  // Árak betöltése a böngésző memóriájából
-  useEffect(() => {
-    const savedPrices = localStorage.getItem("ma_department_prices");
-    if (savedPrices) {
-      try { setPricesByDept(JSON.parse(savedPrices)); } catch (e) { console.error("Hiba az árak betöltésekor", e); }
-    }
-  }, []);
-
+  // Árak megnyitása
   const openPriceModal = () => {
-    setCurrentPrices(pricesByDept[activeTab] || []);
+    const deptPrices = allPrices.filter(p => p.department === activeTab);
+    setCurrentPrices(deptPrices.length > 0 ? deptPrices : []);
     setIsPriceModalOpen(true);
   };
 
-  const savePrices = () => {
-    const newPricesByDept = { ...pricesByDept, [activeTab]: currentPrices };
-    setPricesByDept(newPricesByDept);
-    localStorage.setItem("ma_department_prices", JSON.stringify(newPricesByDept));
-    setIsPriceModalOpen(false);
-  };
-
+  // Új tétel hozzáadása a listához (még csak a memóriában)
   const addPriceItem = () => {
     setCurrentPrices([...currentPrices, { id: Date.now().toString(), name: "", price: "" }]);
   };
@@ -308,6 +296,26 @@ export default function Home() {
 
   const removePriceItem = (id: string) => {
     setCurrentPrices(currentPrices.filter(item => item.id !== id));
+  };
+
+  // Árak mentése a Supabase-be
+  const savePrices = async () => {
+    // 1. Töröljük a jelenlegi árakat ennél a szakrendelésnél
+    await supabase.from("prices").delete().eq("department", activeTab);
+
+    // 2. Csak azokat mentsük el, amik nincsenek teljesen üresen hagyva
+    const validPrices = currentPrices.filter(p => p.name.trim() !== "" || p.price.trim() !== "");
+    
+    if (validPrices.length > 0) {
+      const inserts = validPrices.map(p => ({
+        department: activeTab,
+        name: p.name,
+        price: p.price
+      }));
+      await supabase.from("prices").insert(inserts);
+    }
+    
+    setIsPriceModalOpen(false);
   };
 
   const closeModal = () => setModal(prev => ({ ...prev, isOpen: false }));
@@ -361,13 +369,27 @@ export default function Home() {
     else setNeedsProfileName(false);
   };
 
+  const fetchAllPrices = async () => {
+    const { data, error } = await supabase.from("prices").select("*");
+    if (!error && data) setAllPrices(data);
+  };
+
   useEffect(() => { 
     if (user && !needsProfileName) {
       fetchAppointments();
+      fetchAllPrices();
+
+      // Előjegyzések élő figyelése
       const channel = supabase.channel('live-appointments')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => fetchAppointments())
         .subscribe();
-      return () => { supabase.removeChannel(channel); };
+      
+      // Árak élő figyelése
+      const pricesChannel = supabase.channel('live-prices')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'prices' }, () => fetchAllPrices())
+        .subscribe();
+
+      return () => { supabase.removeChannel(channel); supabase.removeChannel(pricesChannel); };
     } 
   }, [user, needsProfileName]);
 

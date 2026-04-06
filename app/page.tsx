@@ -31,7 +31,7 @@ const CheckCircleIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fi
 const XCircleIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
 const BellIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>;
 const SettingsIcon = ({ size = 16 }: { size?: number }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 1.7l-.15.82a6.8 6.8 0 0 1-2.12 1.22l-.78-.37a2 2 0 0 0-2.67.73l-.22.38a2 2 0 0 0 .73 2.67l.78.37a6.8 6.8 0 0 1 0 2.45l-.78.37a2 2 0 0 0-.73 2.67l.22.38a2 2 0 0 0 2.67.73l.78-.37a6.8 6.8 0 0 1 2.12 1.22l.15.82a2 2 0 0 0 2 1.7h.44a2 2 0 0 0 2-1.7l.15-.82a6.8 6.8 0 0 1 2.12-1.22l.78.37a2 2 0 0 0 2.67-.73l.22-.38a2 2 0 0 0-.73-2.67l-.78-.37a6.8 6.8 0 0 1 0-2.45l.78-.37a2 2 0 0 0 .73-2.67l-.22-.38a2 2 0 0 0-2.67-.73l-.78.37a6.8 6.8 0 0 1-2.12-1.22l-.15-.82A2 2 0 0 0 12.22 2z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
-const BugIcon = ({ size = 20 }: { size?: number }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M17.47 9c1.93-.2 3.53-1.9 3.53-3.9"/><path d="m6.53 15-3.5-2"/><path d="m17.47 15 3.5-2"/><path d="m6.53 20-3.5 2"/><path d="m17.47 20 3.5 2"/></svg>;
+const FeedbackIcon = ({ size = 20 }: { size?: number }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
 
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
@@ -981,10 +981,10 @@ export default function Home() {
         
         <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50 rounded-t-3xl shrink-0">
           <div className="flex items-center gap-3">
-            <div className="bg-amber-100 text-amber-600 p-2.5 rounded-xl"><BugIcon /></div>
+            <div className="bg-amber-100 text-amber-600 p-2.5 rounded-xl"><FeedbackIcon size={24} /></div>
             <div>
               <h3 className="text-xl font-extrabold text-slate-900">Hibabejelentő</h3>
-              <p className="text-sm font-bold text-slate-500">Közvetlenül a fejlesztőnek</p>
+              <p className="text-sm font-bold text-slate-500">Ötlet vagy probléma küldése a fejlesztőnek</p>
             </div>
           </div>
           <button disabled={isSubmittingBug} onClick={() => setIsBugModalOpen(false)} className="p-2 bg-white border border-slate-200 hover:bg-red-50 hover:text-red-600 text-slate-600 rounded-xl transition-colors font-bold text-sm shadow-sm disabled:opacity-50">Mégsem</button>
@@ -1268,14 +1268,15 @@ export default function Home() {
 
           <div className="flex items-center gap-2 sm:gap-4 w-full md:w-auto justify-end">
             
-            {/* --- HIBABEJELENTŐ IKON --- */}
-            <button onClick={() => setIsBugModalOpen(true)} className="p-2 text-slate-500 hover:text-amber-600 transition-colors relative group" title="Hibabejelentés / Ötlet">
-              <BugIcon />
+            {/* --- HIBABEJELENTŐ GOMB --- */}
+            <button onClick={() => setIsBugModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-full text-xs font-bold transition-all shadow-sm" title="Hibabejelentés / Ötlet">
+              <FeedbackIcon size={16} />
+              <span className="hidden sm:inline">Hibabejelentő</span>
             </button>
 
             {/* --- ÉRTESÍTÉSEK --- */}
             <div className="relative" ref={notifRef}>
-              <button onClick={toggleNotif} className="relative p-2 text-slate-500 hover:text-red-600 transition-colors">
+              <button onClick={toggleNotif} className="relative p-2 text-slate-500 hover:text-red-600 transition-colors ml-1">
                 <BellIcon />
                 {unreadCount > 0 && <span className="absolute top-0 right-0 translate-x-1 -translate-y-1 bg-red-500 text-white text-[10px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full border-2 border-white shadow-sm">{unreadCount}</span>}
               </button>

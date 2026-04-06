@@ -7,7 +7,6 @@ import { supabase } from "./supabase";
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
 const ListPlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M19 10v6"/><path d="M22 13h-6"/></svg>;
-const SparklesIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>;
 const CalendarIcon = ({ size = 24 }: { size?: number }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 const TrashIcon = ({ size = 16 }: { size?: number }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
 const RestoreIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>;
@@ -134,7 +133,7 @@ function ModernStatusSelect({ value, onChange, disabled }: { value: string, onCh
   );
 }
 
-// --- MODERN NAPTÁR VÁLASZTÓ ---
+// --- MODERN NAPTÁR VÁLASZTÓ (JAVÍTOTT MÉRET & Z-INDEX) ---
 function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, onChange: (date: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(selectedDate ? new Date(selectedDate) : new Date());
@@ -181,20 +180,21 @@ function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, on
 
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
-          <div className="absolute top-full left-0 mt-2 w-72 bg-white/95 backdrop-blur-xl border border-slate-200 shadow-2xl rounded-2xl z-50 p-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-4">
+          <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)}></div>
+          {/* Javított naptár-doboz: kisebb magasság, ultra-magas z-index, hogy soha ne lógjon ki vagy takaródjon el */}
+          <div className="absolute top-full left-0 mt-2 w-64 bg-white/95 backdrop-blur-xl border border-slate-200 shadow-2xl rounded-2xl z-[999] p-3 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-3">
               <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"><ChevronLeftIcon /></button>
               <div className="font-bold text-slate-800 text-sm">{viewDate.getFullYear()}. {monthNames[viewDate.getMonth()]}</div>
               <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"><ChevronRightIcon /></button>
             </div>
             
-            <div className="grid grid-cols-7 gap-1 text-center mb-2">
+            <div className="grid grid-cols-7 gap-1 text-center mb-1">
               {dayNames.map(d => <div key={d} className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{d}</div>)}
             </div>
             
             <div className="grid grid-cols-7 gap-1">
-              {emptyDays.map((_, i) => <div key={`empty-${i}`} className="p-2"></div>)}
+              {emptyDays.map((_, i) => <div key={`empty-${i}`} className="p-1"></div>)}
               {days.map(day => {
                 const currentDateStr = `${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
                 const isSelected = currentDateStr === selectedDate;
@@ -203,7 +203,7 @@ function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, on
                   <button 
                     key={day} 
                     onClick={() => selectDay(day)}
-                    className={`p-2 w-full text-sm font-semibold rounded-lg transition-all flex items-center justify-center aspect-square
+                    className={`p-1.5 w-full text-xs font-bold rounded-lg transition-all flex items-center justify-center aspect-square
                       ${isSelected ? 'bg-red-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}
                     `}
                   >
@@ -465,11 +465,9 @@ export default function Home() {
     document.body.removeChild(link);
   };
 
-  // ÚJ: Szigorított Előzmények feltétel - CSAK akkor fut, ha mindkettő van!
   const openPatientHistory = (name: string, taj: string) => {
     if (!name || !taj) return showAlert("Hiányzó adat", "Az előzmények megtekintéséhez a beteg nevének és TAJ számának is kitöltve kell lennie!");
     
-    // Csak a pontosan egyező nevű és TAJ számú rekordokat hozzuk le
     let matches = appointments.filter(a => !a.is_deleted && a.taj_szam === taj && a.patient_name === name);
     matches = matches.sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime());
     
@@ -759,37 +757,56 @@ export default function Home() {
 
               <div className="w-px h-24 bg-slate-200/60 hidden xl:block"></div>
 
+              {/* JAVÍTOTT: A Generátor 2 fix sorba rendezve */}
               <div className="w-full xl:w-auto flex-1">
-                 
                  <div className="flex items-center gap-2.5 mb-4 text-slate-800 font-extrabold text-lg">
                     <div className="bg-red-100 text-red-600 p-1.5 rounded-lg shadow-sm"><ListPlusIcon /></div>
                     <span>Napi előjegyzési lista létrehozása</span>
                  </div>
                  
-                 <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-end gap-3">
-                    
-                    <div className="col-span-2 lg:col-span-1 lg:min-w-[200px] xl:w-[220px]">
-                      <div className="flex justify-between items-center mb-1.5">
-                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Dátum</label>
-                         <div className="flex gap-1">
-                           <button onClick={() => setSelectedDate(getTodayDateStr())} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded transition-colors border border-slate-200">Ma</button>
-                           <button onClick={() => setSelectedDate(getTomorrowDateStr())} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded transition-colors border border-slate-200">Holnap</button>
-                         </div>
+                 <div className="flex flex-col gap-3 w-full">
+                    {/* ELSŐ SOR */}
+                    <div className="flex flex-wrap items-end gap-3">
+                      <div className="w-full sm:w-auto sm:flex-1 md:w-[220px] md:flex-none">
+                        <div className="flex justify-between items-center mb-1.5">
+                           <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Dátum</label>
+                           <div className="flex gap-1">
+                             <button onClick={() => setSelectedDate(getTodayDateStr())} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded transition-colors border border-slate-200">Ma</button>
+                             <button onClick={() => setSelectedDate(getTomorrowDateStr())} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded transition-colors border border-slate-200">Holnap</button>
+                           </div>
+                        </div>
+                        <ModernDatePicker selectedDate={selectedDate} onChange={setSelectedDate} />
                       </div>
-                      <ModernDatePicker selectedDate={selectedDate} onChange={setSelectedDate} />
+
+                      <div className="w-[calc(50%-0.375rem)] sm:w-20 md:w-24">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Kezd</label>
+                        <input type="time" value={genStart} onChange={(e) => setGenStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" />
+                      </div>
+                      <div className="w-[calc(50%-0.375rem)] sm:w-20 md:w-24">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Vége</label>
+                        <input type="time" value={genEnd} onChange={(e) => setGenEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" />
+                      </div>
+                      <div className="w-full sm:w-16 md:w-20">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Perc</label>
+                        <input type="number" value={genDuration} onChange={(e) => setGenDuration(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" />
+                      </div>
                     </div>
 
-                    <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Kezd</label><input type="time" value={genStart} onChange={(e) => setGenStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
-                    <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Vége</label><input type="time" value={genEnd} onChange={(e) => setGenEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
-                    <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Perc</label><input type="number" value={genDuration} onChange={(e) => setGenDuration(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none w-full lg:w-16 font-semibold text-slate-800 transition-all shadow-sm" /></div>
-                    
-                    <div className="hidden lg:block w-px h-10 bg-slate-300/50 mx-1 mb-1"></div>
-                    <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet Kezd</label><input type="time" value={genBreakStart} onChange={(e) => setGenBreakStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
-                    <div><label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet Vége</label><input type="time" value={genBreakEnd} onChange={(e) => setGenBreakEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" /></div>
-                    
-                    <button onClick={generateDailySlots} className="col-span-2 lg:col-span-1 w-full lg:w-auto bg-gradient-to-r from-red-600 to-red-500 text-white px-6 py-2.5 rounded-xl hover:from-red-700 hover:to-red-600 font-bold shadow-md shadow-red-500/30 transition-all lg:ml-auto active:scale-95 text-sm flex items-center justify-center gap-2 mt-2 lg:mt-0 h-10">
-                      <SparklesIcon /> Lista Generálása
-                    </button>
+                    {/* MÁSODIK SOR */}
+                    <div className="flex flex-wrap items-end gap-3">
+                      <div className="w-[calc(50%-0.375rem)] sm:w-28">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet Kezd</label>
+                        <input type="time" value={genBreakStart} onChange={(e) => setGenBreakStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" />
+                      </div>
+                      <div className="w-[calc(50%-0.375rem)] sm:w-28">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet Vége</label>
+                        <input type="time" value={genBreakEnd} onChange={(e) => setGenBreakEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" />
+                      </div>
+                      
+                      <button onClick={generateDailySlots} className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-500 text-white px-8 py-2.5 rounded-xl hover:from-red-700 hover:to-red-600 font-bold shadow-md shadow-red-500/30 transition-all sm:ml-auto active:scale-95 text-sm h-[42px] mt-2 sm:mt-0">
+                        Lista Generálása
+                      </button>
+                    </div>
                  </div>
               </div>
             </div>
@@ -898,7 +915,7 @@ export default function Home() {
                       {dayAppointments.map((app: any) => {
                         const isDel = app.is_deleted === true;
                         const isBooked = app.patient_name && app.patient_name.trim() !== "";
-                        // ÚJ: Csak akkor jelenik meg az Előzmény ikon, ha NÉV és TAJ is van
+                        
                         const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
                         
                         if (printingDate && isDel) return null; 

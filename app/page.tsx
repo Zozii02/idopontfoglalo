@@ -160,6 +160,19 @@ function ModernStatusSelect({ value, onChange, disabled }: { value: string, onCh
 function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, onChange: (date: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(selectedDate ? new Date(selectedDate) : new Date());
+  
+  // Okos kattintás figyelő
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
 
   const monthNames = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
   const dayNames = ["H", "K", "Sze", "Cs", "P", "Sz", "V"];
@@ -189,7 +202,7 @@ function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, on
   const displayDate = selectedDate ? `${selectedDate.split('-')[0]}. ${monthNames[parseInt(selectedDate.split('-')[1]) - 1]} ${selectedDate.split('-')[2]}.` : "Válassz dátumot...";
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full" ref={containerRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm"
@@ -202,40 +215,37 @@ function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, on
       </button>
 
       {isOpen && (
-        <>
-          <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)}></div>
-          <div className="absolute top-full left-0 mt-2 w-64 bg-white/95 backdrop-blur-xl border border-slate-200 shadow-2xl rounded-2xl z-[999] p-3 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-3">
-              <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"><ChevronLeftIcon /></button>
-              <div className="font-bold text-slate-800 text-sm">{viewDate.getFullYear()}. {monthNames[viewDate.getMonth()]}</div>
-              <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"><ChevronRightIcon /></button>
-            </div>
-            
-            <div className="grid grid-cols-7 gap-1 text-center mb-1">
-              {dayNames.map(d => <div key={d} className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{d}</div>)}
-            </div>
-            
-            <div className="grid grid-cols-7 gap-1">
-              {emptyDays.map((_, i) => <div key={`empty-${i}`} className="p-1"></div>)}
-              {days.map(day => {
-                const currentDateStr = `${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                const isSelected = currentDateStr === selectedDate;
-                
-                return (
-                  <button 
-                    key={day} 
-                    onClick={() => selectDay(day)}
-                    className={`p-1.5 w-full text-xs font-bold rounded-lg transition-all flex items-center justify-center aspect-square
-                      ${isSelected ? 'bg-red-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}
-                    `}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
+        <div className="absolute top-full left-0 mt-2 w-64 bg-white/95 backdrop-blur-xl border border-slate-200 shadow-2xl rounded-2xl z-[999] p-3 animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex justify-between items-center mb-3">
+            <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"><ChevronLeftIcon /></button>
+            <div className="font-bold text-slate-800 text-sm">{viewDate.getFullYear()}. {monthNames[viewDate.getMonth()]}</div>
+            <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"><ChevronRightIcon /></button>
           </div>
-        </>
+          
+          <div className="grid grid-cols-7 gap-1 text-center mb-1">
+            {dayNames.map(d => <div key={d} className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{d}</div>)}
+          </div>
+          
+          <div className="grid grid-cols-7 gap-1">
+            {emptyDays.map((_, i) => <div key={`empty-${i}`} className="p-1"></div>)}
+            {days.map(day => {
+              const currentDateStr = `${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+              const isSelected = currentDateStr === selectedDate;
+              
+              return (
+                <button 
+                  key={day} 
+                  onClick={() => selectDay(day)}
+                  className={`p-1.5 w-full text-xs font-bold rounded-lg transition-all flex items-center justify-center aspect-square
+                    ${isSelected ? 'bg-red-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}
+                  `}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -309,6 +319,7 @@ export default function Home() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null); // Az értesítések okos kattintás figyelője
 
   // --- Modálok és Toastok ---
   const [historyModal, setHistoryModal] = useState<{isOpen: boolean, patientName: string, taj: string, data: any[]}>({
@@ -381,7 +392,6 @@ export default function Home() {
     showToast(`${activeTab} árak sikeresen elmentve!`);
   };
 
-  // ÚJ: Szakrendelés hozzáadása
   const handleAddDepartment = async () => {
     const trimmed = newDeptName.trim();
     if (!trimmed) return;
@@ -392,7 +402,6 @@ export default function Home() {
     showToast("Szakrendelés sikeresen hozzáadva!");
   };
 
-  // ÚJ: Szakrendelés törlése
   const handleDeleteDepartment = (name: string) => {
     showConfirm(
       "Szakrendelés törlése",
@@ -418,6 +427,17 @@ export default function Home() {
   const showConfirm = (title: string, message: string, confirmText: string, confirmColor: string, onConfirmCallback: () => void) => {
     setModal({ isOpen: true, title, message, type: "confirm", confirmText, confirmColor, onConfirm: () => { onConfirmCallback(); closeModal(); }});
   };
+
+  // Értesítés okos kattintás figyelője
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setIsNotifOpen(false);
+      }
+    };
+    if (isNotifOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isNotifOpen]);
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 300);
@@ -1149,45 +1169,42 @@ export default function Home() {
           <div className="flex items-center gap-3 sm:gap-5 w-full md:w-auto justify-end">
             
             {/* --- ÉRTESÍTÉSEK --- */}
-            <div className="relative">
+            <div className="relative" ref={notifRef}>
               <button onClick={toggleNotif} className="relative p-2 text-slate-500 hover:text-red-600 transition-colors">
                 <BellIcon />
                 {unreadCount > 0 && <span className="absolute top-0 right-0 translate-x-1 -translate-y-1 bg-red-500 text-white text-[10px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full border-2 border-white shadow-sm">{unreadCount}</span>}
               </button>
               {isNotifOpen && (
-                 <>
-                   <div className="fixed inset-0 z-40" onClick={() => setIsNotifOpen(false)}></div>
-                   <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                     <div className="p-3.5 border-b border-slate-100 bg-slate-50/80 font-bold text-sm text-slate-800 flex items-center justify-between">
-                       <span>Értesítések</span>
-                       {unreadCount > 0 && <span className="text-[10px] bg-red-100 text-red-600 px-2.5 py-0.5 rounded-full uppercase tracking-wider">{unreadCount} új</span>}
-                     </div>
-                     <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
-                        {notifications.length === 0 ? (
-                           <div className="p-6 text-center text-sm font-medium text-slate-400">Nincsenek még értesítések.</div>
-                        ) : (
-                           notifications.map(n => {
-                             const isPriceMod = n.message.includes("módosította az árlistát:");
-                             return (
-                               <div 
-                                 key={n.id} 
-                                 onClick={() => isPriceMod ? handleNotificationClick(n.message) : null}
-                                 className={`p-3.5 border-b border-slate-50 transition-colors flex gap-3 items-start ${isPriceMod ? 'cursor-pointer hover:bg-slate-100' : 'hover:bg-slate-50'}`}
-                                 title={isPriceMod ? "Kattints a megtekintéshez" : ""}
-                               >
-                                  <div className="bg-emerald-100 text-emerald-600 p-1.5 rounded-xl mt-0.5 shrink-0 shadow-sm"><TagIcon /></div>
-                                  <div className="flex-1">
-                                    <p className="text-sm text-slate-800 font-medium leading-snug">{n.message}</p>
-                                    <p className="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-widest">{formatDateTime(n.created_at)}</p>
-                                  </div>
-                                  {isPriceMod && <div className="mt-2 text-slate-400"><ChevronRightIcon /></div>}
-                               </div>
-                             );
-                           })
-                        )}
-                     </div>
+                 <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                   <div className="p-3.5 border-b border-slate-100 bg-slate-50/80 font-bold text-sm text-slate-800 flex items-center justify-between">
+                     <span>Értesítések</span>
+                     {unreadCount > 0 && <span className="text-[10px] bg-red-100 text-red-600 px-2.5 py-0.5 rounded-full uppercase tracking-wider">{unreadCount} új</span>}
                    </div>
-                 </>
+                   <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
+                      {notifications.length === 0 ? (
+                         <div className="p-6 text-center text-sm font-medium text-slate-400">Nincsenek még értesítések.</div>
+                      ) : (
+                         notifications.map(n => {
+                           const isPriceMod = n.message.includes("módosította az árlistát:");
+                           return (
+                             <div 
+                               key={n.id} 
+                               onClick={() => isPriceMod ? handleNotificationClick(n.message) : null}
+                               className={`p-3.5 border-b border-slate-50 transition-colors flex gap-3 items-start ${isPriceMod ? 'cursor-pointer hover:bg-slate-100' : 'hover:bg-slate-50'}`}
+                               title={isPriceMod ? "Kattints a megtekintéshez" : ""}
+                             >
+                                <div className="bg-emerald-100 text-emerald-600 p-1.5 rounded-xl mt-0.5 shrink-0 shadow-sm"><TagIcon /></div>
+                                <div className="flex-1">
+                                  <p className="text-sm text-slate-800 font-medium leading-snug">{n.message}</p>
+                                  <p className="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-widest">{formatDateTime(n.created_at)}</p>
+                                </div>
+                                {isPriceMod && <div className="mt-2 text-slate-400"><ChevronRightIcon /></div>}
+                             </div>
+                           );
+                         })
+                      )}
+                   </div>
+                 </div>
               )}
             </div>
 
@@ -1203,7 +1220,7 @@ export default function Home() {
         
         {/* --- KONTROLL SÁV --- */}
         {!printingDate && searchTerm === "" && (
-          <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-6 mb-6 no-print">
+          <div className="relative z-30 bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-6 mb-6 no-print">
             <div className="flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between">
               
               <div className="w-full xl:w-1/2">

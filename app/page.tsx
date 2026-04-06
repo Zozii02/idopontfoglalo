@@ -27,11 +27,13 @@ const LockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height
 const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>;
 const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
 const RefreshIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>;
+const CheckCircleIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
+const XCircleIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
 
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
 
-// --- OKOS FORMÁZÓK ---
+// --- OKOS FORMÁZÓK ÉS SEGÉDEK ---
 const formatTAJ = (val: string) => {
   if (!val) return "";
   const cleaned = val.replace(/\D/g, '').substring(0, 9);
@@ -65,8 +67,22 @@ const getTomorrowDateStr = () => {
   return d.toISOString().split('T')[0];
 };
 
+// Vizuális szövegkiemelő
+const HighlightText = ({ text, highlight }: { text: string, highlight: string }) => {
+  if (!highlight.trim()) return <>{text}</>;
+  const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+  return (
+    <>
+      {parts.map((part, i) => 
+        part.toLowerCase() === highlight.toLowerCase() ? 
+          <mark key={i} className="bg-yellow-200 text-yellow-900 rounded-sm px-0.5 py-0 font-bold">{part}</mark> : part
+      )}
+    </>
+  );
+};
+
 // --- OKOS CELLA ---
-function EditableCell({ value, onSave, disabled = false, highlight = false, formatter }: { value: string; onSave: (val: string) => void; disabled?: boolean; highlight?: boolean; formatter?: (v: string) => string }) {
+function EditableCell({ value, onSave, disabled = false, highlight = false, formatter, searchTerm = "" }: { value: string; onSave: (val: string) => void; disabled?: boolean; highlight?: boolean; formatter?: (v: string) => string; searchTerm?: string }) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentValue, setCurrentValue] = useState(value || "");
 
@@ -92,13 +108,15 @@ function EditableCell({ value, onSave, disabled = false, highlight = false, form
     );
   }
 
+  const displayValue = value || "";
+
   return (
     <div onClick={() => { setIsEditing(true); setCurrentValue(value || ""); }}
       className={`cursor-pointer min-h-[38px] p-2 rounded-lg transition-all border border-transparent hover:bg-white/80 hover:border-slate-200 font-medium break-words
         ${highlight ? "text-red-950 font-bold" : "text-emerald-950"}`}
       title="Kattints a szerkesztéshez"
     >
-      {value || <span className="text-slate-400 italic text-sm font-normal opacity-70">Üres (kattints)</span>}
+      {displayValue ? <HighlightText text={displayValue} highlight={searchTerm} /> : <span className="text-slate-400 italic text-sm font-normal opacity-70">Üres (kattints)</span>}
     </div>
   );
 }
@@ -226,17 +244,30 @@ const formatDateTime = (isoString: string) => {
   if (!isoString) return "";
   return new Date(isoString).toLocaleString("hu-HU", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 };
-const formatTimeOnly = (isoString: string) => {
-  if (!isoString) return "";
-  const d = new Date(isoString);
-  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-};
 const formatShortDate = (d: string) => {
   const parts = d.split('-');
   return parts.length === 3 ? `${parts[1]}. ${parts[2]}.` : d;
 };
 const timeToMins = (t: string) => { const [h, m] = t.split(':'); return parseInt(h) * 60 + parseInt(m); };
 const minsToTime = (m: number) => { const h = Math.floor(m / 60).toString().padStart(2, '0'); const mins = (m % 60).toString().padStart(2, '0'); return `${h}:${mins}`; };
+
+// Várható bevétel számító függvény
+const getDailyRevenue = (dayApps: any[], deptPrices: any[]) => {
+  let total = 0;
+  dayApps.forEach(app => {
+    if (app.is_deleted || !app.patient_name || !app.examination_type) return;
+    const examText = app.examination_type.toLowerCase();
+    
+    // Megnézzük, hogy a beírt vizsgálat tartalmazza-e az árlista valamelyik elemét
+    const matchedPrice = deptPrices.find(p => examText.includes(p.name.toLowerCase()));
+    if (matchedPrice) {
+       const numStr = matchedPrice.price.replace(/\D/g, ''); // Kiszűrjük a számokat a "15.000 Ft"-ból
+       if (numStr) total += parseInt(numStr, 10);
+    }
+  });
+  return total;
+};
+
 
 // --- Főoldal ---
 export default function Home() {
@@ -277,7 +308,7 @@ export default function Home() {
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
   const [currentPrices, setCurrentPrices] = useState<{id: string, name: string, price: string}[]>([]);
 
-  // --- Modálok ---
+  // --- Modálok és Toastok ---
   const [historyModal, setHistoryModal] = useState<{isOpen: boolean, patientName: string, taj: string, data: any[]}>({
     isOpen: false, patientName: "", taj: "", data: []
   });
@@ -289,6 +320,15 @@ export default function Home() {
   const [modal, setModal] = useState<{isOpen: boolean, title: string, message: string, type: "alert" | "confirm", confirmText: string, confirmColor: string, onConfirm: () => void}>({
     isOpen: false, title: "", message: "", type: "alert", confirmText: "Rendben", confirmColor: "bg-slate-900 text-white", onConfirm: () => {}
   });
+
+  const [toast, setToast] = useState<{visible: boolean, message: string, type: 'success' | 'error'}>({
+    visible: false, message: "", type: 'success'
+  });
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ visible: true, message, type });
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3500);
+  };
 
   // Naplózó segédfüggvény
   const logAction = async (appId: number, action: string, details: string) => {
@@ -335,6 +375,7 @@ export default function Home() {
       await supabase.from("prices").insert(inserts);
     }
     setIsPriceModalOpen(false);
+    showToast(`${activeTab} árak sikeresen elmentve!`);
   };
 
   const closeModal = () => setModal(prev => ({ ...prev, isOpen: false }));
@@ -429,11 +470,9 @@ export default function Home() {
   const updateAppointment = async (id: number, field: string, newValue: string) => {
     if (!user) return;
     
-    // Megkeressük a régi értéket
     const oldApp = appointments.find(a => a.id === id);
     const oldValue = oldApp ? oldApp[field] : "";
     
-    // Csak akkor naplózunk és mentünk, ha tényleg változott valami
     if (oldValue !== newValue) {
       const modifierName = getDisplayName();
       const now = new Date().toISOString();
@@ -444,7 +483,6 @@ export default function Home() {
       };
       const fieldLabel = fieldNames[field] || field;
       
-      // Megformázzuk a napló bejegyzést
       const oldDisp = oldValue ? oldValue : "(üres)";
       const newDisp = newValue ? newValue : "(üres)";
       const details = `${fieldLabel}: "${oldDisp}" ➔ "${newDisp}"`;
@@ -480,11 +518,12 @@ export default function Home() {
           .update({ is_deleted: true, deleted_by: modifierName, deleted_at: now })
           .in('id', idsToDelete);
           
-        // Naplózás minden törölt sornak
         const logs = idsToDelete.map((id: number) => ({
            appointment_id: id, modified_by: modifierName, action: "Törlés", details: "Üres sor automatikus takarítása"
         }));
         await supabase.from('appointment_logs').insert(logs);
+        
+        showToast("Üres sorok sikeresen törölve!");
       }
     );
   };
@@ -505,6 +544,7 @@ export default function Home() {
     setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app));
     await supabase.from("appointments").update({ is_deleted: true, deleted_by: modifierName, deleted_at: now }).eq("id", id);
     await logAction(id, "Törlés", "Időpont törölve a listából");
+    showToast("Időpont törölve");
   };
 
   const deleteEntireDay = async (date: string) => {
@@ -533,6 +573,7 @@ export default function Home() {
            appointment_id: id, modified_by: modifierName, action: "Törlés", details: "Teljes nap csoportos törlése"
         }));
         await supabase.from('appointment_logs').insert(logs);
+        showToast("A teljes nap törlésre került.");
       }
     );
   };
@@ -543,6 +584,7 @@ export default function Home() {
     setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: false, last_modified_by: modifierName, last_modified_at: now } : app));
     await supabase.from("appointments").update({ is_deleted: false, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
     await logAction(id, "Visszaállítás", "Törölt időpont visszaállítva");
+    showToast("Időpont sikeresen visszaállítva!");
   };
 
   const exportToCSV = (date: string) => {
@@ -630,6 +672,7 @@ export default function Home() {
            }));
            await supabase.from('appointment_logs').insert(logs);
         }
+        showToast("Napi időpontok sikeresen legenerálva!");
       }
     );
   };
@@ -648,9 +691,10 @@ export default function Home() {
        await logAction(data[0].id, "Létrehozás", "Egyedi időpont manuálisan hozzáadva");
     }
     setNewTimeSlot("");
+    showToast("Új időpont sikeresen hozzáadva!");
   };
 
-  // --- UI MODÁLOK ---
+  // --- UI COMPONENTEK ---
   const customModalUI = (
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${modal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeModal}></div>
@@ -745,7 +789,7 @@ export default function Home() {
 
         <div className="overflow-y-auto p-6 custom-scrollbar h-full">
           {historyModal.data.length === 0 ? (
-             <p className="text-center text-slate-500 font-medium py-8">Nem tal��lható korábbi bejegyzés ehhez a TAJ számhoz.</p>
+             <p className="text-center text-slate-500 font-medium py-8">Nem található korábbi bejegyzés ehhez a TAJ számhoz.</p>
           ) : (
             <div className="space-y-4">
               {historyModal.data.map((app, idx) => (
@@ -828,6 +872,16 @@ export default function Home() {
           )}
         </div>
       </div>
+    </div>
+  );
+
+  const toastUI = (
+    <div className={`fixed bottom-6 right-6 z-[999] bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] border border-slate-100 p-4 flex items-center gap-3 transform transition-all duration-500 ease-out pointer-events-none
+      ${toast.visible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-12 opacity-0 scale-95'}`}>
+      <div className={`p-2 rounded-full ${toast.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+        {toast.type === 'success' ? <CheckCircleIcon /> : <XCircleIcon />}
+      </div>
+      <p className="font-bold text-sm text-slate-800 pr-2">{toast.message}</p>
     </div>
   );
 
@@ -931,10 +985,11 @@ export default function Home() {
       {patientHistoryModalUI}
       {priceModalUI}
       {infoModalUI}
+      {toastUI}
       {!printingDate && <div className="absolute inset-0 bg-slate-100/70 backdrop-blur-2xl z-0 pointer-events-none no-print"></div>}
 
       {/* --- FEJLÉC ÉS KERESŐ --- */}
-      <div className="bg-white/70 backdrop-blur-xl sticky top-0 z-40 border-b border-white/50 shadow-sm relative no-print">
+      <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-white/50 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] relative no-print h-[73px]">
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-4 w-full md:w-auto">
              <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain select-none pointer-events-none drop-shadow-sm" />
@@ -944,15 +999,15 @@ export default function Home() {
              </div>
           </div>
           
-          <div className="flex-1 max-w-lg w-full relative">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon size={18} /></div>
+          <div className="flex-1 max-w-lg w-full relative group">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-500 transition-colors"><SearchIcon size={18} /></div>
             <input 
               ref={searchInputRef}
               type="text" 
               placeholder="Keresés név, TAJ vagy telefon... (Ctrl+K)" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white/80 border border-white/60 py-2.5 pl-10 pr-4 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 font-semibold text-slate-800 shadow-sm transition-all"
+              className="w-full bg-white/80 border border-white/60 py-2 pl-10 pr-4 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 font-semibold text-slate-800 shadow-sm transition-all"
             />
           </div>
 
@@ -981,8 +1036,8 @@ export default function Home() {
                       <TagIcon /> {activeTab} árak
                     </button>
                     
-                    <div className="relative w-full sm:w-40">
-                      <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon size={14} /></div>
+                    <div className="relative w-full sm:w-40 group">
+                      <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-400"><SearchIcon size={14} /></div>
                       <input 
                         type="text" 
                         placeholder="Keresés..." 
@@ -1117,23 +1172,52 @@ export default function Home() {
             const activeSlots = dayAppointments.filter((a: any) => !a.is_deleted);
             const bookedCount = activeSlots.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
             const freeCount = activeSlots.length - bookedCount;
+            
+            // --- MINI DASHBOARD Számítások ---
+            const percent = activeSlots.length > 0 ? Math.round((bookedCount / activeSlots.length) * 100) : 0;
+            const deptPrices = allPrices.filter(p => p.department === (dayAppointments[0]?.department || activeTab));
+            const dailyRevenue = getDailyRevenue(activeSlots, deptPrices);
+            const formattedRevenue = dailyRevenue > 0 ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyRevenue) : "0 Ft";
 
             return (
-              <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-sm scroll-mt-24 print-container ${printingDate ? 'bg-white border-0 shadow-none' : 'overflow-hidden bg-white/90 backdrop-blur-xl border border-white/60'}`}>
+              <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] scroll-mt-[100px] print-container ${printingDate ? 'bg-white border-0 shadow-none' : 'overflow-hidden bg-white/90 backdrop-blur-xl border border-white/60'}`}>
                 
-                <div className={`p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-white/60'}`}>
-                  <div className="flex items-center gap-3 text-slate-900">
-                    <CalendarIcon size={20} />
-                    <h2 className="text-xl font-bold">{date} {searchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}</h2>
+                <div className={`p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-slate-100'}`}>
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="flex items-center gap-3 text-slate-900">
+                      <CalendarIcon size={20} />
+                      <h2 className="text-xl font-bold">{date} {searchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}</h2>
+                    </div>
+                    
+                    {!printingDate && (
+                      <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-100">
+                        <div className="flex flex-col gap-1 w-32 sm:w-40">
+                          <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                            <span>Telítettség</span>
+                            <span className={percent === 100 ? "text-emerald-600" : ""}>{percent}%</span>
+                          </div>
+                          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                             <div className={`h-full transition-all duration-1000 ${percent === 100 ? 'bg-emerald-500' : percent > 60 ? 'bg-amber-400' : 'bg-blue-400'}`} style={{width: `${percent}%`}}></div>
+                          </div>
+                        </div>
+                        <div className="w-px h-6 bg-slate-200 mx-1"></div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Várható bevétel</span>
+                          <span className="text-sm font-extrabold text-slate-800">{formattedRevenue}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
+
                   <div className="flex items-center flex-wrap gap-2">
-                    <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-bold border border-slate-200">Összes: {activeSlots.length}</span>
-                    <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold border border-emerald-200">Szabad: {freeCount}</span>
-                    <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold border border-red-200">Foglalt: {bookedCount}</span>
+                    <span className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200">Összes: {activeSlots.length}</span>
+                    <span className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200">Szabad: {freeCount}</span>
+                    <span className="bg-red-100 text-red-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-200">Foglalt: {bookedCount}</span>
                     
                     {!printingDate && (
                       <>
-                        <div className="w-px h-6 bg-slate-300 mx-1 hidden sm:block"></div>
+                        <div className="w-px h-6 bg-slate-300 mx-1 hidden md:block"></div>
                         <button onClick={() => clearEmptySlots(date)} className="bg-white hover:bg-amber-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-amber-300 hover:text-amber-700">
                           <EraserIcon /> <span className="hidden sm:inline">Üres sorok takarítása</span><span className="sm:hidden">Takarít</span>
                         </button>
@@ -1155,8 +1239,8 @@ export default function Home() {
 
                 <div className={`overflow-x-auto custom-scrollbar ${printingDate ? 'overflow-visible' : ''}`}>
                   <table className="min-w-full text-left border-collapse print-table">
-                    <thead>
-                      <tr className="border-b border-slate-200/60 print-border">
+                    <thead className={`${printingDate ? '' : 'sticky top-[73px] z-20 bg-slate-50/95 backdrop-blur-xl shadow-sm border-b border-slate-200'}`}>
+                      <tr className="print-border">
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[200px]">Páciens neve</th>
                         <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">TAJ szám</th>
@@ -1169,7 +1253,7 @@ export default function Home() {
                         {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap w-min">Művelet</th>}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100/50">
+                    <tbody className="divide-y divide-slate-100/50 relative z-0">
                       {dayAppointments.map((app: any) => {
                         const isDel = app.is_deleted === true;
                         const isBooked = app.patient_name && app.patient_name.trim() !== "";
@@ -1178,11 +1262,19 @@ export default function Home() {
                         
                         if (printingDate && isDel) return null; 
 
+                        // Vizuális Státusz Színek a sor szélére
+                        const statusBorder = printingDate || isDel || !isBooked ? "" :
+                          app.status === "Megérkezett" ? "border-l-4 border-l-amber-400" :
+                          app.status === "Vizsgálaton" ? "border-l-4 border-l-blue-400" :
+                          app.status === "Befejezve" ? "border-l-4 border-l-emerald-500" :
+                          app.status === "Nem jelent meg" ? "border-l-4 border-l-slate-800" :
+                          "border-l-4 border-l-transparent";
+
                         const rowStyle = isDel 
                           ? "bg-slate-100/40 opacity-70 print-hidden" 
                           : isBooked 
-                            ? "bg-red-50/70 hover:bg-red-100/60" 
-                            : "bg-emerald-50/70 hover:bg-emerald-100/60";
+                            ? `bg-red-50/70 hover:bg-red-100/60 ${statusBorder}`
+                            : "bg-emerald-50/70 hover:bg-emerald-100/60 border-l-4 border-l-transparent";
 
                         return (
                           <tr key={app.id} className={`transition-colors group relative ${printingDate ? '' : rowStyle}`}>
@@ -1198,7 +1290,7 @@ export default function Home() {
                             <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black font-bold text-sm border-l border-gray-300' : ''}`}>
                               {printingDate ? app.patient_name : (
                                 <div className="relative">
-                                  <EditableCell disabled={isDel} highlight={isBooked} formatter={formatName} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} />
+                                  <EditableCell disabled={isDel} highlight={isBooked} formatter={formatName} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} searchTerm={searchTerm} />
                                   {canShowHistory && (
                                     <button 
                                       onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} 
@@ -1213,22 +1305,22 @@ export default function Home() {
                             </td>
                             
                             <td className={`px-4 py-3 align-middle whitespace-nowrap ${printingDate ? 'text-black font-mono text-sm border-l border-gray-300' : ''}`}>
-                              {printingDate ? formatTAJ(app.taj_szam) : <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} />}
+                              {printingDate ? formatTAJ(app.taj_szam) : <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} searchTerm={searchTerm} />}
                             </td>
                             
                             {!printingDate && (
                               <>
-                                <td className="px-4 py-3 align-middle whitespace-nowrap"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} /></td>
+                                <td className="px-4 py-3 align-middle whitespace-nowrap"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={searchTerm} /></td>
                                 
                                 <td className="px-4 py-3 align-middle whitespace-nowrap"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></td>
                               </>
                             )}
                             
                             <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
-                              {printingDate ? app.examination_type : <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} />}
+                              {printingDate ? app.examination_type : <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={searchTerm} />}
                             </td>
                             <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
-                              {printingDate ? app.notes : <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} />}
+                              {printingDate ? app.notes : <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={searchTerm} />}
                             </td>
                             
                             {!printingDate && (
@@ -1258,11 +1350,18 @@ export default function Home() {
                       const isBooked = app.patient_name && app.patient_name.trim() !== "";
                       const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
                       
+                      const statusBorder = isDel || !isBooked ? "" :
+                          app.status === "Megérkezett" ? "border-l-4 border-l-amber-400" :
+                          app.status === "Vizsgálaton" ? "border-l-4 border-l-blue-400" :
+                          app.status === "Befejezve" ? "border-l-4 border-l-emerald-500" :
+                          app.status === "Nem jelent meg" ? "border-l-4 border-l-slate-800" :
+                          "border-l-4 border-l-transparent";
+
                       const cardStyle = isDel 
                         ? "bg-slate-100/50 border-slate-200/50 opacity-80" 
                         : isBooked 
-                          ? "bg-red-50/90 border-white shadow-sm" 
-                          : "bg-emerald-50/90 border-white shadow-sm";
+                          ? `bg-red-50/90 border-white shadow-sm ${statusBorder}` 
+                          : "bg-emerald-50/90 border-white shadow-sm border-l-4 border-l-transparent";
 
                       return (
                         <div key={`mob-${app.id}`} className={`rounded-2xl p-5 border transition-all ${cardStyle}`}>
@@ -1298,23 +1397,23 @@ export default function Home() {
                                   <div className="w-[130px]"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></div>
                                 </div>
                               </div>
-                              <EditableCell disabled={isDel} highlight={isBooked} formatter={formatName} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} />
+                              <EditableCell disabled={isDel} highlight={isBooked} formatter={formatName} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} searchTerm={searchTerm} />
                             </div>
                             <div className="grid grid-cols-2 gap-3 relative z-0">
                               <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">TAJ szám</span>
-                                <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} />
+                                <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} searchTerm={searchTerm} />
                               </div>
                               <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Telefon</span>
-                                <EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} />
+                                <EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={searchTerm} />
                               </div>
                             </div>
                             <div className="bg-white/70 p-2.5 rounded-xl border border-white/50 relative z-0">
                               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat & Megjegyzés</span>
-                              <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} />
+                              <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={searchTerm} />
                               <div className="mt-1 border-t border-black/5 pt-1">
-                                <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} />
+                                <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={searchTerm} />
                               </div>
                             </div>
                           </div>
@@ -1347,7 +1446,7 @@ export default function Home() {
       {!printingDate && showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 bg-slate-900/90 backdrop-blur-md text-white p-3.5 rounded-full shadow-2xl hover:bg-black transition-all hover:scale-110 active:scale-95 animate-in fade-in slide-in-from-bottom-6 border border-slate-700"
+          className="fixed bottom-6 left-6 md:left-auto md:right-6 z-50 bg-slate-900/90 backdrop-blur-md text-white p-3.5 rounded-full shadow-2xl hover:bg-black transition-all hover:scale-110 active:scale-95 animate-in fade-in slide-in-from-bottom-6 border border-slate-700"
           title="Ugrás az oldal tetejére"
         >
           <ArrowUpIcon />
@@ -1373,7 +1472,7 @@ export default function Home() {
           .overflow-visible { overflow: visible !important; }
           
           .print-table { width: 100% !important; border-collapse: collapse !important; margin-top: 10px !important; table-layout: fixed; page-break-inside: auto; }
-          .print-table thead { display: table-header-group; }
+          .print-table thead { display: table-header-group; position: static !important; }
           .print-table tr { page-break-inside: avoid; page-break-after: auto; }
           
           .print-table th { border: 1px solid #333 !important; padding: 6px !important; color: black !important; font-size: 11px !important; font-weight: bold !important; background: #f3f4f6 !important; -webkit-print-color-adjust: exact; text-align: left; }

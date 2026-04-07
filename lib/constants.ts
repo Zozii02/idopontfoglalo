@@ -1,0 +1,196 @@
+export const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
+
+export const LAB_DATABASE = [
+  {
+    category: "Általános",
+    items: [
+      { id: "alt_1", name: "CRP", price: 1500, time: "1 munkanap" },
+      { id: "alt_2", name: "AST (ASO)", price: 2200, time: "3 munkanap" },
+      { id: "alt_3", name: "Vvt süllyedés", price: 1500, time: "1 munkanap" },
+      { id: "alt_4", name: "Vérkép automatával", price: 1000, time: "1 munkanap" },
+      { id: "alt_5", name: "Vérkép+reticulocyta", price: 2200, time: "1 munkanap" },
+      { id: "alt_6", name: "Teljes vizelet ált+üledék", price: 1200, time: "1 munkanap" },
+      { id: "alt_7", name: "Vizelet tenyésztés", price: 6000, time: "-" },
+      { id: "alt_8", name: "Vércsoport", price: 15000, time: "2 munkanap" },
+      { id: "alt_9", name: "Húgysav", price: 400, time: "1 munkanap" },
+      { id: "alt_10", name: "Epesav", price: 10500, time: "8 munkanap" },
+      { id: "alt_11", name: "Koleszterin", price: 400, time: "1 munkanap" },
+      { id: "alt_12", name: "HDL-koleszterin", price: 700, time: "1 munkanap" },
+      { id: "alt_13", name: "LDL koleszterin", price: 700, time: "1 munkanap" },
+      { id: "alt_14", name: "Triglicerid", price: 400, time: "1 munkanap" },
+      { id: "alt_15", name: "Vas", price: 500, time: "1 munkanap" },
+      { id: "alt_16", name: "Transzferrin", price: 1000, time: "1 munkanap" },
+      { id: "alt_17", name: "Transzferrin szat. (vas+transzf)", price: 300, time: "1 munkanap" },
+      { id: "alt_18", name: "Ferritin", price: 2600, time: "1 munkanap" },
+      { id: "alt_19", name: "Lipáz", price: 800, time: "1 munkanap" },
+      { id: "alt_20", name: "Amiláz", price: 800, time: "1 munkanap" },
+      { id: "alt_21", name: "Pancreas spec. elasztáz", price: 20000, time: "17 munkanap" },
+      { id: "alt_22", name: "Albumin", price: 400, time: "1 munkanap" },
+      { id: "alt_23", name: "Összfehérje", price: 400, time: "1 munkanap" },
+      { id: "alt_24", name: "IgG / IgA / IgM", price: 2000, time: "3 munkanap" },
+      { id: "alt_25", name: "Nagylabor csomag", price: 18000, time: "Csomag" },
+    ]
+  },
+  {
+    category: "Hemosztázis",
+    items: [
+      { id: "hem_1", name: "Prothrombin(INR)", price: 1000, time: "1 munkanap" },
+      { id: "hem_2", name: "APTI", price: 1000, time: "1 munkanap" },
+      { id: "hem_3", name: "Trombin idő", price: 1000, time: "1 munkanap" },
+      { id: "hem_4", name: "Fibrinogén", price: 1700, time: "1 munkanap" },
+      { id: "hem_5", name: "D-dimer", price: 6500, time: "1 munkanap" },
+    ]
+  },
+  {
+    category: "Máj és Vese",
+    items: [
+      { id: "mv_1", name: "Összbilirubin", price: 400, time: "1 munkanap" },
+      { id: "mv_2", name: "GPT / GOT / GGT", price: 400, time: "1 munkanap" },
+      { id: "mv_3", name: "Alkalikus foszfatáz", price: 400, time: "1 munkanap" },
+      { id: "mv_4", name: "LDH", price: 400, time: "1 munkanap" },
+      { id: "mv_5", name: "Karbamid", price: 400, time: "1 munkanap" },
+      { id: "mv_6", name: "Kreatinin", price: 500, time: "1 munkanap" },
+    ]
+  },
+  {
+    category: "Cukor / Anyagcsere",
+    items: [
+      { id: "cuk_1", name: "Glukóz- éhgyomri", price: 400, time: "1 munkanap" },
+      { id: "cuk_2", name: "Hemoglobin A1c", price: 3500, time: "1 munkanap" },
+      { id: "cuk_3", name: "Fruktózamin", price: 3000, time: "3 munkanap" },
+      { id: "cuk_4", name: "Inzulin- éhgyomri", price: 2500, time: "1 munkanap" },
+      { id: "cuk_5", name: "3 pontos vércukorterhelés", price: 1200, time: "1 munkanap" },
+      { id: "cuk_6", name: "3 pontos inzulinterhelés", price: 7500, time: "1 munkanap" },
+      { id: "cuk_7", name: "HOMA index", price: 0, time: "1 munkanap" },
+    ]
+  },
+  {
+    category: "Ionok",
+    items: [
+      { id: "ion_1", name: "Nátrium / Kálium / Klorid", price: 400, time: "1 munkanap" },
+      { id: "ion_2", name: "Calcium / Magnézium", price: 400, time: "1 munkanap" },
+      { id: "ion_3", name: "P-foszfor", price: 400, time: "1 munkanap" },
+      { id: "ion_4", name: "Cink", price: 6900, time: "3 munkanap" },
+    ]
+  },
+  {
+    category: "Hormonok",
+    items: [
+      { id: "horm_1", name: "TSH", price: 2000, time: "1 munkanap" },
+      { id: "horm_2", name: "fT3 / FT4", price: 3000, time: "1 munkanap" },
+      { id: "horm_3", name: "Thyreoglobulin", price: 4000, time: "5 munkanap" },
+      { id: "horm_4", name: "Anti TPO / Anti TG", price: 4000, time: "1 munkanap" },
+      { id: "horm_5", name: "TRAK / Reverz T3", price: 7500, time: "3 munkanap" },
+      { id: "horm_6", name: "FSH", price: 3500, time: "1 munkanap" },
+      { id: "horm_7", name: "LH / Prolactin / Ösztradiol", price: 3000, time: "1 munkanap" },
+      { id: "horm_8", name: "Progeszteron", price: 4800, time: "1 munkanap" },
+      { id: "horm_9", name: "AMH", price: 11000, time: "3 munkanap" },
+      { id: "horm_10", name: "Béta-HCG", price: 4500, time: "1 munkanap" },
+      { id: "horm_11", name: "Tesztoszteron", price: 3500, time: "1 munkanap" },
+      { id: "horm_12", name: "Total és szabad tesztoszteron", price: 8000, time: "1 munkanap" },
+      { id: "horm_13", name: "Cortizol", price: 3500, time: "2 munkanap" },
+      { id: "horm_14", name: "SHBG", price: 4000, time: "1 munkanap" },
+      { id: "horm_15", name: "Parathormon (PHT)", price: 5500, time: "5 munkanap" },
+      { id: "horm_16", name: "Aldoszteron", price: 11000, time: "17 munkanap" },
+      { id: "horm_17", name: "C-peptid", price: 6500, time: "-" },
+      { id: "horm_18", name: "DHEA-S", price: 3500, time: "1 munkanap" },
+      { id: "horm_19", name: "CK", price: 600, time: "-" },
+    ]
+  },
+  {
+    category: "Allergia / Intolerancia",
+    items: [
+      { id: "all_1", name: "Cöliacia", price: 6500, time: "5 munkanap" },
+      { id: "all_2", name: "EMA IgA/IgG", price: 10000, time: "5 munkanap" },
+      { id: "all_3", name: "Nutritív 20", price: 23000, time: "5 munkanap" },
+      { id: "all_4", name: "Nutritív 40", price: 28000, time: "5 munkanap" },
+      { id: "all_5", name: "IgE", price: 4000, time: "3 munkanap" },
+      { id: "all_6", name: "Hisztamin intolerancia (DAO)", price: 14000, time: "17 munkanap" },
+      { id: "all_7", name: "40-es étel intolerancia panel", price: 22000, time: "3 munkanap" },
+      { id: "all_8", name: "108-as intolerancia panel", price: 47000, time: "5 munkanap" },
+      { id: "all_9", name: "220 intolerancia igg", price: 80000, time: "Csomag" },
+      { id: "all_10", name: "Laktóz vér/nyál", price: 16000, time: "10 munkanap" },
+      { id: "all_11", name: "Inhalatív 20", price: 23000, time: "5 munkanap" },
+      { id: "all_12", name: "Inhalatív 40", price: 32000, time: "5 munkanap" },
+      { id: "all_13", name: "Méh-darázscs. antisepc. IgE", price: 16000, time: "5 munkanap" },
+      { id: "all_14", name: "54 kombinált allergia panel", price: 33000, time: "-" },
+    ]
+  },
+  {
+    category: "Tumormarker",
+    items: [
+      { id: "tm_1", name: "CA 125 (petefészek)", price: 4600, time: "5 munkanap" },
+      { id: "tm_2", name: "CA 19-9 (hasnyálmirigy)", price: 4000, time: "3 munkanap" },
+      { id: "tm_3", name: "CA 72-4 (pank, máj, tüdő)", price: 6500, time: "17 munkanap" },
+      { id: "tm_4", name: "CA 15-3 (emlő)", price: 4500, time: "3 munkanap" },
+      { id: "tm_5", name: "CEA (máj, vastagbél, végbél)", price: 4000, time: "3 munkanap" },
+      { id: "tm_6", name: "ROMA index (HE4+CA 125)", price: 14000, time: "7 munkanap" },
+      { id: "tm_7", name: "PSA (prostata)", price: 3000, time: "1 munkanap" },
+      { id: "tm_8", name: "PSA free (prostata)", price: 4000, time: "1 munkanap" },
+      { id: "tm_9", name: "NSE (kis sejtes tüdőrák)", price: 11000, time: "-" },
+      { id: "tm_10", name: "TPA (hólyag)", price: 11000, time: "-" },
+      { id: "tm_11", name: "AFP (máj)", price: 4500, time: "-" },
+    ]
+  },
+  {
+    category: "Vitaminok",
+    items: [
+      { id: "vit_1", name: "A vitamin", price: 12000, time: "17 munkanap" },
+      { id: "vit_2", name: "B12 vitamin", price: 4000, time: "1 munkanap" },
+      { id: "vit_3", name: "Folsav", price: 4000, time: "1 munkanap" },
+      { id: "vit_4", name: "C vitamin", price: 15000, time: "17 munkanap" },
+      { id: "vit_5", name: "Jód", price: 18000, time: "14 munkanap" },
+      { id: "vit_6", name: "Szelén", price: 12000, time: "14 munkanap" },
+      { id: "vit_7", name: "D-vitamin", price: 4500, time: "1 munkanap" },
+      { id: "vit_8", name: "K1 vitamin", price: 18000, time: "17 munkanap" },
+    ]
+  },
+  {
+    category: "Fertőzés",
+    items: [
+      { id: "inf_1", name: "Hepatitis A (IgG+IgM) antitest", price: 6500, time: "3 munkanap" },
+      { id: "inf_2", name: "Hepatitis A friss (IgM)", price: 4500, time: "1 munkanap" },
+      { id: "inf_3", name: "Hepatitis B (HBsAg) antigén", price: 4500, time: "3 munkanap" },
+      { id: "inf_4", name: "Hepatitis B antitest (Anti-HBsAg)", price: 4500, time: "3 munkanap" },
+      { id: "inf_5", name: "Hepatitis B (Anti- HBcAg)", price: 5300, time: "3 munkanap" },
+      { id: "inf_6", name: "Hepatitis C antitest", price: 5500, time: "3 munkanap" },
+      { id: "inf_7", name: "Hepatitis E IgG/IgM", price: 12000, time: "10 munkanap" },
+      { id: "inf_8", name: "Autoimmun májpanel", price: 13500, time: "-" },
+      { id: "inf_9", name: "Borrelia antitest IgG+IgM (Lyme kór)", price: 20000, time: "7 munkanap" },
+      { id: "inf_10", name: "Chlamydia pneum. anti. IGG IgM+IgA", price: 10000, time: "5 munkanap" },
+      { id: "inf_11", name: "Clamidia tracho IgG/IgA/IgM", price: 10000, time: "5 munkanap" },
+      { id: "inf_12", name: "Cytomegalovírus IgG/IgM", price: 6600, time: "3 munkanap" },
+      { id: "inf_13", name: "Epstein-bar vírus antitestek", price: 10500, time: "5 munkanap" },
+      { id: "inf_14", name: "Helicobacter pylori antit. IgA+IgG", price: 8000, time: "2 munkanap" },
+      { id: "inf_15", name: "Herpes simplex vírus IgG+IgM", price: 12000, time: "5 munkanap" },
+      { id: "inf_16", name: "HIV", price: 6500, time: "3 munkanap" },
+      { id: "inf_17", name: "Legionella IgG, IgM", price: 15000, time: "17 munkanap" },
+      { id: "inf_18", name: "Morbili (kanyaró) IgG", price: 9000, time: "17 munkanap" },
+      { id: "inf_19", name: "Mycoplasma pneumoniae antit.", price: 10000, time: "5 munkanap" },
+      { id: "inf_20", name: "Parvo vírus B19 IgG", price: 10000, time: "5 munkanap" },
+      { id: "inf_21", name: "Rubeola védettség / vírus antitest", price: 7500, time: "5 munkanap" },
+      { id: "inf_22", name: "Toxoplasma antitest IgG-IgM", price: 7500, time: "3 munkanap" },
+      { id: "inf_23", name: "Treponema ellenanyag (LUES/szifilisz)", price: 5500, time: "5 munkanap" },
+      { id: "inf_24", name: "Varicella zoster védettség", price: 8500, time: "5 munkanap" },
+      { id: "inf_25", name: "Varicella zoster vírus antit. IgG-IgM", price: 9000, time: "5 munkanap" },
+    ]
+  },
+  {
+    category: "Speciális / Egyéb",
+    items: [
+      { id: "spec_1", name: "Spermium elleni antitest", price: 16000, time: "21 munkanap" },
+      { id: "spec_2", name: "Leiden mutáció", price: 15000, time: "12 munkanap" },
+      { id: "spec_3", name: "Calprotectin", price: 8000, time: "5 munkanap" },
+      { id: "spec_4", name: "Széklet tenyésztés", price: 8500, time: "5 munkanap" },
+      { id: "spec_5", name: "Széklet vér (3 minta)", price: 7500, time: "3 egymást követő nap" },
+      { id: "spec_6", name: "Leptin", price: 15000, time: "-" },
+      { id: "spec_7", name: "APC rezisztencia", price: 8000, time: "Fagyasztós" },
+      { id: "spec_8", name: "ADH", price: 17500, time: "17 munkanap" },
+      { id: "spec_9", name: "ACTH", price: 8000, time: "Fagyasztós" },
+      { id: "spec_10", name: "Anti-DSdna", price: 6000, time: "-" },
+      { id: "spec_11", name: "Celluláris immunstátusz", price: 31000, time: "-" },
+      { id: "spec_12", name: "Cell. Immun + NK funkció", price: 55000, time: "-" },
+      { id: "spec_13", name: "NK lymphocyta funkció", price: 38000, time: "-" },
+    ]
+  }
+];

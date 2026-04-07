@@ -37,12 +37,16 @@ export function PatientAutocomplete({
   const [currentValue, setCurrentValue] = useState(value || "");
   const [results, setResults] = useState<any[]>([]);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  // Egy flag, ami jelzi, ha épp egy listaelemre kattintunk
+  const isSelecting = useRef(false); 
 
   // Bezárás, ha mellékattintanak
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        handleBlur();
+        if (!isSelecting.current) {
+          handleBlur();
+        }
       }
     };
     if (isEditing) document.addEventListener("mousedown", handleClickOutside);
@@ -57,28 +61,42 @@ export function PatientAutocomplete({
     }
     const timer = setTimeout(async () => {
       const data = await searchPatients(currentValue);
-      setResults(data);
-    }, 300); // 300ms késleltetés gépeléskor (ne terheljük a szervert)
+      // Csak akkor mutatjuk a listát, ha van találat, ÉS az nem pont az, ami be van írva
+      if (data && data.length > 0 && data[0].name.toLowerCase() !== currentValue.toLowerCase()) {
+        setResults(data);
+      } else {
+        setResults([]);
+      }
+    }, 300); 
     return () => clearTimeout(timer);
   }, [currentValue, isEditing]);
 
   const handleBlur = () => {
-    // Pici késleltetés kell, hogy ha rákattint egy névre a listában, az előbb fusson le
-    setTimeout(() => {
-      setIsEditing(false); 
-      const finalVal = currentValue.trim();
-      const formattedVal = finalVal.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-      if (formattedVal !== value) onSave(formattedVal); 
-      setCurrentValue(formattedVal);
-      setResults([]);
-    }, 150);
+    if (isSelecting.current) return; // Ha épp listából választunk, ne fusson le a blur!
+    
+    setIsEditing(false); 
+    setResults([]);
+    
+    const finalVal = currentValue.trim();
+    // Név formázása (Nagybetűvel kezdődjön minden szó)
+    const formattedVal = finalVal ? finalVal.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : "";
+    
+    if (formattedVal !== value) {
+      onSave(formattedVal); 
+    }
+    setCurrentValue(formattedVal);
   };
 
   const handleSelect = (patient: any) => {
+    isSelecting.current = true; // Jelezzük, hogy most kattintottunk
     setCurrentValue(patient.name);
     setIsEditing(false);
     setResults([]);
-    onSelectPatient(patient); // Kitölti a TAJ-t és a telefont is
+    
+    // Átadjuk a kiválasztott beteg adatait a főoldalnak
+    onSelectPatient(patient);
+    
+    setTimeout(() => { isSelecting.current = false; }, 200);
   };
 
   if (disabled) return <div className="p-2 text-slate-400 font-medium line-through bg-slate-50/50 rounded-lg break-words">{value || "-"}</div>;
@@ -90,18 +108,28 @@ export function PatientAutocomplete({
           autoFocus 
           value={currentValue} 
           onChange={(e) => setCurrentValue(e.target.value)} 
-          onKeyDown={(e) => e.key === "Enter" && handleBlur()}
+          onBlur={handleBlur} // Most már használhatjuk a beépített onBlur-t
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleBlur();
+            }
+          }}
           placeholder="Név keresése..."
           className="w-full min-w-0 bg-white border border-emerald-400 p-2 rounded-lg focus:outline-none focus:ring-4 focus:ring-emerald-100 text-slate-900 font-semibold shadow-sm transition-all"
         />
         {/* Lenyíló találati lista */}
         {results.length > 0 && (
-          <ul className="absolute z-50 top-full left-0 w-[260px] mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar">
-            <li className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 border-b border-slate-100 sticky top-0">Ismert betegek</li>
+          <ul className="absolute z-50 top-full left-0 w-[280px] mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar">
+            <li className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 border-b border-slate-100 sticky top-0">Ismert betegek (Kattints rá)</li>
             {results.map(p => (
               <li 
                 key={p.id} 
-                onClick={() => handleSelect(p)}
+                // A titok: onMouseDown hamarabb fut le, mint az input onBlur eseménye!
+                onMouseDown={(e) => {
+                  e.preventDefault(); // Megakadályozza, hogy az input elveszítse a fókuszt
+                  handleSelect(p);
+                }}
                 className="px-3 py-2 border-b border-slate-50 hover:bg-emerald-50 cursor-pointer transition-colors"
               >
                 <div className="font-bold text-slate-800 text-sm">{p.name}</div>

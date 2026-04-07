@@ -487,8 +487,8 @@ export default function Home() {
   const [showLabCalculator, setShowLabCalculator] = useState(false);
   const [selectedLabTests, setSelectedLabTests] = useState<string[]>([]);
   const [labPatientName, setLabPatientName] = useState("");
-  const [labPatientTaj, setLabPatientTaj] = useState(""); // ÚJ
-  const [labPatientAddress, setLabPatientAddress] = useState(""); // ÚJ
+  const [labPatientTaj, setLabPatientTaj] = useState("");
+  const [labPatientAddress, setLabPatientAddress] = useState("");
   const [labSearchTerm, setLabSearchTerm] = useState("");
   const [includeBloodDrawFee, setIncludeBloodDrawFee] = useState(true);
 
@@ -1480,13 +1480,13 @@ export default function Home() {
     const formattedTotal = new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(totalPrice);
 
     return (
-      <div className={`min-h-screen font-sans pb-10 relative ${printingLabQuote ? 'bg-white print-mode' : 'bg-slate-50'}`}>
+      <div className={`min-h-screen font-sans relative ${printingLabQuote ? 'bg-white print-mode' : 'bg-slate-50 overflow-hidden'}`}>
         {customModalUI}
         {toastUI}
         
         {/* FEJLÉC (csak nem nyomtatáskor) */}
         {!printingLabQuote && (
-          <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm no-print">
+          <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm no-print h-[73px]">
             <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex justify-between items-center">
               <div className="flex items-center gap-4">
                  <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain" />
@@ -1503,16 +1503,16 @@ export default function Home() {
         )}
 
         {/* LABOR TARTALOM */}
-        <div className={`max-w-[1600px] mx-auto px-4 md:px-8 pt-8 ${printingLabQuote ? 'p-0 pt-0 max-w-none' : ''}`}>
+        <div className={`max-w-[1600px] mx-auto ${printingLabQuote ? 'p-0 pt-0 max-w-none' : 'px-4 md:px-8 py-6 h-[calc(100vh-73px)] flex flex-col'}`}>
           
           {/* NYOMTATÁSI NÉZET - KIZÁRÓLAG NYOMTATÁSKOR JELENIK MEG */}
           {printingLabQuote && (
-            <div className="bg-white text-black p-6 max-w-4xl mx-auto printable-quote">
-              <div className="flex justify-between items-start border-b border-emerald-600 pb-4 mb-4">
+            <div className="bg-white text-black max-w-4xl mx-auto printable-quote">
+              <div className="flex justify-between items-start border-b-2 border-emerald-600 pb-3 mb-4">
                 <div>
                   <img src="/logo.png" alt="Medical-Aqua" className="h-16 object-contain mb-2" />
                   <h1 className="text-2xl font-extrabold text-slate-900">Laboratóriumi Ajánlat</h1>
-                  <p className="text-slate-500 mt-1 font-medium text-sm">Dátum: {new Date().toLocaleDateString('hu-HU')}</p>
+                  <p className="text-slate-500 mt-0.5 font-medium text-sm">Dátum: {new Date().toLocaleDateString('hu-HU')}</p>
                 </div>
                 <div className="text-right text-xs text-slate-600 mt-1 space-y-0.5">
                   <p className="font-bold text-slate-800 text-sm">Medical-Aqua Kft.</p>
@@ -1525,15 +1525,15 @@ export default function Home() {
               <div className="mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200 print-bg-light">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">Páciens neve</h2>
-                    <p className="text-lg font-bold text-slate-900">{labPatientName || "Nincs megadva"}</p>
+                    <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-0.5">Páciens neve</h2>
+                    <p className="text-base font-bold text-slate-900">{labPatientName || "Nincs megadva"}</p>
                   </div>
                   <div>
-                    <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">TAJ Szám</h2>
+                    <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-0.5">TAJ Szám</h2>
                     <p className="text-sm font-bold text-slate-900">{labPatientTaj || "-"}</p>
                   </div>
                   <div className="col-span-2">
-                    <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">Lakcím</h2>
+                    <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-0.5">Lakcím</h2>
                     <p className="text-sm font-bold text-slate-900">{labPatientAddress || "-"}</p>
                   </div>
                 </div>
@@ -1541,30 +1541,30 @@ export default function Home() {
 
               <div className="mb-4">
                 <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-1 mb-2">Kiválasztott vizsgálatok ({selectedItems.length} db)</h3>
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full text-left border-collapse text-[10px]">
                   <thead>
                     <tr className="border-b border-slate-300">
-                      <th className="py-1.5 px-2 font-bold text-slate-600">Vizsgálat megnevezése</th>
-                      <th className="py-1.5 px-2 font-bold text-slate-600">Kategória</th>
-                      <th className="py-1.5 px-2 font-bold text-slate-600 text-right">Eredmény várható</th>
-                      <th className="py-1.5 px-2 font-bold text-slate-600 text-right">Díj (HUF)</th>
+                      <th className="py-1 px-1 font-bold text-slate-600">Vizsgálat megnevezése</th>
+                      <th className="py-1 px-1 font-bold text-slate-600">Kategória</th>
+                      <th className="py-1 px-1 font-bold text-slate-600 text-right">Eredmény várható</th>
+                      <th className="py-1 px-1 font-bold text-slate-600 text-right">Díj (HUF)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {selectedItems.map(item => (
                       <tr key={item.id}>
-                        <td className="py-1.5 px-2 font-bold text-slate-900">{item.name}</td>
-                        <td className="py-1.5 px-2 text-slate-500">{LAB_DATABASE.find(c => c.items.some(i => i.id === item.id))?.category}</td>
-                        <td className="py-1.5 px-2 text-slate-600 text-right">{item.time}</td>
-                        <td className="py-1.5 px-2 font-bold text-slate-900 text-right">{item.price === 0 ? "-" : `${item.price.toLocaleString('hu-HU')} Ft`}</td>
+                        <td className="py-1 px-1 font-bold text-slate-900">{item.name}</td>
+                        <td className="py-1 px-1 text-slate-500">{LAB_DATABASE.find(c => c.items.some(i => i.id === item.id))?.category}</td>
+                        <td className="py-1 px-1 text-slate-600 text-right">{item.time}</td>
+                        <td className="py-1 px-1 font-bold text-slate-900 text-right">{item.price === 0 ? "-" : `${item.price.toLocaleString('hu-HU')} Ft`}</td>
                       </tr>
                     ))}
                     {includeBloodDrawFee && (
-                      <tr className="bg-slate-50 print-bg-light border-t border-slate-200">
-                        <td className="py-1.5 px-2 font-bold text-slate-900">Vérvételi / Kezelési díj</td>
-                        <td className="py-1.5 px-2 text-slate-500">Egyéb</td>
-                        <td className="py-1.5 px-2 text-slate-600 text-right">-</td>
-                        <td className="py-1.5 px-2 font-bold text-slate-900 text-right">3 000 Ft</td>
+                      <tr className="bg-slate-50 print-bg-light border-t-2 border-slate-200">
+                        <td className="py-1 px-1 font-bold text-slate-900">Vérvételi / Kezelési díj</td>
+                        <td className="py-1 px-1 text-slate-500">Egyéb</td>
+                        <td className="py-1 px-1 text-slate-600 text-right">-</td>
+                        <td className="py-1 px-1 font-bold text-slate-900 text-right">3 000 Ft</td>
                       </tr>
                     )}
                   </tbody>
@@ -1578,20 +1578,21 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="mt-8 text-center text-[10px] text-slate-500 border-t border-slate-200 pt-4">
-                A fenti árak tájékoztató jellegűek. Az ajánlat a kiállítás napjától számított 30 napig érvényes.
+              <div className="mt-8 flex justify-between items-end text-[10px] text-slate-500 border-t border-slate-200 pt-4">
+                 <span>Kiállította: <b className="text-slate-700">{getDisplayName()}</b></span>
+                 <span className="text-right">A fenti árak tájékoztató jellegűek. Az ajánlat a kiállítás napjától számított 30 napig érvényes.</span>
               </div>
             </div>
           )}
 
           {/* INTERAKTÍV FELÜLET (NEM NYOMTATÁSKOR) */}
           {!printingLabQuote && (
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
+            <div className="flex flex-col lg:flex-row gap-6 items-start flex-1 min-h-0 w-full">
               
               {/* BAL OSZLOP: Vizsgálatok listája */}
-              <div className="w-full lg:w-2/3 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><ListPlusIcon /> Vizsgálatok kiválasztása</h2>
+              <div className="w-full lg:w-2/3 bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col min-h-0 h-full">
+                <div className="flex justify-between items-center mb-4 shrink-0">
+                  <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><ListPlusIcon /> Vizsgálatok kiválasztása</h2>
                   
                   <div className="relative w-64 group">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"><SearchIcon size={16} /></div>
@@ -1600,19 +1601,19 @@ export default function Home() {
                       placeholder="Keresés a vizsgálatok között..." 
                       value={labSearchTerm}
                       onChange={(e) => setLabSearchTerm(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 py-2.5 pl-9 pr-4 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 font-semibold text-slate-800 transition-all outline-none"
+                      className="w-full bg-slate-50 border border-slate-200 py-2 pl-9 pr-4 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 font-semibold text-slate-800 transition-all outline-none"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar pr-4 pb-4">
+                <div className="flex-1 overflow-y-auto custom-scrollbar pr-3 space-y-4">
                   {LAB_DATABASE.map(cat => {
                     const filteredItems = cat.items.filter(i => i.name.toLowerCase().includes(labSearchTerm.toLowerCase()));
                     if (filteredItems.length === 0) return null;
 
                     return (
                       <div key={cat.category} className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-                        <div className="bg-slate-50/80 px-5 py-3 border-b border-slate-100 flex justify-between items-center">
+                        <div className="bg-slate-50/80 px-4 py-2 border-b border-slate-100 flex justify-between items-center">
                           <h3 className="font-extrabold text-slate-800 text-sm">{cat.category}</h3>
                           <span className="text-xs font-bold text-slate-400">{filteredItems.length} vizsgálat</span>
                         </div>
@@ -1620,18 +1621,18 @@ export default function Home() {
                           {filteredItems.map(item => {
                             const isSelected = selectedLabTests.includes(item.id);
                             return (
-                              <label key={item.id} className={`flex items-start gap-3 p-3.5 border-b border-r border-slate-50 cursor-pointer transition-all hover:bg-slate-50 ${isSelected ? 'bg-emerald-50/50' : ''}`}>
-                                <div className="relative flex items-center justify-center mt-0.5">
+                              <label key={item.id} className={`flex items-start gap-3 p-3 border-b border-r border-slate-50 cursor-pointer transition-all hover:bg-slate-50 ${isSelected ? 'bg-emerald-50/50' : ''}`}>
+                                <div className="relative flex items-center justify-center mt-0.5 shrink-0">
                                   <input type="checkbox" className="sr-only" checked={isSelected} onChange={() => toggleLabTest(item.id)} />
-                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent'}`}>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                  <div className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent'}`}>
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                   </div>
                                 </div>
-                                <div className="flex-1">
-                                  <p className={`text-sm font-bold leading-tight ${isSelected ? 'text-emerald-900' : 'text-slate-700'}`}>{item.name}</p>
-                                  <div className="flex gap-3 mt-1.5">
-                                    <span className="text-[10px] font-extrabold text-slate-400 bg-white px-2 py-0.5 rounded-md border border-slate-100 shadow-sm">{item.price === 0 ? "Ár hiányzik" : `${item.price.toLocaleString('hu-HU')} Ft`}</span>
-                                    <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1"><HistoryIcon /> {item.time}</span>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-sm font-bold leading-tight truncate ${isSelected ? 'text-emerald-900' : 'text-slate-700'}`} title={item.name}>{item.name}</p>
+                                  <div className="flex gap-2 mt-1">
+                                    <span className="text-[9px] font-extrabold text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-100 shadow-sm">{item.price === 0 ? "Nincs ár" : `${item.price.toLocaleString('hu-HU')} Ft`}</span>
+                                    <span className="text-[9px] font-bold text-slate-400 flex items-center gap-1 truncate"><HistoryIcon /> {item.time}</span>
                                   </div>
                                 </div>
                               </label>
@@ -1645,88 +1646,90 @@ export default function Home() {
               </div>
 
               {/* JOBB OSZLOP: Kalkuláció és Nyomtatás */}
-              <div className="w-full lg:w-1/3 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 sticky top-24">
-                <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2"><DocumentIcon /> Ajánlat Összegzése</h2>
+              <div className="w-full lg:w-1/3 bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col h-full min-h-0">
+                <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 shrink-0"><DocumentIcon /> Ajánlat Összegzése</h2>
                 
-                <div className="mb-4 space-y-3">
+                <div className="mb-2 space-y-2 shrink-0">
                   <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1.5">Páciens neve (Opcionális)</label>
+                    <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Páciens neve (Opcionális)</label>
                     <input 
                       type="text" 
                       placeholder="Kovács János" 
                       value={labPatientName}
                       onChange={(e) => setLabPatientName(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm"
+                      className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1.5">TAJ Szám</label>
+                      <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">TAJ Szám</label>
                       <input 
                         type="text" 
                         placeholder="123 456 789" 
                         value={labPatientTaj}
                         onChange={(e) => setLabPatientTaj(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm"
+                        className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm"
                       />
                     </div>
                     <div className="col-span-2">
-                      <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1.5">Lakcím</label>
+                      <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Lakcím</label>
                       <input 
                         type="text" 
                         placeholder="1234 Budapest, Példa utca 1." 
                         value={labPatientAddress}
                         onChange={(e) => setLabPatientAddress(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm"
+                        className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 mb-6 mt-4">
-                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-200 pb-2">Kiválasztott tételek ({selectedItems.length})</h3>
+                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-3 mb-4 mt-2 flex flex-col min-h-0 flex-1">
+                  <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 border-b border-slate-200 pb-1.5 shrink-0">Kiválasztott tételek ({selectedItems.length})</h3>
                   
-                  {selectedItems.length === 0 ? (
-                    <p className="text-sm text-slate-400 font-medium italic text-center py-4">Nincs kiválasztott vizsgálat.</p>
-                  ) : (
-                    <div className="space-y-3 max-h-[30vh] overflow-y-auto custom-scrollbar pr-2">
-                      {selectedItems.map(item => (
+                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-1.5 min-h-0">
+                    {selectedItems.length === 0 ? (
+                      <p className="text-xs text-slate-400 font-medium italic text-center py-2">Nincs kiválasztott vizsgálat.</p>
+                    ) : (
+                      selectedItems.map(item => (
                         <div key={item.id} className="flex justify-between items-start gap-2">
-                          <span className="text-sm font-bold text-slate-700 leading-tight">{item.name}</span>
-                          <span className="text-sm font-extrabold text-slate-900 whitespace-nowrap">{item.price === 0 ? "-" : `${item.price.toLocaleString('hu-HU')} Ft`}</span>
+                          <span className="text-xs font-bold text-slate-700 leading-tight">{item.name}</span>
+                          <span className="text-xs font-extrabold text-slate-900 whitespace-nowrap">{item.price === 0 ? "-" : `${item.price.toLocaleString('hu-HU')} Ft`}</span>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      ))
+                    )}
+                  </div>
 
-                  <div className="mt-4 pt-4 border-t border-slate-200">
+                  <div className="mt-3 pt-3 border-t border-slate-200 shrink-0">
                     <label className="flex items-center justify-between cursor-pointer group">
                       <div className="flex items-center gap-2">
                          <div className="relative flex items-center justify-center">
                            <input type="checkbox" className="sr-only" checked={includeBloodDrawFee} onChange={(e) => setIncludeBloodDrawFee(e.target.checked)} />
-                           <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${includeBloodDrawFee ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent'}`}>
-                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                           <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${includeBloodDrawFee ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent'}`}>
+                             <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                            </div>
                          </div>
-                         <span className="text-xs font-bold text-slate-600 group-hover:text-slate-800 transition-colors">Vérvételi / Kezelési díj</span>
+                         <span className="text-[11px] font-bold text-slate-600 group-hover:text-slate-800 transition-colors">Vérvételi / Kezelési díj</span>
                       </div>
-                      <span className="text-sm font-extrabold text-slate-900">3 000 Ft</span>
+                      <span className="text-xs font-extrabold text-slate-900">3 000 Ft</span>
                     </label>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-end mb-8">
-                  <span className="text-sm font-bold uppercase tracking-widest text-slate-500">Végösszeg</span>
-                  <span className="text-3xl font-extrabold text-emerald-600">{formattedTotal}</span>
-                </div>
+                <div className="shrink-0">
+                  <div className="flex justify-between items-end mb-4">
+                    <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Végösszeg</span>
+                    <span className="text-2xl font-extrabold text-emerald-600">{formattedTotal}</span>
+                  </div>
 
-                <button 
-                  onClick={handlePrintLabQuote} 
-                  disabled={selectedItems.length === 0}
-                  className="w-full py-4 rounded-xl font-bold shadow-md transition-all active:scale-95 flex justify-center items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <PrintIcon /> Árajánlat Nyomtatása (PDF)
-                </button>
+                  <button 
+                    onClick={handlePrintLabQuote} 
+                    disabled={selectedItems.length === 0}
+                    className="w-full py-3.5 rounded-xl font-bold shadow-md transition-all active:scale-95 flex justify-center items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  >
+                    <PrintIcon /> Árajánlat Nyomtatása (PDF)
+                  </button>
+                </div>
               </div>
 
             </div>
@@ -1734,20 +1737,22 @@ export default function Home() {
         </div>
 
         <style dangerouslySetInnerHTML={{__html: `
-          .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
-          .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 10px; margin: 0 4px; }
+          .custom-scrollbar::-webkit-scrollbar { height: 5px; width: 5px; }
+          .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.03); border-radius: 10px; margin: 0 2px; }
           .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 10px; }
           .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
           
           @media print {
-            @page { margin: 1cm; size: portrait; }
-            body, html { background: white !important; color: black !important; font-family: sans-serif; height: auto !important; overflow: visible !important; }
+            @page { size: auto; margin: 0mm; } /* Ez távolítja el a böngésző fejléceit (dátum, cím, URL) */
+            body, html { background: white !important; color: black !important; font-family: sans-serif; height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
             .no-print { display: none !important; }
+            
             .print-mode { background: white !important; min-height: auto !important; padding: 0 !important; }
-            .printable-quote { width: 100% !important; max-width: none !important; padding: 0 !important; box-shadow: none !important; border: none !important; }
+            
+            .printable-quote { padding: 1.5cm 1.5cm !important; width: 100% !important; max-width: none !important; box-sizing: border-box !important; }
             .printable-quote table { width: 100% !important; border-collapse: collapse !important; }
-            .printable-quote th { border-bottom: 1px solid #ccc !important; padding-top: 4px !important; padding-bottom: 4px !important; }
-            .printable-quote td { border-bottom: 1px solid #eee !important; padding-top: 4px !important; padding-bottom: 4px !important; }
+            .printable-quote th { border-bottom: 1px solid #ccc !important; padding: 2px 4px !important; }
+            .printable-quote td { border-bottom: 1px solid #eee !important; padding: 2px 4px !important; }
             .print-bg-light { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           }
         `}} />
@@ -2348,9 +2353,10 @@ export default function Home() {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
         @media print {
-          @page { margin: 1cm; size: portrait; }
-          body, html { background: white !important; color: black !important; font-family: sans-serif; height: auto !important; overflow: visible !important; }
+          @page { size: auto; margin: 0mm; } /* Ez távolítja el a böngésző fejléceit (dátum, cím, URL) */
+          body, html { background: white !important; color: black !important; font-family: sans-serif; height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
           .no-print { display: none !important; }
+          
           .print-mode { background: white !important; min-height: auto !important; padding: 0 !important; display: block !important; position: static !important; overflow: visible !important; }
           
           .print-container { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; page-break-after: auto; overflow: visible !important; }

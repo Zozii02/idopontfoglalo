@@ -1881,13 +1881,18 @@ export default function Home() {
                 
                 <div className={`p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-slate-100'}`}>
                   
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  
+                    <div className="flex items-center gap-3 text-slate-900">
+                      <CalendarIcon size={20} />
+                      <h2 className="text-xl font-bold">{date} {searchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}</h2>
+                                      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     <div className="flex items-center gap-3 text-slate-900">
                       <CalendarIcon size={20} />
                       <h2 className="text-xl font-bold">{date} {searchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}</h2>
                     </div>
                     
-                    {!printingDate && (
+                    {/* STATISZTIKA ELREJTÉSE KERESÉS KÖZBEN */}
+                    {!printingDate && searchTerm === "" && (
                       <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-100">
                         <div className="flex flex-col gap-1 w-32 sm:w-40">
                           <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
@@ -1908,11 +1913,17 @@ export default function Home() {
                   </div>
 
                   <div className="flex items-center flex-wrap gap-2">
-                    <span className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200">Összes: {activeSlots.length}</span>
-                    <span className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200">Szabad: {freeCount}</span>
-                    <span className="bg-red-100 text-red-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-200">Foglalt: {bookedCount}</span>
+                    {/* SZÁMLÁLÓK ELREJTÉSE KERESÉS KÖZBEN */}
+                    {searchTerm === "" && (
+                      <>
+                        <span className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200">Összes: {activeSlots.length}</span>
+                        <span className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200">Szabad: {freeCount}</span>
+                        <span className="bg-red-100 text-red-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-200">Foglalt: {bookedCount}</span>
+                      </>
+                    )}
                     
-                    {!printingDate && (
+                    {/* GOMBOK ELREJTÉSE KERESÉS KÖZBEN BIZTONSÁGI OKOKBÓL */}
+                    {!printingDate && searchTerm === "" && (
                       <>
                         <div className="w-px h-6 bg-slate-300 mx-1 hidden md:block"></div>
                         <button onClick={() => clearEmptySlots(date)} className="bg-white hover:bg-amber-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-amber-300 hover:text-amber-700 cursor-pointer">
@@ -1932,7 +1943,7 @@ export default function Home() {
                       </>
                     )}
                   </div>
-                </div>
+                  
 
                 <div className={`overflow-x-auto custom-scrollbar ${printingDate ? 'overflow-visible' : ''}`}>
                   <table className="min-w-full text-left border-collapse print-table">

@@ -38,65 +38,66 @@ const DocumentIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill=
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
 
-// --- LABOR VIZSGÁLAT ADATBÁZIS (CSV ALAPJÁN) ---
+// --- LABOR VIZSGÁLAT ADATBÁZIS (FELTÖLTVE VALÓS ÁRAKKAL) ---
 const LAB_DATABASE = [
   {
     category: "Általános",
     items: [
-      { id: "alt_1", name: "CRP", price: 0, time: "1 munkanap" },
-      { id: "alt_2", name: "AST (ASO)", price: 0, time: "3 munkanap" },
-      { id: "alt_3", name: "Vvt süllyedés", price: 0, time: "1 munkanap" },
-      { id: "alt_4", name: "Vérkép automatával", price: 0, time: "1 munkanap" },
-      { id: "alt_5", name: "Vérkép+reticulocyta", price: 0, time: "1 munkanap" },
-      { id: "alt_6", name: "Teljes vizelet ált+üledék", price: 0, time: "1 munkanap" },
-      { id: "alt_7", name: "Vizelet tenyésztés", price: 0, time: "-" },
-      { id: "alt_8", name: "Vércsoport", price: 0, time: "2 munkanap" },
-      { id: "alt_9", name: "Húgysav", price: 0, time: "1 munkanap" },
-      { id: "alt_10", name: "Epesav", price: 0, time: "8 munkanap" },
-      { id: "alt_11", name: "Koleszterin", price: 0, time: "1 munkanap" },
-      { id: "alt_12", name: "HDL-koleszterin", price: 0, time: "1 munkanap" },
-      { id: "alt_13", name: "LDL koleszterin", price: 0, time: "1 munkanap" },
-      { id: "alt_14", name: "Triglicerid", price: 0, time: "1 munkanap" },
-      { id: "alt_15", name: "Vas", price: 0, time: "1 munkanap" },
-      { id: "alt_16", name: "Transzferrin", price: 0, time: "1 munkanap" },
-      { id: "alt_17", name: "Transzferrin szat.", price: 0, time: "1 munkanap" },
-      { id: "alt_18", name: "Ferritin", price: 0, time: "1 munkanap" },
-      { id: "alt_19", name: "Lipáz", price: 0, time: "1 munkanap" },
-      { id: "alt_20", name: "Amiláz", price: 0, time: "1 munkanap" },
-      { id: "alt_21", name: "Albumin", price: 0, time: "1 munkanap" },
-      { id: "alt_22", name: "Összfehérje", price: 0, time: "1 munkanap" },
-      { id: "alt_23", name: "IgG / IgA / IgM", price: 0, time: "3 munkanap" },
-      { id: "alt_24", name: "Nagylabor csomag", price: 18000, time: "Csomag" },
+      { id: "alt_1", name: "CRP", price: 1500, time: "1 munkanap" },
+      { id: "alt_2", name: "AST (ASO)", price: 2200, time: "3 munkanap" },
+      { id: "alt_3", name: "Vvt süllyedés", price: 1500, time: "1 munkanap" },
+      { id: "alt_4", name: "Vérkép automatával", price: 1000, time: "1 munkanap" },
+      { id: "alt_5", name: "Vérkép+reticulocyta", price: 2200, time: "1 munkanap" },
+      { id: "alt_6", name: "Teljes vizelet ált+üledék", price: 1200, time: "1 munkanap" },
+      { id: "alt_7", name: "Vizelet tenyésztés", price: 6000, time: "-" },
+      { id: "alt_8", name: "Vércsoport", price: 15000, time: "2 munkanap" },
+      { id: "alt_9", name: "Húgysav", price: 400, time: "1 munkanap" },
+      { id: "alt_10", name: "Epesav", price: 10500, time: "8 munkanap" },
+      { id: "alt_11", name: "Koleszterin", price: 400, time: "1 munkanap" },
+      { id: "alt_12", name: "HDL-koleszterin", price: 700, time: "1 munkanap" },
+      { id: "alt_13", name: "LDL koleszterin", price: 700, time: "1 munkanap" },
+      { id: "alt_14", name: "Triglicerid", price: 400, time: "1 munkanap" },
+      { id: "alt_15", name: "Vas", price: 500, time: "1 munkanap" },
+      { id: "alt_16", name: "Transzferrin", price: 1000, time: "1 munkanap" },
+      { id: "alt_17", name: "Transzferrin szat. (vas+transzf)", price: 300, time: "1 munkanap" },
+      { id: "alt_18", name: "Ferritin", price: 2600, time: "1 munkanap" },
+      { id: "alt_19", name: "Lipáz", price: 800, time: "1 munkanap" },
+      { id: "alt_20", name: "Amiláz", price: 800, time: "1 munkanap" },
+      { id: "alt_21", name: "Pancreas spec. elasztáz", price: 20000, time: "17 munkanap" },
+      { id: "alt_22", name: "Albumin", price: 400, time: "1 munkanap" },
+      { id: "alt_23", name: "Összfehérje", price: 400, time: "1 munkanap" },
+      { id: "alt_24", name: "IgG / IgA / IgM", price: 2000, time: "3 munkanap" },
+      { id: "alt_25", name: "Nagylabor csomag", price: 18000, time: "Csomag" },
     ]
   },
   {
     category: "Hemosztázis",
     items: [
-      { id: "hem_1", name: "Prothrombin (INR)", price: 0, time: "1 munkanap" },
-      { id: "hem_2", name: "APTI", price: 0, time: "1 munkanap" },
-      { id: "hem_3", name: "Trombin idő", price: 0, time: "1 munkanap" },
-      { id: "hem_4", name: "Fibrinogén", price: 0, time: "1 munkanap" },
-      { id: "hem_5", name: "D-dimer", price: 0, time: "1 munkanap" },
+      { id: "hem_1", name: "Prothrombin(INR)", price: 1000, time: "1 munkanap" },
+      { id: "hem_2", name: "APTI", price: 1000, time: "1 munkanap" },
+      { id: "hem_3", name: "Trombin idő", price: 1000, time: "1 munkanap" },
+      { id: "hem_4", name: "Fibrinogén", price: 1700, time: "1 munkanap" },
+      { id: "hem_5", name: "D-dimer", price: 6500, time: "1 munkanap" },
     ]
   },
   {
     category: "Máj és Vese",
     items: [
-      { id: "mv_1", name: "Összbilirubin", price: 0, time: "1 munkanap" },
-      { id: "mv_2", name: "GPT / GOT / GGT", price: 0, time: "1 munkanap" },
-      { id: "mv_3", name: "Alkalikus foszfatáz", price: 0, time: "1 munkanap" },
-      { id: "mv_4", name: "LDH", price: 0, time: "1 munkanap" },
-      { id: "mv_5", name: "Karbamid", price: 0, time: "1 munkanap" },
-      { id: "mv_6", name: "Kreatinin", price: 0, time: "1 munkanap" },
+      { id: "mv_1", name: "Összbilirubin", price: 400, time: "1 munkanap" },
+      { id: "mv_2", name: "GPT / GOT / GGT", price: 400, time: "1 munkanap" },
+      { id: "mv_3", name: "Alkalikus foszfatáz", price: 400, time: "1 munkanap" },
+      { id: "mv_4", name: "LDH", price: 400, time: "1 munkanap" },
+      { id: "mv_5", name: "Karbamid", price: 400, time: "1 munkanap" },
+      { id: "mv_6", name: "Kreatinin", price: 500, time: "1 munkanap" },
     ]
   },
   {
     category: "Cukor / Anyagcsere",
     items: [
-      { id: "cuk_1", name: "Glukóz- éhgyomri", price: 0, time: "1 munkanap" },
-      { id: "cuk_2", name: "Hemoglobin A1c", price: 0, time: "1 munkanap" },
-      { id: "cuk_3", name: "Fruktózamin", price: 0, time: "3 munkanap" },
-      { id: "cuk_4", name: "Inzulin- éhgyomri", price: 0, time: "1 munkanap" },
+      { id: "cuk_1", name: "Glukóz- éhgyomri", price: 400, time: "1 munkanap" },
+      { id: "cuk_2", name: "Hemoglobin A1c", price: 3500, time: "1 munkanap" },
+      { id: "cuk_3", name: "Fruktózamin", price: 3000, time: "3 munkanap" },
+      { id: "cuk_4", name: "Inzulin- éhgyomri", price: 2500, time: "1 munkanap" },
       { id: "cuk_5", name: "3 pontos vércukorterhelés", price: 1200, time: "1 munkanap" },
       { id: "cuk_6", name: "3 pontos inzulinterhelés", price: 7500, time: "1 munkanap" },
       { id: "cuk_7", name: "HOMA index", price: 0, time: "1 munkanap" },
@@ -105,46 +106,130 @@ const LAB_DATABASE = [
   {
     category: "Ionok",
     items: [
-      { id: "ion_1", name: "Nátrium / Kálium / Klorid", price: 0, time: "1 munkanap" },
-      { id: "ion_2", name: "Calcium / Magnézium", price: 0, time: "1 munkanap" },
-      { id: "ion_3", name: "P-foszfor", price: 0, time: "1 munkanap" },
-      { id: "ion_4", name: "Cink", price: 0, time: "3 munkanap" },
+      { id: "ion_1", name: "Nátrium / Kálium / Klorid", price: 400, time: "1 munkanap" },
+      { id: "ion_2", name: "Calcium / Magnézium", price: 400, time: "1 munkanap" },
+      { id: "ion_3", name: "P-foszfor", price: 400, time: "1 munkanap" },
+      { id: "ion_4", name: "Cink", price: 6900, time: "3 munkanap" },
     ]
   },
   {
     category: "Hormonok",
     items: [
-      { id: "horm_1", name: "TSH / fT3", price: 0, time: "1 munkanap" },
-      { id: "horm_2", name: "FT4", price: 3000, time: "1 munkanap" },
-      { id: "horm_3", name: "Anti TPO", price: 4000, time: "1 munkanap" },
-      { id: "horm_4", name: "Cortizol", price: 3500, time: "2 munkanap" },
-      { id: "horm_5", name: "FSH / LH / Prolactin", price: 0, time: "1 munkanap" },
-      { id: "horm_6", name: "Ösztradiol / Progeszteron", price: 0, time: "1 munkanap" },
-      { id: "horm_7", name: "AMH", price: 0, time: "3 munkanap" },
-      { id: "horm_8", name: "Tesztoszteron (Total/Szabad)", price: 0, time: "1 munkanap" },
+      { id: "horm_1", name: "TSH", price: 2000, time: "1 munkanap" },
+      { id: "horm_2", name: "fT3 / FT4", price: 3000, time: "1 munkanap" },
+      { id: "horm_3", name: "Thyreoglobulin", price: 4000, time: "5 munkanap" },
+      { id: "horm_4", name: "Anti TPO / Anti TG", price: 4000, time: "1 munkanap" },
+      { id: "horm_5", name: "TRAK / Reverz T3", price: 7500, time: "3 munkanap" },
+      { id: "horm_6", name: "FSH", price: 3500, time: "1 munkanap" },
+      { id: "horm_7", name: "LH / Prolactin / Ösztradiol", price: 3000, time: "1 munkanap" },
+      { id: "horm_8", name: "Progeszteron", price: 4800, time: "1 munkanap" },
+      { id: "horm_9", name: "AMH", price: 11000, time: "3 munkanap" },
+      { id: "horm_10", name: "Béta-HCG", price: 4500, time: "1 munkanap" },
+      { id: "horm_11", name: "Tesztoszteron", price: 3500, time: "1 munkanap" },
+      { id: "horm_12", name: "Total és szabad tesztoszteron", price: 8000, time: "1 munkanap" },
+      { id: "horm_13", name: "Cortizol", price: 3500, time: "2 munkanap" },
+      { id: "horm_14", name: "SHBG", price: 4000, time: "1 munkanap" },
+      { id: "horm_15", name: "Parathormon (PHT)", price: 5500, time: "5 munkanap" },
+      { id: "horm_16", name: "Aldoszteron", price: 11000, time: "17 munkanap" },
+      { id: "horm_17", name: "C-peptid", price: 6500, time: "-" },
+      { id: "horm_18", name: "DHEA-S", price: 3500, time: "1 munkanap" },
+      { id: "horm_19", name: "CK", price: 600, time: "-" },
     ]
   },
   {
     category: "Allergia / Intolerancia",
     items: [
-      { id: "all_1", name: "Nutritív 20 / 40", price: 0, time: "5 munkanap" },
-      { id: "all_2", name: "40-es étel intolerancia", price: 0, time: "3 munkanap" },
-      { id: "all_3", name: "108-as intolerancia panel", price: 0, time: "5 munkanap" },
-      { id: "all_4", name: "220 intolerancia igg", price: 80000, time: "Csomag" },
-      { id: "all_5", name: "Laktóz vér/nyál", price: 0, time: "10 munkanap" },
-      { id: "all_6", name: "Inhalatív 20 / 40", price: 0, time: "5 munkanap" },
-      { id: "all_7", name: "Hisztamin intolerancia (DAO)", price: 0, time: "17 munkanap" },
+      { id: "all_1", name: "Cöliacia", price: 6500, time: "5 munkanap" },
+      { id: "all_2", name: "EMA IgA/IgG", price: 10000, time: "5 munkanap" },
+      { id: "all_3", name: "Nutritív 20", price: 23000, time: "5 munkanap" },
+      { id: "all_4", name: "Nutritív 40", price: 28000, time: "5 munkanap" },
+      { id: "all_5", name: "IgE", price: 4000, time: "3 munkanap" },
+      { id: "all_6", name: "Hisztamin intolerancia (DAO)", price: 14000, time: "17 munkanap" },
+      { id: "all_7", name: "40-es étel intolerancia panel", price: 22000, time: "3 munkanap" },
+      { id: "all_8", name: "108-as intolerancia panel", price: 47000, time: "5 munkanap" },
+      { id: "all_9", name: "220 intolerancia igg", price: 80000, time: "Csomag" },
+      { id: "all_10", name: "Laktóz vér/nyál", price: 16000, time: "10 munkanap" },
+      { id: "all_11", name: "Inhalatív 20", price: 23000, time: "5 munkanap" },
+      { id: "all_12", name: "Inhalatív 40", price: 32000, time: "5 munkanap" },
+      { id: "all_13", name: "Méh-darázscs. antisepc. IgE", price: 16000, time: "5 munkanap" },
+      { id: "all_14", name: "54 kombinált allergia panel", price: 33000, time: "-" },
+    ]
+  },
+  {
+    category: "Tumormarker",
+    items: [
+      { id: "tm_1", name: "CA 125 (petefészek)", price: 4600, time: "5 munkanap" },
+      { id: "tm_2", name: "CA 19-9 (hasnyálmirigy)", price: 4000, time: "3 munkanap" },
+      { id: "tm_3", name: "CA 72-4 (pank, máj, tüdő)", price: 6500, time: "17 munkanap" },
+      { id: "tm_4", name: "CA 15-3 (emlő)", price: 4500, time: "3 munkanap" },
+      { id: "tm_5", name: "CEA (máj, vastagbél, végbél)", price: 4000, time: "3 munkanap" },
+      { id: "tm_6", name: "ROMA index (HE4+CA 125)", price: 14000, time: "7 munkanap" },
+      { id: "tm_7", name: "PSA (prostata)", price: 3000, time: "1 munkanap" },
+      { id: "tm_8", name: "PSA free (prostata)", price: 4000, time: "1 munkanap" },
+      { id: "tm_9", name: "NSE (kis sejtes tüdőrák)", price: 11000, time: "-" },
+      { id: "tm_10", name: "TPA (hólyag)", price: 11000, time: "-" },
+      { id: "tm_11", name: "AFP (máj)", price: 4500, time: "-" },
+    ]
+  },
+  {
+    category: "Vitaminok",
+    items: [
+      { id: "vit_1", name: "A vitamin", price: 12000, time: "17 munkanap" },
+      { id: "vit_2", name: "B12 vitamin", price: 4000, time: "1 munkanap" },
+      { id: "vit_3", name: "Folsav", price: 4000, time: "1 munkanap" },
+      { id: "vit_4", name: "C vitamin", price: 15000, time: "17 munkanap" },
+      { id: "vit_5", name: "Jód", price: 18000, time: "14 munkanap" },
+      { id: "vit_6", name: "Szelén", price: 12000, time: "14 munkanap" },
+      { id: "vit_7", name: "D-vitamin", price: 4500, time: "1 munkanap" },
+      { id: "vit_8", name: "K1 vitamin", price: 18000, time: "17 munkanap" },
+    ]
+  },
+  {
+    category: "Fertőzés",
+    items: [
+      { id: "inf_1", name: "Hepatitis A (IgG+IgM) antitest", price: 6500, time: "3 munkanap" },
+      { id: "inf_2", name: "Hepatitis A friss (IgM)", price: 4500, time: "1 munkanap" },
+      { id: "inf_3", name: "Hepatitis B (HBsAg) antigén", price: 4500, time: "3 munkanap" },
+      { id: "inf_4", name: "Hepatitis B antitest (Anti-HBsAg)", price: 4500, time: "3 munkanap" },
+      { id: "inf_5", name: "Hepatitis B (Anti- HBcAg)", price: 5300, time: "3 munkanap" },
+      { id: "inf_6", name: "Hepatitis C antitest", price: 5500, time: "3 munkanap" },
+      { id: "inf_7", name: "Hepatitis E IgG/IgM", price: 12000, time: "10 munkanap" },
+      { id: "inf_8", name: "Autoimmun májpanel", price: 13500, time: "-" },
+      { id: "inf_9", name: "Borrelia antitest IgG+IgM (Lyme kór)", price: 20000, time: "7 munkanap" },
+      { id: "inf_10", name: "Chlamydia pneum. anti. IGG IgM+IgA", price: 10000, time: "5 munkanap" },
+      { id: "inf_11", name: "Clamidia tracho IgG/IgA/IgM", price: 10000, time: "5 munkanap" },
+      { id: "inf_12", name: "Cytomegalovírus IgG/IgM", price: 6600, time: "3 munkanap" },
+      { id: "inf_13", name: "Epstein-bar vírus antitestek", price: 10500, time: "5 munkanap" },
+      { id: "inf_14", name: "Helicobacter pylori antit. IgA+IgG", price: 8000, time: "2 munkanap" },
+      { id: "inf_15", name: "Herpes simplex vírus IgG+IgM", price: 12000, time: "5 munkanap" },
+      { id: "inf_16", name: "HIV", price: 6500, time: "3 munkanap" },
+      { id: "inf_17", name: "Legionella IgG, IgM", price: 15000, time: "17 munkanap" },
+      { id: "inf_18", name: "Morbili (kanyaró) IgG", price: 9000, time: "17 munkanap" },
+      { id: "inf_19", name: "Mycoplasma pneumoniae antit.", price: 10000, time: "5 munkanap" },
+      { id: "inf_20", name: "Parvo vírus B19 IgG", price: 10000, time: "5 munkanap" },
+      { id: "inf_21", name: "Rubeola védettség / vírus antitest", price: 7500, time: "5 munkanap" },
+      { id: "inf_22", name: "Toxoplasma antitest IgG-IgM", price: 7500, time: "3 munkanap" },
+      { id: "inf_23", name: "Treponema ellenanyag (LUES/szifilisz)", price: 5500, time: "5 munkanap" },
+      { id: "inf_24", name: "Varicella zoster védettség", price: 8500, time: "5 munkanap" },
+      { id: "inf_25", name: "Varicella zoster vírus antit. IgG-IgM", price: 9000, time: "5 munkanap" },
     ]
   },
   {
     category: "Speciális / Egyéb",
     items: [
-      { id: "spec_1", name: "Anti-DSdna", price: 6000, time: "-" },
-      { id: "spec_2", name: "Celluláris immunstátusz", price: 31000, time: "-" },
-      { id: "spec_3", name: "Cell. Immun + NK funkció", price: 55000, time: "-" },
-      { id: "spec_4", name: "NK lymphocyta funkció", price: 38000, time: "-" },
-      { id: "spec_5", name: "D-vitamin", price: 0, time: "1 munkanap" },
-      { id: "spec_6", name: "B12 vitamin / Folsav", price: 0, time: "1 munkanap" },
+      { id: "spec_1", name: "Spermium elleni antitest", price: 16000, time: "21 munkanap" },
+      { id: "spec_2", name: "Leiden mutáció", price: 15000, time: "12 munkanap" },
+      { id: "spec_3", name: "Calprotectin", price: 8000, time: "5 munkanap" },
+      { id: "spec_4", name: "Széklet tenyésztés", price: 8500, time: "5 munkanap" },
+      { id: "spec_5", name: "Széklet vér (3 minta)", price: 7500, time: "3 egymást követő nap" },
+      { id: "spec_6", name: "Leptin", price: 15000, time: "-" },
+      { id: "spec_7", name: "APC rezisztencia", price: 8000, time: "Fagyasztós" },
+      { id: "spec_8", name: "ADH", price: 17500, time: "17 munkanap" },
+      { id: "spec_9", name: "ACTH", price: 8000, time: "Fagyasztós" },
+      { id: "spec_10", name: "Anti-DSdna", price: 6000, time: "-" },
+      { id: "spec_11", name: "Celluláris immunstátusz", price: 31000, time: "-" },
+      { id: "spec_12", name: "Cell. Immun + NK funkció", price: 55000, time: "-" },
+      { id: "spec_13", name: "NK lymphocyta funkció", price: 38000, time: "-" },
     ]
   }
 ];
@@ -276,7 +361,6 @@ function ModernDatePicker({ selectedDate, onChange }: { selectedDate: string, on
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(selectedDate ? new Date(selectedDate) : new Date());
   
-  // Okos kattintás figyelő
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -403,6 +487,8 @@ export default function Home() {
   const [showLabCalculator, setShowLabCalculator] = useState(false);
   const [selectedLabTests, setSelectedLabTests] = useState<string[]>([]);
   const [labPatientName, setLabPatientName] = useState("");
+  const [labPatientTaj, setLabPatientTaj] = useState(""); // ÚJ
+  const [labPatientAddress, setLabPatientAddress] = useState(""); // ÚJ
   const [labSearchTerm, setLabSearchTerm] = useState("");
   const [includeBloodDrawFee, setIncludeBloodDrawFee] = useState(true);
 
@@ -1421,66 +1507,78 @@ export default function Home() {
           
           {/* NYOMTATÁSI NÉZET - KIZÁRÓLAG NYOMTATÁSKOR JELENIK MEG */}
           {printingLabQuote && (
-            <div className="bg-white text-black p-8 max-w-4xl mx-auto printable-quote">
-              <div className="flex justify-between items-start border-b-2 border-emerald-600 pb-6 mb-8">
+            <div className="bg-white text-black p-6 max-w-4xl mx-auto printable-quote">
+              <div className="flex justify-between items-start border-b border-emerald-600 pb-4 mb-4">
                 <div>
-                  <img src="/logo.png" alt="Medical-Aqua" className="h-20 object-contain mb-4" />
-                  <h1 className="text-3xl font-extrabold text-slate-900">Laboratóriumi Ajánlat</h1>
-                  <p className="text-slate-500 mt-1 font-medium text-lg">Dátum: {new Date().toLocaleDateString('hu-HU')}</p>
+                  <img src="/logo.png" alt="Medical-Aqua" className="h-16 object-contain mb-2" />
+                  <h1 className="text-2xl font-extrabold text-slate-900">Laboratóriumi Ajánlat</h1>
+                  <p className="text-slate-500 mt-1 font-medium text-sm">Dátum: {new Date().toLocaleDateString('hu-HU')}</p>
                 </div>
-                <div className="text-right text-sm text-slate-600 mt-2 space-y-1">
-                  <p className="font-bold text-slate-800">Medical-Aqua Kft.</p>
-                  <p>1234 Budapest, Példa utca 1.</p>
-                  <p>Telefon: +36 20 123 4567</p>
-                  <p>Email: info@medical-aqua.hu</p>
+                <div className="text-right text-xs text-slate-600 mt-1 space-y-0.5">
+                  <p className="font-bold text-slate-800 text-sm">Medical-Aqua Kft.</p>
+                  <p>4700 Mátészalka, Eötvös utca 21.</p>
+                  <p>Tel: +36 (30) 850-6149 | +36 (30) 083-3925</p>
+                  <p>Email: kapcsolat@medical-aqua.hu</p>
                 </div>
               </div>
 
-              <div className="mb-8 bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                <h2 className="text-sm uppercase tracking-widest font-bold text-slate-500 mb-2">Páciens neve</h2>
-                <p className="text-2xl font-bold text-slate-900">{labPatientName || "Nincs megadva"}</p>
+              <div className="mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200 print-bg-light">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">Páciens neve</h2>
+                    <p className="text-lg font-bold text-slate-900">{labPatientName || "Nincs megadva"}</p>
+                  </div>
+                  <div>
+                    <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">TAJ Szám</h2>
+                    <p className="text-sm font-bold text-slate-900">{labPatientTaj || "-"}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1">Lakcím</h2>
+                    <p className="text-sm font-bold text-slate-900">{labPatientAddress || "-"}</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="mb-8">
-                <h3 className="text-lg font-bold text-slate-800 border-b border-slate-200 pb-2 mb-4">Kiválasztott vizsgálatok ({selectedItems.length} db)</h3>
-                <table className="w-full text-left border-collapse">
+              <div className="mb-4">
+                <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-1 mb-2">Kiválasztott vizsgálatok ({selectedItems.length} db)</h3>
+                <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b-2 border-slate-300">
-                      <th className="py-3 px-2 text-sm font-bold text-slate-600">Vizsgálat megnevezése</th>
-                      <th className="py-3 px-2 text-sm font-bold text-slate-600">Kategória</th>
-                      <th className="py-3 px-2 text-sm font-bold text-slate-600 text-right">Eredmény várható</th>
-                      <th className="py-3 px-2 text-sm font-bold text-slate-600 text-right">Díj (HUF)</th>
+                    <tr className="border-b border-slate-300">
+                      <th className="py-1.5 px-2 font-bold text-slate-600">Vizsgálat megnevezése</th>
+                      <th className="py-1.5 px-2 font-bold text-slate-600">Kategória</th>
+                      <th className="py-1.5 px-2 font-bold text-slate-600 text-right">Eredmény várható</th>
+                      <th className="py-1.5 px-2 font-bold text-slate-600 text-right">Díj (HUF)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {selectedItems.map(item => (
                       <tr key={item.id}>
-                        <td className="py-3 px-2 font-bold text-slate-900">{item.name}</td>
-                        <td className="py-3 px-2 text-sm text-slate-500">{LAB_DATABASE.find(c => c.items.some(i => i.id === item.id))?.category}</td>
-                        <td className="py-3 px-2 text-sm text-slate-600 text-right">{item.time}</td>
-                        <td className="py-3 px-2 font-bold text-slate-900 text-right">{item.price === 0 ? "-" : `${item.price.toLocaleString('hu-HU')} Ft`}</td>
+                        <td className="py-1.5 px-2 font-bold text-slate-900">{item.name}</td>
+                        <td className="py-1.5 px-2 text-slate-500">{LAB_DATABASE.find(c => c.items.some(i => i.id === item.id))?.category}</td>
+                        <td className="py-1.5 px-2 text-slate-600 text-right">{item.time}</td>
+                        <td className="py-1.5 px-2 font-bold text-slate-900 text-right">{item.price === 0 ? "-" : `${item.price.toLocaleString('hu-HU')} Ft`}</td>
                       </tr>
                     ))}
                     {includeBloodDrawFee && (
-                      <tr className="bg-slate-50">
-                        <td className="py-3 px-2 font-bold text-slate-900">Vérvételi / Kezelési díj</td>
-                        <td className="py-3 px-2 text-sm text-slate-500">Egyéb</td>
-                        <td className="py-3 px-2 text-sm text-slate-600 text-right">-</td>
-                        <td className="py-3 px-2 font-bold text-slate-900 text-right">3 000 Ft</td>
+                      <tr className="bg-slate-50 print-bg-light border-t border-slate-200">
+                        <td className="py-1.5 px-2 font-bold text-slate-900">Vérvételi / Kezelési díj</td>
+                        <td className="py-1.5 px-2 text-slate-500">Egyéb</td>
+                        <td className="py-1.5 px-2 text-slate-600 text-right">-</td>
+                        <td className="py-1.5 px-2 font-bold text-slate-900 text-right">3 000 Ft</td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
 
-              <div className="flex justify-end border-t-2 border-emerald-600 pt-6">
+              <div className="flex justify-end border-t border-emerald-600 pt-3">
                 <div className="text-right">
-                  <p className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-1">Fizetendő végösszeg</p>
-                  <p className="text-4xl font-extrabold text-emerald-700">{formattedTotal}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">Fizetendő végösszeg</p>
+                  <p className="text-2xl font-extrabold text-emerald-700">{formattedTotal}</p>
                 </div>
               </div>
               
-              <div className="mt-16 text-center text-sm text-slate-500 border-t border-slate-200 pt-8">
+              <div className="mt-8 text-center text-[10px] text-slate-500 border-t border-slate-200 pt-4">
                 A fenti árak tájékoztató jellegűek. Az ajánlat a kiállítás napjától számított 30 napig érvényes.
               </div>
             </div>
@@ -1550,18 +1648,42 @@ export default function Home() {
               <div className="w-full lg:w-1/3 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 sticky top-24">
                 <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2"><DocumentIcon /> Ajánlat Összegzése</h2>
                 
-                <div className="mb-6">
-                  <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-2">Páciens neve (Opcionális)</label>
-                  <input 
-                    type="text" 
-                    placeholder="Kovács János" 
-                    value={labPatientName}
-                    onChange={(e) => setLabPatientName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm"
-                  />
+                <div className="mb-4 space-y-3">
+                  <div>
+                    <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1.5">Páciens neve (Opcionális)</label>
+                    <input 
+                      type="text" 
+                      placeholder="Kovács János" 
+                      value={labPatientName}
+                      onChange={(e) => setLabPatientName(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1.5">TAJ Szám</label>
+                      <input 
+                        type="text" 
+                        placeholder="123 456 789" 
+                        value={labPatientTaj}
+                        onChange={(e) => setLabPatientTaj(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1.5">Lakcím</label>
+                      <input 
+                        type="text" 
+                        placeholder="1234 Budapest, Példa utca 1." 
+                        value={labPatientAddress}
+                        onChange={(e) => setLabPatientAddress(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 mb-6">
+                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 mb-6 mt-4">
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-200 pb-2">Kiválasztott tételek ({selectedItems.length})</h3>
                   
                   {selectedItems.length === 0 ? (
@@ -1619,13 +1741,14 @@ export default function Home() {
           
           @media print {
             @page { margin: 1cm; size: portrait; }
-            body, html { background: white !important; color: black !important; font-family: sans-serif; }
+            body, html { background: white !important; color: black !important; font-family: sans-serif; height: auto !important; overflow: visible !important; }
             .no-print { display: none !important; }
             .print-mode { background: white !important; min-height: auto !important; padding: 0 !important; }
             .printable-quote { width: 100% !important; max-width: none !important; padding: 0 !important; box-shadow: none !important; border: none !important; }
             .printable-quote table { width: 100% !important; border-collapse: collapse !important; }
-            .printable-quote th { border-bottom: 2px solid #ccc !important; }
-            .printable-quote td { border-bottom: 1px solid #eee !important; }
+            .printable-quote th { border-bottom: 1px solid #ccc !important; padding-top: 4px !important; padding-bottom: 4px !important; }
+            .printable-quote td { border-bottom: 1px solid #eee !important; padding-top: 4px !important; padding-bottom: 4px !important; }
+            .print-bg-light { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           }
         `}} />
       </div>

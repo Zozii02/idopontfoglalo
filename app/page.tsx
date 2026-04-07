@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabase";
 
 // --- Ikonok ---
-// (Ide kerültek az eddigi ikonok, kiegészítve a Kalkulátor ikonnal)
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
 const ListPlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M19 10v6"/><path d="M22 13h-6"/></svg>;
@@ -40,7 +39,6 @@ const DocumentIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill=
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
 
 // --- LABOR VIZSGÁLAT ADATBÁZIS (CSV ALAPJÁN) ---
-// Itt gyorsan átírhatod az árakat a valós értékekre a "price" mezőben.
 const LAB_DATABASE = [
   {
     category: "Általános",
@@ -429,7 +427,7 @@ export default function Home() {
   const [genBreakEnd, setGenBreakEnd] = useState("13:00");
 
   const [printingDate, setPrintingDate] = useState<string | null>(null);
-  const [printingLabQuote, setPrintingLabQuote] = useState(false); // ÚJ
+  const [printingLabQuote, setPrintingLabQuote] = useState(false); 
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   // --- Globális Árlista & Szakrendelések Állapotok ---
@@ -497,7 +495,7 @@ export default function Home() {
   const handleTabMouseMove = (e: React.MouseEvent) => {
     if (!isDraggingTabs.current || !scrollContainerRef.current) return;
     const x = e.pageX - scrollContainerRef.current.offsetLeft;
-    const walk = (x - startX.current) * 1.5; // Görgetés sebessége
+    const walk = (x - startX.current) * 1.5; 
     if (Math.abs(walk) > 5) {
       hasDragged.current = true;
     }
@@ -1040,7 +1038,6 @@ export default function Home() {
   };
 
   // --- UI COMPONENTEK ---
-  // (Ugyanazok a modalok, mint korábban...)
 
   const customModalUI = (
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${modal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
@@ -1061,6 +1058,267 @@ export default function Home() {
               <button onClick={closeModal} className="w-full py-3.5 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 transition-all shadow-sm active:scale-95">Mégse</button>
            )}
            <button onClick={modal.onConfirm} className={`w-full py-3.5 rounded-xl font-bold shadow-md transition-all active:scale-95 ${modal.confirmColor}`}>{modal.confirmText}</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const priceModalUI = (
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${isPriceModalOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsPriceModalOpen(false)}></div>
+      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-2xl border border-slate-200 flex flex-col transform transition-all duration-300 max-h-[80vh] ${isPriceModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+        
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="bg-emerald-100 text-emerald-600 p-2.5 rounded-xl"><TagIcon /></div>
+            <div>
+              <h3 className="text-xl font-extrabold text-slate-900">Árlista</h3>
+              <p className="text-sm font-bold text-emerald-600 uppercase tracking-widest">{activeTab}</p>
+            </div>
+          </div>
+          <button onClick={() => setIsPriceModalOpen(false)} className="p-2 bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 rounded-xl transition-colors font-bold text-sm">Bezár (Esc)</button>
+        </div>
+
+        <div className="overflow-y-auto p-6 custom-scrollbar flex-1 bg-slate-50/50">
+          {currentPrices.length === 0 ? (
+            <div className="text-center text-slate-500 font-medium py-10 border-2 border-dashed border-slate-200 rounded-2xl">
+              Nincsenek még árak felvéve ehhez a szakrendeléshez.<br/>Kattints az "Új tétel hozzáadása" gombra!
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {currentPrices.map((item) => (
+                <div key={item.id} className="flex flex-col sm:flex-row gap-3 bg-white p-3 rounded-2xl shadow-sm border border-slate-200 hover:border-slate-300 transition-all items-center">
+                  <div className="w-full sm:flex-1">
+                    <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest block mb-1">Vizsgálat megnevezése</label>
+                    <input type="text" value={item.name} onChange={(e) => updatePriceItem(item.id, 'name', e.target.value)} placeholder="pl. Hasi ultrahang" className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none font-semibold text-slate-800 transition-all" />
+                  </div>
+                  <div className="w-full sm:w-40">
+                    <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest block mb-1">Ár</label>
+                    <input type="text" value={item.price} onChange={(e) => updatePriceItem(item.id, 'price', e.target.value)} placeholder="pl. 15.000 Ft" className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none font-semibold text-slate-800 transition-all" />
+                  </div>
+                  <button onClick={() => removePriceItem(item.id)} className="w-full sm:w-auto mt-4 sm:mt-5 p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors flex justify-center" title="Tétel törlése">
+                    <TrashIcon />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <button onClick={addPriceItem} className="mt-4 w-full border-2 border-dashed border-slate-300 text-slate-600 hover:border-emerald-500 hover:text-emerald-700 bg-white py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
+            <PlusIcon /> Új tétel hozzáadása
+          </button>
+        </div>
+
+        <div className="p-6 border-t border-slate-100 shrink-0 bg-white rounded-b-3xl">
+           <button onClick={savePrices} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-md hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-2">
+             Mentés és Bezárás
+           </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const deptModalUI = (
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${isDeptModalOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsDeptModalOpen(false)}></div>
+      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-lg border border-slate-200 flex flex-col transform transition-all duration-300 max-h-[80vh] ${isDeptModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+        
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="bg-slate-100 text-slate-600 p-2.5 rounded-xl"><SettingsIcon size={20} /></div>
+            <div>
+              <h3 className="text-xl font-extrabold text-slate-900">Szakrendelések kezelése</h3>
+              <p className="text-sm font-bold text-slate-500">Új hozzáadása vagy meglévő törlése</p>
+            </div>
+          </div>
+          <button onClick={() => setIsDeptModalOpen(false)} className="p-2 bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 rounded-xl transition-colors font-bold text-sm">Bezár</button>
+        </div>
+
+        <div className="overflow-y-auto p-6 custom-scrollbar flex-1 bg-slate-50/50">
+          {categories.length === 0 ? (
+            <p className="text-center text-slate-500 font-medium py-4">Nincs még szakrendelés a rendszerben.</p>
+          ) : (
+            <div className="space-y-2">
+              {categories.map((cat) => (
+                <div key={cat} className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                  <span className="font-bold text-slate-800">{cat}</span>
+                  <button onClick={() => handleDeleteDepartment(cat)} className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors" title="Törlés">
+                    <TrashIcon />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 border-t border-slate-100 shrink-0 bg-white rounded-b-3xl">
+           <div className="flex flex-col sm:flex-row gap-3">
+             <input 
+               type="text" 
+               placeholder="Új szakrendelés neve..." 
+               value={newDeptName} 
+               onChange={(e) => setNewDeptName(e.target.value)} 
+               onKeyDown={(e) => e.key === "Enter" && handleAddDepartment()}
+               className="flex-1 bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-slate-200 focus:border-slate-500 outline-none font-semibold text-slate-800 transition-all"
+             />
+             <button onClick={handleAddDepartment} className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-2">
+               <PlusIcon /> Hozzáadás
+             </button>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const bugModalUI = (
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${isBugModalOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !isSubmittingBug && setIsBugModalOpen(false)}></div>
+      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-lg border border-slate-200 flex flex-col transform transition-all duration-300 ${isBugModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+        
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50 rounded-t-3xl shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="bg-amber-100 text-amber-600 p-2.5 rounded-xl"><FeedbackIcon size={24} /></div>
+            <div>
+              <h3 className="text-xl font-extrabold text-slate-900">Hibabejelentő</h3>
+              <p className="text-sm font-bold text-slate-500">Ötlet vagy probléma küldése a fejlesztőnek</p>
+            </div>
+          </div>
+          <button disabled={isSubmittingBug} onClick={() => setIsBugModalOpen(false)} className="p-2 bg-white border border-slate-200 hover:bg-red-50 hover:text-red-600 text-slate-600 rounded-xl transition-colors font-bold text-sm shadow-sm disabled:opacity-50">Mégsem</button>
+        </div>
+
+        <div className="p-6 flex-1 bg-white">
+          <div className="mb-4">
+            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest block mb-2">Mit tapasztaltál? Milyen ötleted van?</label>
+            <textarea 
+              value={bugDescription}
+              onChange={(e) => setBugDescription(e.target.value)}
+              placeholder="Írd le ide részletesen..."
+              rows={4}
+              disabled={isSubmittingBug}
+              className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-amber-100 focus:border-amber-500 outline-none font-medium text-slate-800 transition-all custom-scrollbar resize-none"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest block mb-2">Kép csatolása (Opcionális)</label>
+            <input 
+              type="file" 
+              accept="image/png, image/jpeg, image/jpg"
+              onChange={(e) => setBugFile(e.target.files ? e.target.files[0] : null)}
+              disabled={isSubmittingBug}
+              className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 transition-all cursor-pointer"
+            />
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-slate-100 shrink-0 bg-white rounded-b-3xl">
+           <button 
+             onClick={handleBugSubmit} 
+             disabled={isSubmittingBug}
+             className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-md hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed"
+           >
+             {isSubmittingBug ? <span className="flex items-center gap-2 animate-pulse"><RefreshIcon /> Küldés folyamatban...</span> : "E-mail küldése"}
+           </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const patientHistoryModalUI = (
+    <div className={`fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${historyModal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeHistoryModal}></div>
+      <div className={`relative bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-2xl border border-slate-200 flex flex-col transform transition-all duration-300 max-h-[80vh] ${historyModal.isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+        
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-white/50 rounded-t-3xl shrink-0">
+          <div>
+            <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2"><HistoryIcon /> {historyModal.patientName} - Előzmények</h3>
+            {historyModal.taj && <p className="text-sm font-bold text-slate-500 mt-1">TAJ: {formatTAJ(historyModal.taj)}</p>}
+          </div>
+          <button onClick={closeHistoryModal} className="p-2 bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 rounded-xl transition-colors font-bold text-sm">Bezár (Esc)</button>
+        </div>
+
+        <div className="overflow-y-auto p-6 custom-scrollbar h-full">
+          {historyModal.data.length === 0 ? (
+             <p className="text-center text-slate-500 font-medium py-8">Nem található korábbi bejegyzés ehhez a TAJ számhoz.</p>
+          ) : (
+            <div className="space-y-4">
+              {historyModal.data.map((app, idx) => (
+                <div key={idx} className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center gap-4 justify-between hover:border-slate-300 transition-colors">
+                   <div>
+                     <div className="flex items-center gap-2 mb-1">
+                        <span className="font-bold text-slate-900">{formatShortDate(app.appointment_date)}</span>
+                        <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-extrabold">{app.time_slot}</span>
+                        <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider border border-blue-100">{app.department}</span>
+                     </div>
+                     <div className="text-sm font-medium text-slate-600 mt-2">
+                        {app.examination_type ? <span>Vizsgálat: <b className="text-slate-800">{app.examination_type}</b></span> : <span className="italic opacity-60">Nincs vizsgálat rögzítve</span>}
+                        {app.notes && <span className="ml-3 border-l pl-3 border-slate-300">Jegyzet: <b className="text-slate-800">{app.notes}</b></span>}
+                     </div>
+                   </div>
+                   <div className="shrink-0">
+                     <span className={`text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-lg border shadow-sm
+                       ${app.status === "Megérkezett" ? "bg-amber-100 text-amber-800 border-amber-200" :
+                         app.status === "Vizsgálaton" ? "bg-blue-100 text-blue-800 border-blue-200" :
+                         app.status === "Befejezve" ? "bg-emerald-100 text-emerald-800 border-emerald-200" :
+                         app.status === "Nem jelent meg" ? "bg-slate-800 text-white border-slate-900" :
+                         "bg-slate-100 text-slate-700 border-slate-200"
+                       }`}>
+                       {app.status || "Előjegyzett"}
+                     </span>
+                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const infoModalUI = (
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${appInfoModal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeAppInfoModal}></div>
+      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] w-full max-w-lg border border-slate-100 flex flex-col transform transition-all duration-300 max-h-[80vh] ${appInfoModal.isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+        
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl shrink-0">
+           <div className="flex items-center gap-3">
+             <div className="bg-blue-100 text-blue-600 p-2.5 rounded-xl"><InfoIcon /></div>
+             <div>
+               <h3 className="text-xl font-extrabold text-slate-900">Napló</h3>
+               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{appInfoModal.data?.time_slot} {appInfoModal.data?.patient_name && `• ${appInfoModal.data.patient_name}`}</p>
+             </div>
+           </div>
+           <button onClick={closeAppInfoModal} className="p-2 bg-white hover:bg-slate-200 text-slate-600 rounded-xl transition-colors font-bold shadow-sm border border-slate-200"><TrashIcon size={14}/></button>
+        </div>
+        
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
+          {appInfoModal.loading ? (
+             <div className="flex justify-center items-center py-10 opacity-50 animate-pulse"><RefreshIcon /></div>
+          ) : appInfoModal.logs.length === 0 ? (
+             <p className="text-center text-slate-500 text-sm font-medium py-6 italic">Nincs még bejegyzés erről az időpontról.</p>
+          ) : (
+            <div className="relative border-l-2 border-slate-200 ml-4 space-y-6 pb-4">
+              {appInfoModal.logs.map((log, idx) => {
+                 let bgColor = "bg-blue-100 border-blue-200 text-blue-600";
+                 if (log.action === "Törlés") bgColor = "bg-red-100 border-red-200 text-red-600";
+                 if (log.action === "Létrehozás") bgColor = "bg-emerald-100 border-emerald-200 text-emerald-600";
+                 if (log.action === "Visszaállítás") bgColor = "bg-amber-100 border-amber-200 text-amber-600";
+                 
+                 return (
+                   <div key={idx} className="relative pl-6">
+                      <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${bgColor.split(" ")[0]}`}></div>
+                      <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl shadow-sm">
+                         <div className="flex justify-between items-center mb-1.5 gap-2">
+                           <span className={`text-[10px] uppercase font-extrabold tracking-widest px-2 py-0.5 rounded ${bgColor}`}>{log.action}</span>
+                           <span className="text-xs font-bold text-slate-400">{formatDateTime(log.modified_at)}</span>
+                         </div>
+                         <p className="text-sm font-bold text-slate-800 mb-1">{log.modified_by}</p>
+                         <p className="text-xs text-slate-600 leading-relaxed font-medium bg-white p-2 rounded-xl border border-slate-100">{log.details}</p>
+                      </div>
+                   </div>
+                 );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1107,6 +1365,23 @@ export default function Home() {
               Ha nincs felhasználója vagy nem tud bejelentkezni,<br/>vegye fel a kapcsolatot a <span className="font-bold text-slate-700">rendszergazdával</span>.
             </p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- HA VAN FELHASZNÁLÓ, DE NINCS MÉG NEVE MEGADVA ---
+  if (needsProfileName) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
+        {customModalUI}
+        <div className="absolute inset-0 bg-slate-100/60 backdrop-blur-2xl z-0 pointer-events-none"></div>
+        <div className="relative z-10 bg-white/80 backdrop-blur-xl p-10 md:p-14 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] w-full max-w-md border border-white/50 text-center">
+          <div className="flex justify-center text-red-600 mb-6 drop-shadow-sm"><UserIcon /></div>
+          <h2 className="text-2xl font-bold mb-2 text-slate-900">Üdvözlünk a rendszerben!</h2>
+          <p className="text-slate-600 mb-8 text-sm font-medium">Kérjük, add meg a teljes nevedet a naplózáshoz (pl. Dr. Kovács).</p>
+          <input type="text" placeholder="Teljes neved..." value={profileNameInput} onChange={(e) => setProfileNameInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSaveProfileName()} className="w-full p-3.5 bg-white/90 border border-white/50 rounded-xl focus:bg-white focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition-all text-slate-900 font-medium placeholder:text-slate-400 mb-4 text-center shadow-sm" />
+          <button onClick={handleSaveProfileName} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-semibold shadow-md hover:bg-black transition-all active:scale-95">Mentés és Tovább</button>
         </div>
       </div>
     );

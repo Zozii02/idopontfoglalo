@@ -61,9 +61,9 @@ import { PatientAutocomplete } from "../components/PatientAutocomplete";
 // --- Főoldal ---
 export default function Home() {
   const searchInputRef = useRef<HTMLInputElement>(null); 
-  const newTimeSlotRef = useRef<HTMLInputElement>(null); // ÚJ: Ref az "Új időpont" mezőhöz
+  const newTimeSlotRef = useRef<HTMLInputElement>(null); 
 
-  const [isInitialLoading, setIsInitialLoading] = useState(true); // ÚJ: Skeleton loader állapota
+  const [isInitialLoading, setIsInitialLoading] = useState(true); 
 
   const [categories, setCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("");
@@ -88,7 +88,10 @@ export default function Home() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [departmentSearch, setDepartmentSearch] = useState(""); 
   const [showDeleted, setShowDeleted] = useState(false);
+  
+  // OPTIMALIZÁCIÓ 2: Kereső Debounce (Késleltetés) állapotai
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   
   const [user, setUser] = useState<any>(null);
   const [email, setEmail] = useState("");
@@ -141,6 +144,14 @@ export default function Home() {
   const [toast, setToast] = useState<{visible: boolean, message: string, type: 'success' | 'error'}>({
     visible: false, message: "", type: 'success'
   });
+
+  // OPTIMALIZÁCIÓ 2 LOGIKA: Kereső debounce effekt (Vár 300ms-t gépelés után a szűréssel)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const searchPatients = async (term: string) => {
     if (!term || term.length < 2) return [];
@@ -331,7 +342,6 @@ export default function Home() {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setIsNotifOpen(false);
       }
-      // Legördülő menü bezárása kattintásra kívül
       if (deptDropdownRef.current && !deptDropdownRef.current.contains(e.target as Node)) {
         setIsDeptDropdownOpen(false);
       }
@@ -350,7 +360,7 @@ export default function Home() {
 
   // --- AUTOMATIKUS KIJELENTKEZÉS INAKTIVITÁS MIATT (15 PERC) ---
   useEffect(() => {
-    if (!user) return; // Ha nincs bejelentkezve, nem kell időzítő
+    if (!user) return;
 
     let timeoutId: NodeJS.Timeout;
 
@@ -361,15 +371,13 @@ export default function Home() {
 
     const resetTimer = () => {
       if (timeoutId) clearTimeout(timeoutId);
-      // 15 perc (15 * 60 * 1000 = 900000 ms).
       timeoutId = setTimeout(logoutUser, 900000);
     };
 
-    // Aktivitás figyelése
     const events = ['mousemove', 'keydown', 'mousedown', 'scroll', 'touchstart'];
     events.forEach(event => window.addEventListener(event, resetTimer));
 
-    resetTimer(); // Indítás
+    resetTimer(); 
 
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
@@ -380,34 +388,24 @@ export default function Home() {
   // --- GYORSBILLENTYŰK (HOTKEYS) ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Kereső: Ctrl + K
       if (e.ctrlKey && e.key.toLowerCase() === 'k') { 
         e.preventDefault(); searchInputRef.current?.focus(); 
       }
-      
-      // Labor: Alt + L
       if (e.altKey && e.key.toLowerCase() === 'l') { 
         e.preventDefault(); setShowLabCalculator(true); setShowStats(false); 
       }
-      
-      // Statisztika: Alt + S
       if (e.altKey && e.key.toLowerCase() === 's') { 
         e.preventDefault(); setShowStats(true); setShowLabCalculator(false); 
       }
-      
-      // Új időpont felvitele: Alt + N
       if (e.altKey && e.key.toLowerCase() === 'n') { 
         e.preventDefault(); 
         setShowStats(false); 
         setShowLabCalculator(false);
-        // Kis késleltetés kell, ha épp a laborból lépünk vissza, hogy biztosan leképeződjön a DOM
         setTimeout(() => {
           newTimeSlotRef.current?.focus();
           document.getElementById('new-appointment-bar')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
       }
-
-      // Bezárás: Esc
       if (e.key === 'Escape') { 
         closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); 
         closeAppInfoModal(); setIsNotifOpen(false); setIsDeptModalOpen(false);
@@ -479,12 +477,32 @@ export default function Home() {
     }
   };
 
+  // OPTIMALIZÁCIÓ 1: Csak az elmúlt 2 hónap és jövőbeli 1 év lekérése
   const fetchAppointments = async () => {
-    const { data, error } = await supabase.from("appointments").select("*").order("appointment_date", { ascending: true }).order("time_slot", { ascending: true });
+    const today = new Date();
+    
+    // -2 hónap a jelenlegi dátumból
+    const pastDate = new Date();
+    pastDate.setMonth(today.getMonth() - 2);
+    
+    // +1 év a jelenlegi dátumból
+    const futureDate = new Date();
+    futureDate.setFullYear(today.getFullYear() + 1);
+
+    const pastStr = pastDate.toISOString().split('T')[0];
+    const futureStr = futureDate.toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from("appointments")
+      .select("*")
+      .gte("appointment_date", pastStr)
+      .lte("appointment_date", futureStr)
+      .order("appointment_date", { ascending: true })
+      .order("time_slot", { ascending: true });
+
     if (!error && data) setAppointments(data);
   };
 
-  // ÚJ: Kombinált betöltő logika a Skeleton Loaderhez
   const loadInitialData = async () => {
     setIsInitialLoading(true);
     await Promise.all([
@@ -498,7 +516,7 @@ export default function Home() {
 
   useEffect(() => { 
     if (user && !needsProfileName) {
-      loadInitialData(); // Hívjuk meg a kombinált betöltőt!
+      loadInitialData(); 
 
       const channel = supabase.channel('live-appointments')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => fetchAppointments())
@@ -1144,14 +1162,11 @@ export default function Home() {
 
   // --- HA A STATISZTIKA NÉZET VAN NYITVA ---
   if (showStats) {
-    // Csak az aktív, kitöltött (pácienssel rendelkező) időpontokat vesszük figyelembe
     let validApps = appointments.filter(a => !a.is_deleted && a.patient_name && a.patient_name.trim() !== "");
     
-    // Időszak szűrése
     const todayStr = new Date().toISOString().split('T')[0];
-    const currentMonthStr = todayStr.substring(0, 7); // YYYY-MM
+    const currentMonthStr = todayStr.substring(0, 7); 
     
-    // Heti kezdő és végpont kiszámítása
     const now = new Date();
     const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
     const mon = new Date(now); mon.setDate(now.getDate() - dayOfWeek + 1);
@@ -1167,12 +1182,10 @@ export default function Home() {
       validApps = validApps.filter(a => a.appointment_date.startsWith(currentMonthStr));
     }
 
-    // Mutatók kiszámítása
     const totalBooked = validApps.length;
     const completed = validApps.filter(a => a.status === 'Befejezve').length;
     const noShow = validApps.filter(a => a.status === 'Nem jelent meg').length;
     
-    // Szakrendelések statisztikája (Darabszám)
     const deptCounts: Record<string, number> = {};
     validApps.forEach(a => {
         deptCounts[a.department] = (deptCounts[a.department] || 0) + 1;
@@ -1180,7 +1193,6 @@ export default function Home() {
     const deptStats = Object.entries(deptCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
     const maxDeptCount = Math.max(...deptStats.map(d => d.count), 1);
 
-    // Státuszok eloszlása
     const statuses = ['Előjegyzett', 'Megérkezett', 'Vizsgálaton', 'Befejezve', 'Nem jelent meg'];
     const statusCounts = statuses.map(st => {
        const count = validApps.filter(a => (a.status || 'Előjegyzett') === st).length;
@@ -1188,13 +1200,11 @@ export default function Home() {
     }).filter(s => s.count > 0);
     const maxStatusCount = Math.max(...statusCounts.map(s => s.count), 1);
 
-    // Várható bevétel számítása az árlisták alapján
     let totalRevenue = 0;
     validApps.forEach(app => {
        if (!app.examination_type) return;
        const deptPrices = allPrices.filter(p => p.department === app.department);
        const examStr = app.examination_type.toLowerCase();
-       // Megkeressük, szerepel-e a beírt vizsgálatban az árlista eleme
        const matchedPrice = deptPrices.find(p => examStr.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(examStr));
        if (matchedPrice) {
           const priceVal = parseInt(matchedPrice.price.replace(/[^0-9]/g, ''), 10);
@@ -1223,7 +1233,6 @@ export default function Home() {
 
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8">
           
-          {/* Időszak választó */}
           <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-2 w-max mx-auto md:mx-0 mb-8">
             {[
               { id: 'today', label: 'Ma' },
@@ -1283,7 +1292,6 @@ export default function Home() {
              </div>
           </div>
 
-          {/* Grafikonok / Sávok */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
              <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
                 <h2 className="text-lg font-extrabold text-slate-900 mb-6 flex items-center gap-2"><ListPlusIcon /> Szakrendelések forgalma</h2>
@@ -1617,8 +1625,9 @@ export default function Home() {
 
   let filteredAppointments = appointments;
   
-  if (searchTerm.trim() !== "") {
-    const term = searchTerm.toLowerCase();
+  // OPTIMALIZÁCIÓ 2: Itt most a debouncedSearchTerm-et használjuk a villámgyors gépelésért!
+  if (debouncedSearchTerm.trim() !== "") {
+    const term = debouncedSearchTerm.toLowerCase();
     const termNoSpace = term.replace(/\s+/g, ''); 
     
     filteredAppointments = filteredAppointments.filter((app: any) => {
@@ -1753,7 +1762,7 @@ export default function Home() {
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8 relative z-10 min-h-[80vh]">
         
         {/* --- KONTROLL SÁV --- */}
-        {!printingDate && searchTerm === "" && (
+        {!printingDate && debouncedSearchTerm === "" && (
           <div className="relative z-30 bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-6 mb-6 no-print">
             <div className="flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between">
               
@@ -1891,10 +1900,10 @@ export default function Home() {
           </div>
         )}
 
-        {!printingDate && searchTerm !== "" && (
+        {!printingDate && debouncedSearchTerm !== "" && (
           <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-2xl mb-6 shadow-sm flex items-center gap-3 no-print">
             <SearchIcon size={18} />
-            <span className="font-bold">Keresési eredmények a következőre: "{searchTerm}"</span>
+            <span className="font-bold">Keresési eredmények a következőre: "{debouncedSearchTerm}"</span>
             <span className="ml-auto bg-blue-200 text-blue-900 px-3 py-1 rounded-full text-xs font-extrabold">{filteredAppointments.length} találat</span>
           </div>
         )}
@@ -1925,7 +1934,7 @@ export default function Home() {
         ) : (
           <>
             {/* Naptár áttekintés (Csak ha már betöltött) */}
-            {!printingDate && searchTerm === "" && freeSlotsSummary.length > 0 && (
+            {!printingDate && debouncedSearchTerm === "" && freeSlotsSummary.length > 0 && (
               <div className="mb-8 no-print">
                 <div className="flex items-center gap-2 mb-3 text-slate-700 font-bold uppercase tracking-widest text-xs ml-1">
                   <CalendarIcon size={16} /> <span>Naptár Áttekintés - Kattints a dátumra</span>
@@ -1953,8 +1962,8 @@ export default function Home() {
             {sortedDates.length === 0 ? (
               <div className="bg-white/80 backdrop-blur-xl p-12 md:p-20 text-center rounded-3xl shadow-sm border border-white/60 flex flex-col items-center no-print relative z-0">
                 <div className="text-slate-300 mb-4"><CalendarIcon size={64} /></div>
-                <h3 className="text-xl font-bold text-slate-800 mb-2">{searchTerm ? "Nincs találat" : "Még nincsenek időpontok"}</h3>
-                <p className="text-slate-600 text-sm font-medium">{searchTerm ? "Próbálkozz más névvel vagy TAJ számmal." : "Válassz dátumot a generátorban, és hozd létre a napot!"}</p>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">{debouncedSearchTerm ? "Nincs találat" : "Még nincsenek időpontok"}</h3>
+                <p className="text-slate-600 text-sm font-medium">{debouncedSearchTerm ? "Próbálkozz más névvel vagy TAJ számmal." : "Válassz dátumot a generátorban, és hozd létre a napot!"}</p>
               </div>
             ) : (
               sortedDates.map((date) => {
@@ -1979,10 +1988,10 @@ export default function Home() {
                       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                         <div className="flex items-center gap-3 text-slate-900">
                           <CalendarIcon size={20} />
-                          <h2 className="text-xl font-bold">{date} {searchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}</h2>
+                          <h2 className="text-xl font-bold">{date} {debouncedSearchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}</h2>
                         </div>
                         
-                        {!printingDate && searchTerm === "" && (
+                        {!printingDate && debouncedSearchTerm === "" && (
                           <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-100">
                             <div className="flex flex-col gap-1 w-32 sm:w-40">
                               <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
@@ -2003,7 +2012,7 @@ export default function Home() {
                       </div>
 
                       <div className="flex items-center flex-wrap gap-2">
-                        {searchTerm === "" && (
+                        {debouncedSearchTerm === "" && (
                           <>
                             <span className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200">Összes: {activeSlots.length}</span>
                             <span className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200">Szabad: {freeCount}</span>
@@ -2011,7 +2020,7 @@ export default function Home() {
                           </>
                         )}
                         
-                        {!printingDate && searchTerm === "" && (
+                        {!printingDate && debouncedSearchTerm === "" && (
                           <>
                             <div className="w-px h-6 bg-slate-300 mx-1 hidden md:block"></div>
                             <button onClick={() => clearEmptySlots(date)} className="bg-white hover:bg-amber-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-amber-300 hover:text-amber-700 cursor-pointer">
@@ -2035,7 +2044,7 @@ export default function Home() {
 
                     <div className={`overflow-x-auto custom-scrollbar ${printingDate ? 'overflow-visible' : ''}`}>
                       <table className="min-w-full text-left border-collapse print-table">
-                        <thead>
+                        <thead className="sticky top-0 z-20 shadow-sm bg-white">
                           <tr className="border-b border-slate-200/60 print-border">
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[200px]">Páciens neve</th>
@@ -2049,7 +2058,7 @@ export default function Home() {
                             {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap w-min">Művelet</th>}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100/50 relative z-0">
+                        <tbody className="divide-y divide-slate-100/50 relative z-0 bg-white/50 backdrop-blur-sm">
                           {dayAppointments.map((app: any) => {
                             const isDel = app.is_deleted === true;
                             const isBooked = app.patient_name && app.patient_name.trim() !== "";
@@ -2093,7 +2102,7 @@ export default function Home() {
                                         onSave={(val) => updateAppointment(app.id, "patient_name", val)} 
                                         onSelectPatient={(p) => handleSelectPatient(app.id, p)}
                                         searchPatients={searchPatients}
-                                        searchTerm={searchTerm} 
+                                        searchTerm={debouncedSearchTerm} 
                                       />
                                       {canShowHistory && (
                                         <button 
@@ -2109,22 +2118,22 @@ export default function Home() {
                                 </td>
                                 
                                 <td className={`px-4 py-3 align-middle whitespace-nowrap ${printingDate ? 'text-black font-mono text-sm border-l border-gray-300' : ''}`}>
-                                  {printingDate ? formatTAJ(app.taj_szam) : <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} searchTerm={searchTerm} />}
+                                  {printingDate ? formatTAJ(app.taj_szam) : <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} searchTerm={debouncedSearchTerm} />}
                                 </td>
                                 
                                 {!printingDate && (
                                   <>
-                                    <td className="px-4 py-3 align-middle whitespace-nowrap"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={searchTerm} /></td>
+                                    <td className="px-4 py-3 align-middle whitespace-nowrap"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={debouncedSearchTerm} /></td>
                                     
                                     <td className="px-4 py-3 align-middle whitespace-nowrap"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></td>
                                   </>
                                 )}
                                 
                                 <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
-                                  {printingDate ? app.examination_type : <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={searchTerm} />}
+                                  {printingDate ? app.examination_type : <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} />}
                                 </td>
                                 <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
-                                  {printingDate ? app.notes : <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={searchTerm} />}
+                                  {printingDate ? app.notes : <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={debouncedSearchTerm} />}
                                 </td>
                                 
                                 {!printingDate && (
@@ -2208,24 +2217,24 @@ export default function Home() {
                                     onSave={(val) => updateAppointment(app.id, "patient_name", val)} 
                                     onSelectPatient={(p) => handleSelectPatient(app.id, p)}
                                     searchPatients={searchPatients}
-                                    searchTerm={searchTerm} 
+                                    searchTerm={debouncedSearchTerm} 
                                   />
                                 </div>
                                 <div className="grid grid-cols-2 gap-3 relative z-0">
                                   <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">TAJ szám</span>
-                                    <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} searchTerm={searchTerm} />
+                                    <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} searchTerm={debouncedSearchTerm} />
                                   </div>
                                   <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Telefon</span>
-                                    <EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={searchTerm} />
+                                    <EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={debouncedSearchTerm} />
                                   </div>
                                 </div>
                                 <div className="bg-white/70 p-2.5 rounded-xl border border-white/50 relative z-0">
                                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat & Megjegyzés</span>
-                                  <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={searchTerm} />
+                                  <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} />
                                   <div className="mt-1 border-t border-black/5 pt-1">
-                                    <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={searchTerm} />
+                                    <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={debouncedSearchTerm} />
                                   </div>
                                 </div>
                               </div>
@@ -2241,7 +2250,7 @@ export default function Home() {
           </>
         )}
 
-        {!printingDate && searchTerm === "" && !isInitialLoading && (
+        {!printingDate && debouncedSearchTerm === "" && !isInitialLoading && (
           <div id="new-appointment-bar" className="mt-6 flex flex-col sm:flex-row items-center justify-end gap-3 bg-white/90 backdrop-blur-xl p-4 rounded-3xl shadow-sm border border-white/60 w-full sm:w-max sm:ml-auto no-print scroll-mt-24">
             <input 
               ref={newTimeSlotRef}

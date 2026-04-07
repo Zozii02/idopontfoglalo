@@ -1491,7 +1491,7 @@ export default function Home() {
               <div className="flex items-center gap-4">
                  <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain" />
                  <div>
-                   <h1 className="text-xl font-bold tracking-tight text-slate-900">Labor Kalkulátor</h1>
+                   <h1 className="text-xl font-bold tracking-tight text-slate-900">Labor kalkulátor</h1>
                    <p className="text-emerald-600 font-medium text-[11px] tracking-widest uppercase">Ajánlatkészítő</p>
                  </div>
               </div>
@@ -1511,7 +1511,7 @@ export default function Home() {
               <div className="flex justify-between items-start border-b-2 border-emerald-600 pb-3 mb-4">
                 <div>
                   <img src="/logo.png" alt="Medical-Aqua" className="h-16 object-contain mb-2" />
-                  <h1 className="text-2xl font-extrabold text-slate-900">Laboratóriumi Ajánlat</h1>
+                  <h1 className="text-2xl font-extrabold text-slate-900">Laboratóriumi ajánlat</h1>
                   <p className="text-slate-500 mt-0.5 font-medium text-sm">Dátum: {new Date().toLocaleDateString('hu-HU')}</p>
                 </div>
                 <div className="text-right text-xs text-slate-600 mt-1 space-y-0.5">
@@ -1647,7 +1647,7 @@ export default function Home() {
 
               {/* JOBB OSZLOP: Kalkuláció és Nyomtatás */}
               <div className="w-full lg:w-1/3 bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col h-full min-h-0">
-                <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 shrink-0"><DocumentIcon /> Ajánlat Összegzése</h2>
+                <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 shrink-0"><DocumentIcon /> Ajánlat összegzése</h2>
                 
                 <div className="mb-2 space-y-2 shrink-0">
                   <div>
@@ -1835,7 +1835,7 @@ export default function Home() {
             {/* --- LABOR KALKULÁTOR GOMB --- */}
             <button onClick={() => setShowLabCalculator(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Labor Árkalkulátor">
               <CalculatorIcon size={16} />
-              <span className="hidden sm:inline">Labor Kalkulátor</span>
+              <span className="hidden sm:inline">Labor kalkulátor</span>
             </button>
 
             {/* --- HIBABEJELENTŐ GOMB --- */}

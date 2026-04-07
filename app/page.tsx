@@ -61,6 +61,9 @@ import { PatientAutocomplete } from "../components/PatientAutocomplete";
 // --- Főoldal ---
 export default function Home() {
   const searchInputRef = useRef<HTMLInputElement>(null); 
+  const newTimeSlotRef = useRef<HTMLInputElement>(null); // ÚJ: Ref az "Új időpont" mezőhöz
+
+  const [isInitialLoading, setIsInitialLoading] = useState(true); // ÚJ: Skeleton loader állapota
 
   const [categories, setCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("");
@@ -344,7 +347,8 @@ export default function Home() {
   }, []);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-    // --- AUTOMATIKUS KIJELENTKEZÉS INAKTIVITÁS MIATT (15 PERC) ---
+
+  // --- AUTOMATIKUS KIJELENTKEZÉS INAKTIVITÁS MIATT (15 PERC) ---
   useEffect(() => {
     if (!user) return; // Ha nincs bejelentkezve, nem kell időzítő
 
@@ -357,11 +361,11 @@ export default function Home() {
 
     const resetTimer = () => {
       if (timeoutId) clearTimeout(timeoutId);
-      // 15 perc (15 * 60 * 1000 = 900000 ms). Ha rövidebbet/hosszabbat akarsz, itt írd át a számot!
+      // 15 perc (15 * 60 * 1000 = 900000 ms).
       timeoutId = setTimeout(logoutUser, 900000);
     };
 
-    // Aktivitás figyelése (egérmozgás, kattintás, gépelés, görgetés)
+    // Aktivitás figyelése
     const events = ['mousemove', 'keydown', 'mousedown', 'scroll', 'touchstart'];
     events.forEach(event => window.addEventListener(event, resetTimer));
 
@@ -373,9 +377,37 @@ export default function Home() {
     };
   }, [user]);
 
+  // --- GYORSBILLENTYŰK (HOTKEYS) ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key.toLowerCase() === 'k') { e.preventDefault(); searchInputRef.current?.focus(); }
+      // Kereső: Ctrl + K
+      if (e.ctrlKey && e.key.toLowerCase() === 'k') { 
+        e.preventDefault(); searchInputRef.current?.focus(); 
+      }
+      
+      // Labor: Alt + L
+      if (e.altKey && e.key.toLowerCase() === 'l') { 
+        e.preventDefault(); setShowLabCalculator(true); setShowStats(false); 
+      }
+      
+      // Statisztika: Alt + S
+      if (e.altKey && e.key.toLowerCase() === 's') { 
+        e.preventDefault(); setShowStats(true); setShowLabCalculator(false); 
+      }
+      
+      // Új időpont felvitele: Alt + N
+      if (e.altKey && e.key.toLowerCase() === 'n') { 
+        e.preventDefault(); 
+        setShowStats(false); 
+        setShowLabCalculator(false);
+        // Kis késleltetés kell, ha épp a laborból lépünk vissza, hogy biztosan leképeződjön a DOM
+        setTimeout(() => {
+          newTimeSlotRef.current?.focus();
+          document.getElementById('new-appointment-bar')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+
+      // Bezárás: Esc
       if (e.key === 'Escape') { 
         closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); 
         closeAppInfoModal(); setIsNotifOpen(false); setIsDeptModalOpen(false);
@@ -447,12 +479,26 @@ export default function Home() {
     }
   };
 
+  const fetchAppointments = async () => {
+    const { data, error } = await supabase.from("appointments").select("*").order("appointment_date", { ascending: true }).order("time_slot", { ascending: true });
+    if (!error && data) setAppointments(data);
+  };
+
+  // ÚJ: Kombinált betöltő logika a Skeleton Loaderhez
+  const loadInitialData = async () => {
+    setIsInitialLoading(true);
+    await Promise.all([
+      fetchCategories(),
+      fetchAppointments(),
+      fetchAllPrices(),
+      fetchNotifications()
+    ]);
+    setIsInitialLoading(false);
+  };
+
   useEffect(() => { 
     if (user && !needsProfileName) {
-      fetchCategories();
-      fetchAppointments();
-      fetchAllPrices();
-      fetchNotifications();
+      loadInitialData(); // Hívjuk meg a kombinált betöltőt!
 
       const channel = supabase.channel('live-appointments')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => fetchAppointments())
@@ -473,11 +519,6 @@ export default function Home() {
       return () => { supabase.removeChannel(channel); supabase.removeChannel(pricesChannel); supabase.removeChannel(notifChannel); supabase.removeChannel(deptChannel); };
     } 
   }, [user, needsProfileName]);
-
-  const fetchAppointments = async () => {
-    const { data, error } = await supabase.from("appointments").select("*").order("appointment_date", { ascending: true }).order("time_slot", { ascending: true });
-    if (!error && data) setAppointments(data);
-  };
 
   const handleLogin = async () => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -1644,13 +1685,13 @@ export default function Home() {
           <div className="flex items-center gap-2 sm:gap-4 w-full md:w-auto justify-end">
             
             {/* --- STATISZTIKA GOMB --- */}
-            <button onClick={() => { setShowStats(true); setShowLabCalculator(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Statisztikák és Kimutatások">
+            <button onClick={() => { setShowStats(true); setShowLabCalculator(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Statisztikák (Alt + S)">
               <ChartPieIcon size={16} />
               <span className="hidden xl:inline">Statisztika</span>
             </button>
 
             {/* --- LABOR KALKULÁTOR GOMB --- */}
-            <button onClick={() => { setShowLabCalculator(true); setShowStats(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Labor Árkalkulátor">
+            <button onClick={() => { setShowLabCalculator(true); setShowStats(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Labor kalkulátor (Alt + L)">
               <CalculatorIcon size={16} />
               <span className="hidden sm:inline">Labor kalkulátor</span>
             </button>
@@ -1858,166 +1899,308 @@ export default function Home() {
           </div>
         )}
 
-        {!printingDate && searchTerm === "" && freeSlotsSummary.length > 0 && (
-          <div className="mb-8 no-print">
-            <div className="flex items-center gap-2 mb-3 text-slate-700 font-bold uppercase tracking-widest text-xs ml-1">
-              <CalendarIcon size={16} /> <span>Naptár Áttekintés - Kattints a dátumra</span>
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-3 custom-scrollbar scroll-smooth">
-              {freeSlotsSummary.map((day) => (
-                <button
-                  key={day.date}
-                  onClick={() => document.getElementById(`date-${day.date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                  className={`flex-shrink-0 min-w-[130px] p-3 rounded-2xl border transition-all text-left group backdrop-blur-md cursor-pointer
-                    ${day.freeCount > 0 ? 'bg-white/90 border-white shadow-sm hover:shadow-md hover:border-emerald-200' : 'bg-slate-100/80 border-white/50 opacity-80 hover:bg-white/90'}`}
-                >
-                  <div className="text-slate-800 font-extrabold text-sm mb-1">{formatShortDate(day.date)}</div>
-                  <div className={`text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-lg w-max transition-colors
-                    ${day.freeCount > 0 ? 'bg-emerald-100 text-emerald-800 group-hover:bg-emerald-200' : 'bg-slate-200 text-slate-700'}`}>
-                    {day.freeCount > 0 ? `${day.freeCount} szabad hely` : 'Megtelt'}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {sortedDates.length === 0 ? (
-          <div className="bg-white/80 backdrop-blur-xl p-12 md:p-20 text-center rounded-3xl shadow-sm border border-white/60 flex flex-col items-center no-print relative z-0">
-            <div className="text-slate-300 mb-4"><CalendarIcon size={64} /></div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">{searchTerm ? "Nincs találat" : "Még nincsenek időpontok"}</h3>
-            <p className="text-slate-600 text-sm font-medium">{searchTerm ? "Próbálkozz más névvel vagy TAJ számmal." : "Válassz dátumot a generátorban, és hozd létre a napot!"}</p>
+        {/* --- SKELETON LOADER (Betöltési animáció) --- */}
+        {!printingDate && isInitialLoading ? (
+          <div className="space-y-8 animate-pulse no-print relative z-10">
+            {[1, 2].map((dayBlock) => (
+              <div key={dayBlock} className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-3xl p-5 shadow-sm">
+                <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100">
+                  <div className="w-8 h-8 bg-slate-200/80 rounded-full"></div>
+                  <div className="w-48 h-6 bg-slate-200/80 rounded-xl"></div>
+                  <div className="w-32 h-6 bg-slate-200/80 rounded-xl ml-auto"></div>
+                </div>
+                <div className="space-y-3">
+                  {[1, 2, 3].map((row) => (
+                    <div key={row} className="w-full h-16 bg-white/50 border border-slate-100 rounded-2xl flex items-center px-4 gap-4">
+                      <div className="w-16 h-5 bg-slate-200/80 rounded-md shrink-0"></div>
+                      <div className="w-48 h-5 bg-slate-200/80 rounded-md"></div>
+                      <div className="w-32 h-5 bg-slate-200/80 rounded-md"></div>
+                      <div className="flex-1 h-5 bg-slate-200/80 rounded-md"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
-          sortedDates.map((date) => {
-            if (printingDate && printingDate !== date) return null;
-
-            const dayAppointments = groupedByDate[date].sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot));
-            const activeSlots = dayAppointments.filter((a: any) => !a.is_deleted);
-            const bookedCount = activeSlots.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
-            const freeCount = activeSlots.length - bookedCount;
-            
-            // --- MINI DASHBOARD Számítások ---
-            const percent = activeSlots.length > 0 ? Math.round((bookedCount / activeSlots.length) * 100) : 0;
-            const deptPrices = allPrices.filter(p => p.department === (dayAppointments[0]?.department || activeTab));
-            const dailyRevenue = getDailyRevenue(activeSlots, deptPrices);
-            const formattedRevenue = dailyRevenue > 0 ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyRevenue) : "0 Ft";
-
-            return (
-              <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] scroll-mt-[100px] print-container relative z-0 ${printingDate ? 'bg-white border-0 shadow-none' : 'overflow-hidden bg-white/90 backdrop-blur-xl border border-white/60'}`}>
-                
-                <div className={`p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-slate-100'}`}>
-                  
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div className="flex items-center gap-3 text-slate-900">
-                      <CalendarIcon size={20} />
-                      <h2 className="text-xl font-bold">{date} {searchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}</h2>
-                    </div>
-                    
-                    {!printingDate && searchTerm === "" && (
-                      <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-100">
-                        <div className="flex flex-col gap-1 w-32 sm:w-40">
-                          <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                            <span>Telítettség</span>
-                            <span className={percent === 100 ? "text-emerald-600" : ""}>{percent}%</span>
-                          </div>
-                          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                             <div className={`h-full transition-all duration-1000 ${percent === 100 ? 'bg-emerald-500' : percent > 60 ? 'bg-amber-400' : 'bg-blue-400'}`} style={{width: `${percent}%`}}></div>
-                          </div>
-                        </div>
-                        <div className="w-px h-6 bg-slate-200 mx-1"></div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Várható bevétel</span>
-                          <span className="text-sm font-extrabold text-slate-800">{formattedRevenue}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center flex-wrap gap-2">
-                    {searchTerm === "" && (
-                      <>
-                        <span className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200">Összes: {activeSlots.length}</span>
-                        <span className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200">Szabad: {freeCount}</span>
-                        <span className="bg-red-100 text-red-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-200">Foglalt: {bookedCount}</span>
-                      </>
-                    )}
-                    
-                    {!printingDate && searchTerm === "" && (
-                      <>
-                        <div className="w-px h-6 bg-slate-300 mx-1 hidden md:block"></div>
-                        <button onClick={() => clearEmptySlots(date)} className="bg-white hover:bg-amber-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-amber-300 hover:text-amber-700 cursor-pointer">
-                          <EraserIcon /> <span className="hidden sm:inline">Üres sorok takarítása</span><span className="sm:hidden">Takarít</span>
-                        </button>
-                        
-                        <button onClick={() => exportToCSV(date)} className="bg-white hover:bg-blue-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-blue-300 hover:text-blue-700 cursor-pointer">
-                          <DownloadIcon /> <span className="hidden sm:inline">Excel Export</span><span className="sm:hidden">Excel</span>
-                        </button>
-                        
-                        <button onClick={() => handlePrintDay(date)} className="bg-slate-800 text-white px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-black transition-all flex items-center gap-1.5 shadow-sm border border-slate-800 cursor-pointer">
-                          <PrintIcon /> <span className="hidden sm:inline">Nyomtatás</span>
-                        </button>
-                        <button onClick={() => deleteEntireDay(date)} className="bg-red-50 text-red-600 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition-all flex items-center gap-1.5 shadow-sm border border-red-200 hover:border-red-600 cursor-pointer">
-                          <TrashIcon /> <span className="hidden sm:inline">Nap törlése</span>
-                        </button>
-                      </>
-                    )}
-                  </div>
+          <>
+            {/* Naptár áttekintés (Csak ha már betöltött) */}
+            {!printingDate && searchTerm === "" && freeSlotsSummary.length > 0 && (
+              <div className="mb-8 no-print">
+                <div className="flex items-center gap-2 mb-3 text-slate-700 font-bold uppercase tracking-widest text-xs ml-1">
+                  <CalendarIcon size={16} /> <span>Naptár Áttekintés - Kattints a dátumra</span>
                 </div>
+                <div className="flex gap-3 overflow-x-auto pb-3 custom-scrollbar scroll-smooth">
+                  {freeSlotsSummary.map((day) => (
+                    <button
+                      key={day.date}
+                      onClick={() => document.getElementById(`date-${day.date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                      className={`flex-shrink-0 min-w-[130px] p-3 rounded-2xl border transition-all text-left group backdrop-blur-md cursor-pointer
+                        ${day.freeCount > 0 ? 'bg-white/90 border-white shadow-sm hover:shadow-md hover:border-emerald-200' : 'bg-slate-100/80 border-white/50 opacity-80 hover:bg-white/90'}`}
+                    >
+                      <div className="text-slate-800 font-extrabold text-sm mb-1">{formatShortDate(day.date)}</div>
+                      <div className={`text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-lg w-max transition-colors
+                        ${day.freeCount > 0 ? 'bg-emerald-100 text-emerald-800 group-hover:bg-emerald-200' : 'bg-slate-200 text-slate-700'}`}>
+                        {day.freeCount > 0 ? `${day.freeCount} szabad hely` : 'Megtelt'}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-                <div className={`overflow-x-auto custom-scrollbar ${printingDate ? 'overflow-visible' : ''}`}>
-                  <table className="min-w-full text-left border-collapse print-table">
-                    <thead>
-                      <tr className="border-b border-slate-200/60 print-border">
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[200px]">Páciens neve</th>
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">TAJ szám</th>
-                        
-                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Telefon</th>}
-                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Státusz</th>}
-                        
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto">Vizsgálat</th>
-                        <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto">Megjegyzés</th>
-                        {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap w-min">Művelet</th>}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100/50 relative z-0">
-                      {dayAppointments.map((app: any) => {
-                        const isDel = app.is_deleted === true;
-                        const isBooked = app.patient_name && app.patient_name.trim() !== "";
-                        
-                        const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
-                        
-                        if (printingDate && isDel) return null; 
+            {/* Adatok megjelenítése */}
+            {sortedDates.length === 0 ? (
+              <div className="bg-white/80 backdrop-blur-xl p-12 md:p-20 text-center rounded-3xl shadow-sm border border-white/60 flex flex-col items-center no-print relative z-0">
+                <div className="text-slate-300 mb-4"><CalendarIcon size={64} /></div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">{searchTerm ? "Nincs találat" : "Még nincsenek időpontok"}</h3>
+                <p className="text-slate-600 text-sm font-medium">{searchTerm ? "Próbálkozz más névvel vagy TAJ számmal." : "Válassz dátumot a generátorban, és hozd létre a napot!"}</p>
+              </div>
+            ) : (
+              sortedDates.map((date) => {
+                if (printingDate && printingDate !== date) return null;
 
-                        // Vizuális Státusz Színek a sor szélére
-                        const statusBorder = printingDate || isDel || !isBooked ? "" :
-                          app.status === "Megérkezett" ? "border-l-4 border-l-amber-400" :
-                          app.status === "Vizsgálaton" ? "border-l-4 border-l-blue-400" :
-                          app.status === "Befejezve" ? "border-l-4 border-l-emerald-500" :
-                          app.status === "Nem jelent meg" ? "border-l-4 border-l-slate-800" :
-                          "border-l-4 border-l-transparent";
+                const dayAppointments = groupedByDate[date].sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot));
+                const activeSlots = dayAppointments.filter((a: any) => !a.is_deleted);
+                const bookedCount = activeSlots.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
+                const freeCount = activeSlots.length - bookedCount;
+                
+                // --- MINI DASHBOARD Számítások ---
+                const percent = activeSlots.length > 0 ? Math.round((bookedCount / activeSlots.length) * 100) : 0;
+                const deptPrices = allPrices.filter(p => p.department === (dayAppointments[0]?.department || activeTab));
+                const dailyRevenue = getDailyRevenue(activeSlots, deptPrices);
+                const formattedRevenue = dailyRevenue > 0 ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyRevenue) : "0 Ft";
 
-                        const rowStyle = isDel 
-                          ? "bg-slate-100/40 opacity-70 print-hidden" 
-                          : isBooked 
-                            ? `bg-red-50/70 hover:bg-red-100/60 ${statusBorder}`
-                            : "bg-emerald-50/70 hover:bg-emerald-100/60 border-l-4 border-l-transparent";
-
-                        return (
-                          <tr key={app.id} className={`transition-colors group relative ${printingDate ? '' : rowStyle}`}>
-                            
-                            <td className="px-4 py-3 align-middle whitespace-nowrap">
-                              <div className="flex flex-col gap-1 w-max">
-                                <span className={`font-bold text-base ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
-                                {!printingDate && !isDel && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isBooked ? "bg-red-200/60 text-red-900" : "bg-emerald-200/60 text-emerald-900"}`}>{isBooked ? "Foglalt" : "Szabad"}</span>}
-                                {!printingDate && isDel && <span className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max bg-slate-200 text-slate-700">Törölt</span>}
+                return (
+                  <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] scroll-mt-[100px] print-container relative z-0 ${printingDate ? 'bg-white border-0 shadow-none' : 'overflow-hidden bg-white/90 backdrop-blur-xl border border-white/60'}`}>
+                    
+                    <div className={`p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-slate-100'}`}>
+                      
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div className="flex items-center gap-3 text-slate-900">
+                          <CalendarIcon size={20} />
+                          <h2 className="text-xl font-bold">{date} {searchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}</h2>
+                        </div>
+                        
+                        {!printingDate && searchTerm === "" && (
+                          <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-100">
+                            <div className="flex flex-col gap-1 w-32 sm:w-40">
+                              <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                <span>Telítettség</span>
+                                <span className={percent === 100 ? "text-emerald-600" : ""}>{percent}%</span>
                               </div>
-                            </td>
+                              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                 <div className={`h-full transition-all duration-1000 ${percent === 100 ? 'bg-emerald-500' : percent > 60 ? 'bg-amber-400' : 'bg-blue-400'}`} style={{width: `${percent}%`}}></div>
+                              </div>
+                            </div>
+                            <div className="w-px h-6 bg-slate-200 mx-1"></div>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Várható bevétel</span>
+                              <span className="text-sm font-extrabold text-slate-800">{formattedRevenue}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center flex-wrap gap-2">
+                        {searchTerm === "" && (
+                          <>
+                            <span className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200">Összes: {activeSlots.length}</span>
+                            <span className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200">Szabad: {freeCount}</span>
+                            <span className="bg-red-100 text-red-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-200">Foglalt: {bookedCount}</span>
+                          </>
+                        )}
+                        
+                        {!printingDate && searchTerm === "" && (
+                          <>
+                            <div className="w-px h-6 bg-slate-300 mx-1 hidden md:block"></div>
+                            <button onClick={() => clearEmptySlots(date)} className="bg-white hover:bg-amber-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-amber-300 hover:text-amber-700 cursor-pointer">
+                              <EraserIcon /> <span className="hidden sm:inline">Üres sorok takarítása</span><span className="sm:hidden">Takarít</span>
+                            </button>
                             
-                            <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black font-bold text-sm border-l border-gray-300' : ''}`}>
-                              {printingDate ? app.patient_name : (
-                                <div className="relative">
+                            <button onClick={() => exportToCSV(date)} className="bg-white hover:bg-blue-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-blue-300 hover:text-blue-700 cursor-pointer">
+                              <DownloadIcon /> <span className="hidden sm:inline">Excel Export</span><span className="sm:hidden">Excel</span>
+                            </button>
+                            
+                            <button onClick={() => handlePrintDay(date)} className="bg-slate-800 text-white px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-black transition-all flex items-center gap-1.5 shadow-sm border border-slate-800 cursor-pointer">
+                              <PrintIcon /> <span className="hidden sm:inline">Nyomtatás</span>
+                            </button>
+                            <button onClick={() => deleteEntireDay(date)} className="bg-red-50 text-red-600 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition-all flex items-center gap-1.5 shadow-sm border border-red-200 hover:border-red-600 cursor-pointer">
+                              <TrashIcon /> <span className="hidden sm:inline">Nap törlése</span>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className={`overflow-x-auto custom-scrollbar ${printingDate ? 'overflow-visible' : ''}`}>
+                      <table className="min-w-full text-left border-collapse print-table">
+                        <thead>
+                          <tr className="border-b border-slate-200/60 print-border">
+                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>
+                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[200px]">Páciens neve</th>
+                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">TAJ szám</th>
+                            
+                            {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Telefon</th>}
+                            {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Státusz</th>}
+                            
+                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto">Vizsgálat</th>
+                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto">Megjegyzés</th>
+                            {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap w-min">Művelet</th>}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100/50 relative z-0">
+                          {dayAppointments.map((app: any) => {
+                            const isDel = app.is_deleted === true;
+                            const isBooked = app.patient_name && app.patient_name.trim() !== "";
+                            
+                            const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
+                            
+                            if (printingDate && isDel) return null; 
+
+                            // Vizuális Státusz Színek a sor szélére
+                            const statusBorder = printingDate || isDel || !isBooked ? "" :
+                              app.status === "Megérkezett" ? "border-l-4 border-l-amber-400" :
+                              app.status === "Vizsgálaton" ? "border-l-4 border-l-blue-400" :
+                              app.status === "Befejezve" ? "border-l-4 border-l-emerald-500" :
+                              app.status === "Nem jelent meg" ? "border-l-4 border-l-slate-800" :
+                              "border-l-4 border-l-transparent";
+
+                            const rowStyle = isDel 
+                              ? "bg-slate-100/40 opacity-70 print-hidden" 
+                              : isBooked 
+                                ? `bg-red-50/70 hover:bg-red-100/60 ${statusBorder}`
+                                : "bg-emerald-50/70 hover:bg-emerald-100/60 border-l-4 border-l-transparent";
+
+                            return (
+                              <tr key={app.id} className={`transition-colors group relative ${printingDate ? '' : rowStyle}`}>
+                                
+                                <td className="px-4 py-3 align-middle whitespace-nowrap">
+                                  <div className="flex flex-col gap-1 w-max">
+                                    <span className={`font-bold text-base ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
+                                    {!printingDate && !isDel && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isBooked ? "bg-red-200/60 text-red-900" : "bg-emerald-200/60 text-emerald-900"}`}>{isBooked ? "Foglalt" : "Szabad"}</span>}
+                                    {!printingDate && isDel && <span className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max bg-slate-200 text-slate-700">Törölt</span>}
+                                  </div>
+                                </td>
+                                
+                                <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black font-bold text-sm border-l border-gray-300' : ''}`}>
+                                  {printingDate ? app.patient_name : (
+                                    <div className="relative">
+                                      <PatientAutocomplete 
+                                        disabled={isDel} 
+                                        highlight={isBooked} 
+                                        value={app.patient_name} 
+                                        onSave={(val) => updateAppointment(app.id, "patient_name", val)} 
+                                        onSelectPatient={(p) => handleSelectPatient(app.id, p)}
+                                        searchPatients={searchPatients}
+                                        searchTerm={searchTerm} 
+                                      />
+                                      {canShowHistory && (
+                                        <button 
+                                          onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} 
+                                          className="absolute right-0 top-1/2 -translate-y-1/2 p-2 bg-white text-slate-500 hover:text-red-600 shadow-sm rounded-lg border border-slate-200 opacity-0 group-hover:opacity-100 transition-all z-10 cursor-pointer" 
+                                          title="Előzmények / Karton"
+                                        >
+                                          <HistoryIcon />
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+                                
+                                <td className={`px-4 py-3 align-middle whitespace-nowrap ${printingDate ? 'text-black font-mono text-sm border-l border-gray-300' : ''}`}>
+                                  {printingDate ? formatTAJ(app.taj_szam) : <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} searchTerm={searchTerm} />}
+                                </td>
+                                
+                                {!printingDate && (
+                                  <>
+                                    <td className="px-4 py-3 align-middle whitespace-nowrap"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={searchTerm} /></td>
+                                    
+                                    <td className="px-4 py-3 align-middle whitespace-nowrap"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></td>
+                                  </>
+                                )}
+                                
+                                <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
+                                  {printingDate ? app.examination_type : <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={searchTerm} />}
+                                </td>
+                                <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
+                                  {printingDate ? app.notes : <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={searchTerm} />}
+                                </td>
+                                
+                                {!printingDate && (
+                                  <td className="px-4 py-3 align-middle text-center no-print whitespace-nowrap">
+                                    <div className="flex items-center justify-center gap-1">
+                                      {isDel ? (
+                                        <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer"><RestoreIcon /> Visszaállít</button>
+                                      ) : (
+                                        <button onClick={() => confirmDeleteApp(app.id)} className="text-black/30 hover:text-red-600 hover:bg-red-50 shadow-sm p-2 rounded-lg transition-all cursor-pointer" title="Törlés"><TrashIcon /></button>
+                                      )}
+                                      
+                                      <button onClick={() => openAppInfoModal(app)} className="text-blue-400 hover:text-blue-600 hover:bg-blue-50 shadow-sm p-2 rounded-lg transition-all cursor-pointer" title="Módosítási infók">
+                                        <InfoIcon />
+                                      </button>
+                                    </div>
+                                  </td>
+                                )}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 lg:hidden no-print">
+                        {dayAppointments.map((app: any) => {
+                          const isDel = app.is_deleted === true;
+                          const isBooked = app.patient_name && app.patient_name.trim() !== "";
+                          const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
+                          
+                          const statusBorder = isDel || !isBooked ? "" :
+                              app.status === "Megérkezett" ? "border-l-4 border-l-amber-400" :
+                              app.status === "Vizsgálaton" ? "border-l-4 border-l-blue-400" :
+                              app.status === "Befejezve" ? "border-l-4 border-l-emerald-500" :
+                              app.status === "Nem jelent meg" ? "border-l-4 border-l-slate-800" :
+                              "border-l-4 border-l-transparent";
+
+                          const cardStyle = isDel 
+                            ? "bg-slate-100/50 border-slate-200/50 opacity-80" 
+                            : isBooked 
+                              ? `bg-red-50/90 border-white shadow-sm ${statusBorder}` 
+                              : "bg-emerald-50/90 border-white shadow-sm border-l-4 border-l-transparent";
+
+                          return (
+                            <div key={`mob-${app.id}`} className={`rounded-2xl p-5 border transition-all ${cardStyle}`}>
+                              <div className="flex justify-between items-start mb-4">
+                                <div className="flex flex-col gap-1">
+                                   <span className={`font-bold text-xl ${isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
+                                   <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isDel ? "bg-slate-200 text-slate-700" : isBooked ? "bg-red-200/60 text-red-900" : "bg-emerald-200/60 text-emerald-900"}`}>
+                                     {isDel ? "Törölt" : isBooked ? "Foglalt" : "Szabad"}
+                                   </span>
+                                </div>
+                                
+                                <div className="flex items-center gap-1">
+                                  <button onClick={() => openAppInfoModal(app)} className="text-blue-400 hover:text-blue-600 hover:bg-white/80 shadow-sm p-2 rounded-lg cursor-pointer" title="Infó"><InfoIcon /></button>
+                                  
+                                  {isDel ? (
+                                    <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 flex items-center gap-1.5 cursor-pointer"><RestoreIcon /> Vissza</button>
+                                  ) : (
+                                    <button onClick={() => confirmDeleteApp(app.id)} className="text-black/40 hover:text-red-600 hover:bg-white/80 shadow-sm p-2 rounded-lg cursor-pointer"><TrashIcon /></button>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="flex flex-col gap-3">
+                                <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
+                                  <div className="flex justify-between items-center mb-1 relative z-10">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Páciens neve</span>
+                                    <div className="flex items-center gap-2">
+                                      {canShowHistory && (
+                                        <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-1.5 bg-white text-slate-600 shadow-sm rounded-lg border border-slate-200 cursor-pointer">
+                                          <HistoryIcon />
+                                        </button>
+                                      )}
+                                      <div className="w-[130px]"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></div>
+                                    </div>
+                                  </div>
                                   <PatientAutocomplete 
                                     disabled={isDel} 
                                     highlight={isBooked} 
@@ -2027,153 +2210,48 @@ export default function Home() {
                                     searchPatients={searchPatients}
                                     searchTerm={searchTerm} 
                                   />
-                                  {canShowHistory && (
-                                    <button 
-                                      onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} 
-                                      className="absolute right-0 top-1/2 -translate-y-1/2 p-2 bg-white text-slate-500 hover:text-red-600 shadow-sm rounded-lg border border-slate-200 opacity-0 group-hover:opacity-100 transition-all z-10 cursor-pointer" 
-                                      title="Előzmények / Karton"
-                                    >
-                                      <HistoryIcon />
-                                    </button>
-                                  )}
                                 </div>
-                              )}
-                            </td>
-                            
-                            <td className={`px-4 py-3 align-middle whitespace-nowrap ${printingDate ? 'text-black font-mono text-sm border-l border-gray-300' : ''}`}>
-                              {printingDate ? formatTAJ(app.taj_szam) : <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} searchTerm={searchTerm} />}
-                            </td>
-                            
-                            {!printingDate && (
-                              <>
-                                <td className="px-4 py-3 align-middle whitespace-nowrap"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={searchTerm} /></td>
-                                
-                                <td className="px-4 py-3 align-middle whitespace-nowrap"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></td>
-                              </>
-                            )}
-                            
-                            <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
-                              {printingDate ? app.examination_type : <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={searchTerm} />}
-                            </td>
-                            <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
-                              {printingDate ? app.notes : <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={searchTerm} />}
-                            </td>
-                            
-                            {!printingDate && (
-                              <td className="px-4 py-3 align-middle text-center no-print whitespace-nowrap">
-                                <div className="flex items-center justify-center gap-1">
-                                  {isDel ? (
-                                    <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer"><RestoreIcon /> Visszaállít</button>
-                                  ) : (
-                                    <button onClick={() => confirmDeleteApp(app.id)} className="text-black/30 hover:text-red-600 hover:bg-red-50 shadow-sm p-2 rounded-lg transition-all cursor-pointer" title="Törlés"><TrashIcon /></button>
-                                  )}
-                                  
-                                  <button onClick={() => openAppInfoModal(app)} className="text-blue-400 hover:text-blue-600 hover:bg-blue-50 shadow-sm p-2 rounded-lg transition-all cursor-pointer" title="Módosítási infók">
-                                    <InfoIcon />
-                                  </button>
+                                <div className="grid grid-cols-2 gap-3 relative z-0">
+                                  <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">TAJ szám</span>
+                                    <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} searchTerm={searchTerm} />
+                                  </div>
+                                  <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Telefon</span>
+                                    <EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={searchTerm} />
+                                  </div>
                                 </div>
-                              </td>
-                            )}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 lg:hidden no-print">
-                    {dayAppointments.map((app: any) => {
-                      const isDel = app.is_deleted === true;
-                      const isBooked = app.patient_name && app.patient_name.trim() !== "";
-                      const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
-                      
-                      const statusBorder = isDel || !isBooked ? "" :
-                          app.status === "Megérkezett" ? "border-l-4 border-l-amber-400" :
-                          app.status === "Vizsgálaton" ? "border-l-4 border-l-blue-400" :
-                          app.status === "Befejezve" ? "border-l-4 border-l-emerald-500" :
-                          app.status === "Nem jelent meg" ? "border-l-4 border-l-slate-800" :
-                          "border-l-4 border-l-transparent";
-
-                      const cardStyle = isDel 
-                        ? "bg-slate-100/50 border-slate-200/50 opacity-80" 
-                        : isBooked 
-                          ? `bg-red-50/90 border-white shadow-sm ${statusBorder}` 
-                          : "bg-emerald-50/90 border-white shadow-sm border-l-4 border-l-transparent";
-
-                      return (
-                        <div key={`mob-${app.id}`} className={`rounded-2xl p-5 border transition-all ${cardStyle}`}>
-                          <div className="flex justify-between items-start mb-4">
-                            <div className="flex flex-col gap-1">
-                               <span className={`font-bold text-xl ${isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
-                               <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isDel ? "bg-slate-200 text-slate-700" : isBooked ? "bg-red-200/60 text-red-900" : "bg-emerald-200/60 text-emerald-900"}`}>
-                                 {isDel ? "Törölt" : isBooked ? "Foglalt" : "Szabad"}
-                               </span>
-                            </div>
-                            
-                            <div className="flex items-center gap-1">
-                              <button onClick={() => openAppInfoModal(app)} className="text-blue-400 hover:text-blue-600 hover:bg-white/80 shadow-sm p-2 rounded-lg cursor-pointer" title="Infó"><InfoIcon /></button>
-                              
-                              {isDel ? (
-                                <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 flex items-center gap-1.5 cursor-pointer"><RestoreIcon /> Vissza</button>
-                              ) : (
-                                <button onClick={() => confirmDeleteApp(app.id)} className="text-black/40 hover:text-red-600 hover:bg-white/80 shadow-sm p-2 rounded-lg cursor-pointer"><TrashIcon /></button>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex flex-col gap-3">
-                            <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
-                              <div className="flex justify-between items-center mb-1 relative z-10">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Páciens neve</span>
-                                <div className="flex items-center gap-2">
-                                  {canShowHistory && (
-                                    <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-1.5 bg-white text-slate-600 shadow-sm rounded-lg border border-slate-200 cursor-pointer">
-                                      <HistoryIcon />
-                                    </button>
-                                  )}
-                                  <div className="w-[130px]"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></div>
+                                <div className="bg-white/70 p-2.5 rounded-xl border border-white/50 relative z-0">
+                                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat & Megjegyzés</span>
+                                  <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={searchTerm} />
+                                  <div className="mt-1 border-t border-black/5 pt-1">
+                                    <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={searchTerm} />
+                                  </div>
                                 </div>
                               </div>
-                              <PatientAutocomplete 
-                                disabled={isDel} 
-                                highlight={isBooked} 
-                                value={app.patient_name} 
-                                onSave={(val) => updateAppointment(app.id, "patient_name", val)} 
-                                onSelectPatient={(p) => handleSelectPatient(app.id, p)}
-                                searchPatients={searchPatients}
-                                searchTerm={searchTerm} 
-                              />
                             </div>
-                            <div className="grid grid-cols-2 gap-3 relative z-0">
-                              <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">TAJ szám</span>
-                                <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} searchTerm={searchTerm} />
-                              </div>
-                              <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Telefon</span>
-                                <EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={searchTerm} />
-                              </div>
-                            </div>
-                            <div className="bg-white/70 p-2.5 rounded-xl border border-white/50 relative z-0">
-                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat & Megjegyzés</span>
-                              <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={searchTerm} />
-                              <div className="mt-1 border-t border-black/5 pt-1">
-                                <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={searchTerm} />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            );
-          })
+                );
+              })
+            )}
+          </>
         )}
 
-        {!printingDate && searchTerm === "" && (
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-end gap-3 bg-white/90 backdrop-blur-xl p-4 rounded-3xl shadow-sm border border-white/60 w-full sm:w-max sm:ml-auto no-print">
-            <input type="text" placeholder="pl. 17:00 - 17:15" value={newTimeSlot} onChange={(e) => setNewTimeSlot(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addSingleAppointment()} className="w-full sm:w-40 bg-white/80 border border-white p-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500 text-sm font-semibold text-slate-900 transition-all text-center sm:text-left shadow-sm" />
+        {!printingDate && searchTerm === "" && !isInitialLoading && (
+          <div id="new-appointment-bar" className="mt-6 flex flex-col sm:flex-row items-center justify-end gap-3 bg-white/90 backdrop-blur-xl p-4 rounded-3xl shadow-sm border border-white/60 w-full sm:w-max sm:ml-auto no-print scroll-mt-24">
+            <input 
+              ref={newTimeSlotRef}
+              type="text" 
+              placeholder="pl. 17:00 - 17:15" 
+              value={newTimeSlot} 
+              onChange={(e) => setNewTimeSlot(e.target.value)} 
+              onKeyDown={(e) => e.key === "Enter" && addSingleAppointment()} 
+              className="w-full sm:w-40 bg-white/80 border border-white p-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500 text-sm font-semibold text-slate-900 transition-all text-center sm:text-left shadow-sm" 
+            />
             <button onClick={addSingleAppointment} className="w-full sm:w-auto bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-black font-semibold shadow-md transition-all active:scale-95 text-sm flex items-center justify-center gap-1.5 cursor-pointer"><PlusIcon /> Új időpont</button>
           </div>
         )}

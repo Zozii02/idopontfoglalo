@@ -60,6 +60,10 @@ export default function Home() {
   const [showStats, setShowStats] = useState(false);
   const [statsPeriod, setStatsPeriod] = useState<'today' | 'week' | 'month' | 'all'>('month');
 
+  // --- ÚJ LEGÖRDÜLŐ MENÜ ÁLLAPOT ---
+  const [isDeptDropdownOpen, setIsDeptDropdownOpen] = useState(false);
+  const deptDropdownRef = useRef<HTMLDivElement>(null);
+
   const [appointments, setAppointments] = useState<any[]>([]);
   const [departmentSearch, setDepartmentSearch] = useState(""); 
   const [showDeleted, setShowDeleted] = useState(false);
@@ -116,50 +120,6 @@ export default function Home() {
   const [toast, setToast] = useState<{visible: boolean, message: string, type: 'success' | 'error'}>({
     visible: false, message: "", type: 'success'
   });
-
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const isDraggingTabs = useRef(false);
-  const startX = useRef(0);
-  const scrollLeftPos = useRef(0);
-  const hasDragged = useRef(false);
-
-  const handleTabMouseDown = (e: React.MouseEvent) => {
-    isDraggingTabs.current = true;
-    hasDragged.current = false;
-    if (!scrollContainerRef.current) return;
-    startX.current = e.pageX - scrollContainerRef.current.offsetLeft;
-    scrollLeftPos.current = scrollContainerRef.current.scrollLeft;
-    scrollContainerRef.current.style.cursor = 'grabbing';
-    scrollContainerRef.current.style.userSelect = 'none';
-  };
-
-  const handleTabMouseLeaveOrUp = () => {
-    isDraggingTabs.current = false;
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.style.cursor = 'grab';
-      scrollContainerRef.current.style.removeProperty('user-select');
-    }
-  };
-
-  const handleTabMouseMove = (e: React.MouseEvent) => {
-    if (!isDraggingTabs.current || !scrollContainerRef.current) return;
-    const x = e.pageX - scrollContainerRef.current.offsetLeft;
-    const walk = (x - startX.current) * 1.5; 
-    if (Math.abs(walk) > 5) {
-      hasDragged.current = true;
-    }
-    scrollContainerRef.current.scrollLeft = scrollLeftPos.current - walk;
-  };
-
-  const handleTabClick = (c: string, e: React.MouseEvent) => {
-    if (hasDragged.current) {
-      e.preventDefault();
-      e.stopPropagation();
-      hasDragged.current = false;
-      return;
-    }
-    setActiveTab(c);
-  };
 
   const searchPatients = async (term: string) => {
     if (!term || term.length < 2) return [];
@@ -350,10 +310,14 @@ export default function Home() {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setIsNotifOpen(false);
       }
+      // Legördülő menü bezárása kattintásra kívül
+      if (deptDropdownRef.current && !deptDropdownRef.current.contains(e.target as Node)) {
+        setIsDeptDropdownOpen(false);
+      }
     };
-    if (isNotifOpen) document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isNotifOpen]);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 300);
@@ -369,7 +333,7 @@ export default function Home() {
       if (e.key === 'Escape') { 
         closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); 
         closeAppInfoModal(); setIsNotifOpen(false); setIsDeptModalOpen(false);
-        setIsBugModalOpen(false);
+        setIsBugModalOpen(false); setIsDeptDropdownOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -477,7 +441,7 @@ export default function Home() {
   const handleSaveProfileName = async () => {
     if (!profileNameInput.trim()) return showAlert("Hiányzó adat", "Kérlek, add meg a teljes nevedet a folytatáshoz! (Pl. Dr. Kovács)");
     const { data, error } = await supabase.auth.updateUser({ data: { display_name: profileNameInput } });
-    if (error) return showAlert("Hiba", "Nem sikerült elmenteni a nevedet. Kérlek, prób újra!");
+    if (error) return showAlert("Hiba", "Nem sikerült elmenteni a nevedet. Kérlek, próbáld újra!");
     else { setUser(data.user); setNeedsProfileName(false); }
   };
 
@@ -1420,7 +1384,7 @@ export default function Home() {
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"><SearchIcon size={16} /></div>
                     <input 
                       type="text" 
-                      placeholder="Keresés a vizsgálatok között..." 
+                      placeholder="Keres��s a vizsgálatok között..." 
                       value={labSearchTerm}
                       onChange={(e) => setLabSearchTerm(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 py-2 pl-9 pr-4 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 font-semibold text-slate-800 transition-all outline-none"
@@ -1706,59 +1670,76 @@ export default function Home() {
           <div className="relative z-30 bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-6 mb-6 no-print">
             <div className="flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between">
               
-              <div className="w-full xl:w-1/2 overflow-hidden">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    <label className="block text-slate-500 font-semibold text-xs uppercase tracking-widest">Szakrendelés kiválasztása</label>
-                    <button onClick={() => setIsDeptModalOpen(true)} className="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-200/50 rounded-lg transition-colors cursor-pointer" title="Szakrendelések kezelése (Hozzáadás/Törlés)">
-                      <SettingsIcon size={14} />
-                    </button>
+              <div className="w-full xl:w-[45%] flex flex-col gap-4">
+                
+                {/* ÚJ: ELEGÁNS LEGÖRDÜLŐ SZAKRENDELÉS VÁLASZTÓ */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-slate-800">
+                    <div className="bg-red-100 text-red-600 p-2 rounded-xl shadow-sm"><SettingsIcon size={18} /></div>
+                    <span className="font-extrabold text-lg">Szakrendelés</span>
                   </div>
-                  
-                  <div className="flex items-center gap-3">
+                  <div className="flex gap-2">
                     {activeTab && (
-                      <button onClick={openPriceModal} className="text-xs font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer">
-                        <TagIcon /> {activeTab} árak
+                      <button onClick={openPriceModal} className="text-xs font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer">
+                        <TagIcon /> Árlista
                       </button>
                     )}
-                    
-                    <div className="relative w-full sm:w-40 group">
-                      <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-400"><SearchIcon size={14} /></div>
-                      <input 
-                        type="text" 
-                        placeholder="Keresés..." 
-                        value={departmentSearch} 
-                        onChange={(e) => setDepartmentSearch(e.target.value)} 
-                        className="w-full bg-white/90 border border-slate-200 py-1.5 pl-8 pr-3 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 font-semibold text-slate-700 transition-all shadow-sm" 
-                      />
+                    <button onClick={() => setIsDeptModalOpen(true)} className="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-2 rounded-xl transition-colors shadow-sm cursor-pointer" title="Szakrendelések kezelése">
+                      Kezelés
+                    </button>
+                  </div>
+                </div>
+
+                <div className="relative z-50 w-full" ref={deptDropdownRef}>
+                  <button 
+                    onClick={() => setIsDeptDropdownOpen(!isDeptDropdownOpen)}
+                    className={`w-full bg-white border-2 text-left px-5 py-4 rounded-2xl flex justify-between items-center transition-all shadow-sm group cursor-pointer ${isDeptDropdownOpen ? 'border-red-400 ring-4 ring-red-50' : 'border-slate-200 hover:border-slate-300'}`}
+                  >
+                    <div className="truncate pr-4">
+                      <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-0.5">Kiválasztott szakrendelés</span>
+                      <span className="block text-lg font-extrabold text-slate-800 group-hover:text-red-600 transition-colors truncate">
+                        {activeTab || "Válassz szakrendelést..."}
+                      </span>
+                    </div>
+                    <div className={`p-2 rounded-full transition-transform duration-300 shrink-0 ${isDeptDropdownOpen ? 'rotate-180 bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500 group-hover:bg-red-50 group-hover:text-red-500'}`}>
+                      <ChevronDownIcon size={20} />
+                    </div>
+                  </button>
+
+                  {/* A Legördülő Panel */}
+                  <div className={`absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] border border-slate-100 overflow-hidden transition-all duration-200 origin-top ${isDeptDropdownOpen ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible pointer-events-none'}`}>
+                    <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                      <div className="relative">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon size={16} /></div>
+                        <input 
+                          type="text" 
+                          placeholder="Keresés a szakrendelések között..." 
+                          value={departmentSearch}
+                          onChange={(e) => setDepartmentSearch(e.target.value)}
+                          className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 font-semibold text-slate-800 outline-none shadow-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="max-h-[320px] overflow-y-auto custom-scrollbar p-2 grid grid-cols-1 sm:grid-cols-2 gap-1 bg-white">
+                      {filteredCategories.length > 0 ? (
+                         filteredCategories.map(c => (
+                           <button
+                             key={c}
+                             onClick={() => { setActiveTab(c); setIsDeptDropdownOpen(false); setDepartmentSearch(""); }}
+                             className={`text-left px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-between group cursor-pointer ${activeTab === c ? 'bg-red-50 text-red-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                           >
+                             <span className="truncate pr-2">{c}</span>
+                             {activeTab === c && <CheckCircleIcon size={16} />}
+                           </button>
+                         ))
+                      ) : (
+                         <div className="col-span-full py-8 text-center text-sm font-medium text-slate-400 italic">Nincs találat a keresésre.</div>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div 
-                  ref={scrollContainerRef}
-                  onMouseDown={handleTabMouseDown}
-                  onMouseLeave={handleTabMouseLeaveOrUp}
-                  onMouseUp={handleTabMouseLeaveOrUp}
-                  onMouseMove={handleTabMouseMove}
-                  className="flex gap-2 overflow-x-auto pb-3 custom-scrollbar scroll-smooth min-h-[46px] cursor-grab active:cursor-grabbing"
-                >
-                  {filteredCategories.length > 0 ? (
-                    filteredCategories.map(c => (
-                      <button 
-                        key={c} 
-                        onClick={(e) => handleTabClick(c, e)} 
-                        className={`whitespace-nowrap px-4 py-2 rounded-full font-semibold text-sm transition-all border select-none ${activeTab === c ? 'bg-red-600 border-red-600 text-white shadow-md' : 'bg-white/80 border-white text-slate-600 hover:bg-white hover:border-slate-200 shadow-sm'}`}
-                      >
-                        {c}
-                      </button>
-                    ))
-                  ) : (
-                    <span className="text-sm font-medium text-slate-400 italic py-2">Nincs megjeleníthető szakrendelés...</span>
-                  )}
-                </div>
-                
-                <label className="mt-3 flex items-center gap-3 cursor-pointer group w-max">
+                <label className="flex items-center gap-3 cursor-pointer group w-max mt-1">
                   <div className="relative">
                     <input type="checkbox" className="sr-only" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
                     <div className={`block w-10 h-6 rounded-full transition-colors duration-300 border ${showDeleted ? "bg-slate-800 border-slate-800" : "bg-slate-200 border-slate-300 group-hover:bg-slate-300"}`}></div>
@@ -1768,9 +1749,9 @@ export default function Home() {
                 </label>
               </div>
 
-              <div className="w-px h-24 bg-slate-200/60 hidden xl:block"></div>
+              <div className="w-px h-32 bg-slate-200/60 hidden xl:block mx-4"></div>
 
-              <div className="w-full xl:w-auto flex-1">
+              <div className="w-full xl:w-auto flex-1 relative z-0">
                  <div className="flex items-center gap-2.5 mb-4 text-slate-800 font-extrabold text-lg">
                     <div className="bg-red-100 text-red-600 p-1.5 rounded-lg shadow-sm"><ListPlusIcon /></div>
                     <span>Napi előjegyzési lista létrehozása</span>
@@ -1856,7 +1837,7 @@ export default function Home() {
         )}
 
         {sortedDates.length === 0 ? (
-          <div className="bg-white/80 backdrop-blur-xl p-12 md:p-20 text-center rounded-3xl shadow-sm border border-white/60 flex flex-col items-center no-print">
+          <div className="bg-white/80 backdrop-blur-xl p-12 md:p-20 text-center rounded-3xl shadow-sm border border-white/60 flex flex-col items-center no-print relative z-0">
             <div className="text-slate-300 mb-4"><CalendarIcon size={64} /></div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">{searchTerm ? "Nincs találat" : "Még nincsenek időpontok"}</h3>
             <p className="text-slate-600 text-sm font-medium">{searchTerm ? "Próbálkozz más névvel vagy TAJ számmal." : "Válassz dátumot a generátorban, és hozd létre a napot!"}</p>
@@ -1877,7 +1858,7 @@ export default function Home() {
             const formattedRevenue = dailyRevenue > 0 ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyRevenue) : "0 Ft";
 
             return (
-              <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] scroll-mt-[100px] print-container ${printingDate ? 'bg-white border-0 shadow-none' : 'overflow-hidden bg-white/90 backdrop-blur-xl border border-white/60'}`}>
+              <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] scroll-mt-[100px] print-container relative z-0 ${printingDate ? 'bg-white border-0 shadow-none' : 'overflow-hidden bg-white/90 backdrop-blur-xl border border-white/60'}`}>
                 
                 <div className={`p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-slate-100'}`}>
                   

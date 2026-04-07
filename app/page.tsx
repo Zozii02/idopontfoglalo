@@ -3,7 +3,8 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabase";
 
-// --- Professzionális Minimalista Ikonok ---
+// --- Ikonok ---
+// (Ide kerültek az eddigi ikonok, kiegészítve a Kalkulátor ikonnal)
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
 const ListPlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M19 10v6"/><path d="M22 13h-6"/></svg>;
@@ -32,9 +33,124 @@ const XCircleIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="
 const BellIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>;
 const SettingsIcon = ({ size = 16 }: { size?: number }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 1.7l-.15.82a6.8 6.8 0 0 1-2.12 1.22l-.78-.37a2 2 0 0 0-2.67.73l-.22.38a2 2 0 0 0 .73 2.67l.78.37a6.8 6.8 0 0 1 0 2.45l-.78.37a2 2 0 0 0-.73 2.67l.22.38a2 2 0 0 0 2.67.73l.78-.37a6.8 6.8 0 0 1 2.12 1.22l.15.82a2 2 0 0 0 2 1.7h.44a2 2 0 0 0 2-1.7l.15-.82a6.8 6.8 0 0 1 2.12-1.22l.78.37a2 2 0 0 0 2.67-.73l.22-.38a2 2 0 0 0-.73-2.67l-.78-.37a6.8 6.8 0 0 1 0-2.45l.78-.37a2 2 0 0 0 .73-2.67l-.22-.38a2 2 0 0 0-2.67-.73l-.78.37a6.8 6.8 0 0 1-2.12-1.22l-.15-.82A2 2 0 0 0 12.22 2z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
 const FeedbackIcon = ({ size = 20 }: { size?: number }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
+const CalculatorIcon = ({ size = 18 }: { size?: number }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16.01" y2="14"></line><line x1="12" y1="14" x2="12.01" y2="14"></line><line x1="8" y1="14" x2="8.01" y2="14"></line><line x1="16" y1="10" x2="16.01" y2="10"></line><line x1="12" y1="10" x2="12.01" y2="10"></line><line x1="8" y1="10" x2="8.01" y2="10"></line><line x1="16" y1="18" x2="16.01" y2="18"></line><line x1="12" y1="18" x2="12.01" y2="18"></line><line x1="8" y1="18" x2="8.01" y2="18"></line></svg>;
+const DocumentIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>;
 
 // --- HÁTTÉRKÉP BEÁLLÍTÁSA ---
 const BACKGROUND_IMAGE_URL = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2053&auto=format&fit=crop";
+
+// --- LABOR VIZSGÁLAT ADATBÁZIS (CSV ALAPJÁN) ---
+// Itt gyorsan átírhatod az árakat a valós értékekre a "price" mezőben.
+const LAB_DATABASE = [
+  {
+    category: "Általános",
+    items: [
+      { id: "alt_1", name: "CRP", price: 0, time: "1 munkanap" },
+      { id: "alt_2", name: "AST (ASO)", price: 0, time: "3 munkanap" },
+      { id: "alt_3", name: "Vvt süllyedés", price: 0, time: "1 munkanap" },
+      { id: "alt_4", name: "Vérkép automatával", price: 0, time: "1 munkanap" },
+      { id: "alt_5", name: "Vérkép+reticulocyta", price: 0, time: "1 munkanap" },
+      { id: "alt_6", name: "Teljes vizelet ált+üledék", price: 0, time: "1 munkanap" },
+      { id: "alt_7", name: "Vizelet tenyésztés", price: 0, time: "-" },
+      { id: "alt_8", name: "Vércsoport", price: 0, time: "2 munkanap" },
+      { id: "alt_9", name: "Húgysav", price: 0, time: "1 munkanap" },
+      { id: "alt_10", name: "Epesav", price: 0, time: "8 munkanap" },
+      { id: "alt_11", name: "Koleszterin", price: 0, time: "1 munkanap" },
+      { id: "alt_12", name: "HDL-koleszterin", price: 0, time: "1 munkanap" },
+      { id: "alt_13", name: "LDL koleszterin", price: 0, time: "1 munkanap" },
+      { id: "alt_14", name: "Triglicerid", price: 0, time: "1 munkanap" },
+      { id: "alt_15", name: "Vas", price: 0, time: "1 munkanap" },
+      { id: "alt_16", name: "Transzferrin", price: 0, time: "1 munkanap" },
+      { id: "alt_17", name: "Transzferrin szat.", price: 0, time: "1 munkanap" },
+      { id: "alt_18", name: "Ferritin", price: 0, time: "1 munkanap" },
+      { id: "alt_19", name: "Lipáz", price: 0, time: "1 munkanap" },
+      { id: "alt_20", name: "Amiláz", price: 0, time: "1 munkanap" },
+      { id: "alt_21", name: "Albumin", price: 0, time: "1 munkanap" },
+      { id: "alt_22", name: "Összfehérje", price: 0, time: "1 munkanap" },
+      { id: "alt_23", name: "IgG / IgA / IgM", price: 0, time: "3 munkanap" },
+      { id: "alt_24", name: "Nagylabor csomag", price: 18000, time: "Csomag" },
+    ]
+  },
+  {
+    category: "Hemosztázis",
+    items: [
+      { id: "hem_1", name: "Prothrombin (INR)", price: 0, time: "1 munkanap" },
+      { id: "hem_2", name: "APTI", price: 0, time: "1 munkanap" },
+      { id: "hem_3", name: "Trombin idő", price: 0, time: "1 munkanap" },
+      { id: "hem_4", name: "Fibrinogén", price: 0, time: "1 munkanap" },
+      { id: "hem_5", name: "D-dimer", price: 0, time: "1 munkanap" },
+    ]
+  },
+  {
+    category: "Máj és Vese",
+    items: [
+      { id: "mv_1", name: "Összbilirubin", price: 0, time: "1 munkanap" },
+      { id: "mv_2", name: "GPT / GOT / GGT", price: 0, time: "1 munkanap" },
+      { id: "mv_3", name: "Alkalikus foszfatáz", price: 0, time: "1 munkanap" },
+      { id: "mv_4", name: "LDH", price: 0, time: "1 munkanap" },
+      { id: "mv_5", name: "Karbamid", price: 0, time: "1 munkanap" },
+      { id: "mv_6", name: "Kreatinin", price: 0, time: "1 munkanap" },
+    ]
+  },
+  {
+    category: "Cukor / Anyagcsere",
+    items: [
+      { id: "cuk_1", name: "Glukóz- éhgyomri", price: 0, time: "1 munkanap" },
+      { id: "cuk_2", name: "Hemoglobin A1c", price: 0, time: "1 munkanap" },
+      { id: "cuk_3", name: "Fruktózamin", price: 0, time: "3 munkanap" },
+      { id: "cuk_4", name: "Inzulin- éhgyomri", price: 0, time: "1 munkanap" },
+      { id: "cuk_5", name: "3 pontos vércukorterhelés", price: 1200, time: "1 munkanap" },
+      { id: "cuk_6", name: "3 pontos inzulinterhelés", price: 7500, time: "1 munkanap" },
+      { id: "cuk_7", name: "HOMA index", price: 0, time: "1 munkanap" },
+    ]
+  },
+  {
+    category: "Ionok",
+    items: [
+      { id: "ion_1", name: "Nátrium / Kálium / Klorid", price: 0, time: "1 munkanap" },
+      { id: "ion_2", name: "Calcium / Magnézium", price: 0, time: "1 munkanap" },
+      { id: "ion_3", name: "P-foszfor", price: 0, time: "1 munkanap" },
+      { id: "ion_4", name: "Cink", price: 0, time: "3 munkanap" },
+    ]
+  },
+  {
+    category: "Hormonok",
+    items: [
+      { id: "horm_1", name: "TSH / fT3", price: 0, time: "1 munkanap" },
+      { id: "horm_2", name: "FT4", price: 3000, time: "1 munkanap" },
+      { id: "horm_3", name: "Anti TPO", price: 4000, time: "1 munkanap" },
+      { id: "horm_4", name: "Cortizol", price: 3500, time: "2 munkanap" },
+      { id: "horm_5", name: "FSH / LH / Prolactin", price: 0, time: "1 munkanap" },
+      { id: "horm_6", name: "Ösztradiol / Progeszteron", price: 0, time: "1 munkanap" },
+      { id: "horm_7", name: "AMH", price: 0, time: "3 munkanap" },
+      { id: "horm_8", name: "Tesztoszteron (Total/Szabad)", price: 0, time: "1 munkanap" },
+    ]
+  },
+  {
+    category: "Allergia / Intolerancia",
+    items: [
+      { id: "all_1", name: "Nutritív 20 / 40", price: 0, time: "5 munkanap" },
+      { id: "all_2", name: "40-es étel intolerancia", price: 0, time: "3 munkanap" },
+      { id: "all_3", name: "108-as intolerancia panel", price: 0, time: "5 munkanap" },
+      { id: "all_4", name: "220 intolerancia igg", price: 80000, time: "Csomag" },
+      { id: "all_5", name: "Laktóz vér/nyál", price: 0, time: "10 munkanap" },
+      { id: "all_6", name: "Inhalatív 20 / 40", price: 0, time: "5 munkanap" },
+      { id: "all_7", name: "Hisztamin intolerancia (DAO)", price: 0, time: "17 munkanap" },
+    ]
+  },
+  {
+    category: "Speciális / Egyéb",
+    items: [
+      { id: "spec_1", name: "Anti-DSdna", price: 6000, time: "-" },
+      { id: "spec_2", name: "Celluláris immunstátusz", price: 31000, time: "-" },
+      { id: "spec_3", name: "Cell. Immun + NK funkció", price: 55000, time: "-" },
+      { id: "spec_4", name: "NK lymphocyta funkció", price: 38000, time: "-" },
+      { id: "spec_5", name: "D-vitamin", price: 0, time: "1 munkanap" },
+      { id: "spec_6", name: "B12 vitamin / Folsav", price: 0, time: "1 munkanap" },
+    ]
+  }
+];
+
 
 // --- OKOS FORMÁZÓK ÉS SEGÉDEK ---
 const formatTAJ = (val: string) => {
@@ -285,6 +401,13 @@ export default function Home() {
   const [categories, setCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("");
   
+  // --- ÚJ ÁLLAPOTOK A LABOR KALKULÁTORHOZ ---
+  const [showLabCalculator, setShowLabCalculator] = useState(false);
+  const [selectedLabTests, setSelectedLabTests] = useState<string[]>([]);
+  const [labPatientName, setLabPatientName] = useState("");
+  const [labSearchTerm, setLabSearchTerm] = useState("");
+  const [includeBloodDrawFee, setIncludeBloodDrawFee] = useState(true);
+
   const [appointments, setAppointments] = useState<any[]>([]);
   const [departmentSearch, setDepartmentSearch] = useState(""); 
   const [showDeleted, setShowDeleted] = useState(false);
@@ -306,6 +429,7 @@ export default function Home() {
   const [genBreakEnd, setGenBreakEnd] = useState("13:00");
 
   const [printingDate, setPrintingDate] = useState<string | null>(null);
+  const [printingLabQuote, setPrintingLabQuote] = useState(false); // ÚJ
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   // --- Globális Árlista & Szakrendelések Állapotok ---
@@ -388,6 +512,34 @@ export default function Home() {
       return;
     }
     setActiveTab(c);
+  };
+
+  // --- LABOR KALKULÁTOR FUNKCIÓK ---
+  const toggleLabTest = (id: string) => {
+    setSelectedLabTests(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
+  };
+
+  const getSelectedLabItemsData = () => {
+    const items: any[] = [];
+    LAB_DATABASE.forEach(cat => {
+      cat.items.forEach(item => {
+        if (selectedLabTests.includes(item.id)) items.push(item);
+      });
+    });
+    return items;
+  };
+
+  const calculateLabTotal = () => {
+    const items = getSelectedLabItemsData();
+    const testsTotal = items.reduce((sum, item) => sum + item.price, 0);
+    const baseFee = includeBloodDrawFee ? 3000 : 0;
+    return testsTotal + baseFee;
+  };
+
+  const handlePrintLabQuote = () => {
+    if (selectedLabTests.length === 0) return showAlert("Üres ajánlat", "Kérlek, válassz ki legalább egy vizsgálatot a nyomtatáshoz!");
+    setPrintingLabQuote(true);
+    setTimeout(() => { window.print(); }, 300);
   };
 
 
@@ -484,7 +636,6 @@ export default function Home() {
       formData.append("_subject", "Új hibabejelentés: Medical-Aqua");
       formData.append("_captcha", "false");
 
-      // ! --- IDE ÍRD BE A SAJÁT E-MAIL CÍMEDET --- !
       const response = await fetch("https://formsubmit.co/ajax/TE_EMAIL_CIMED@gmail.com", {
         method: "POST",
         body: formData
@@ -549,7 +700,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const handleAfterPrint = () => setPrintingDate(null);
+    const handleAfterPrint = () => { setPrintingDate(null); setPrintingLabQuote(false); };
     window.addEventListener('afterprint', handleAfterPrint);
     return () => window.removeEventListener('afterprint', handleAfterPrint);
   }, []);
@@ -889,6 +1040,8 @@ export default function Home() {
   };
 
   // --- UI COMPONENTEK ---
+  // (Ugyanazok a modalok, mint korábban...)
+
   const customModalUI = (
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${modal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeModal}></div>
@@ -913,267 +1066,6 @@ export default function Home() {
     </div>
   );
 
-  const priceModalUI = (
-    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${isPriceModalOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsPriceModalOpen(false)}></div>
-      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-2xl border border-slate-200 flex flex-col transform transition-all duration-300 max-h-[80vh] ${isPriceModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
-        
-        <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="bg-emerald-100 text-emerald-600 p-2.5 rounded-xl"><TagIcon /></div>
-            <div>
-              <h3 className="text-xl font-extrabold text-slate-900">Árlista</h3>
-              <p className="text-sm font-bold text-emerald-600 uppercase tracking-widest">{activeTab}</p>
-            </div>
-          </div>
-          <button onClick={() => setIsPriceModalOpen(false)} className="p-2 bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 rounded-xl transition-colors font-bold text-sm">Bezár (Esc)</button>
-        </div>
-
-        <div className="overflow-y-auto p-6 custom-scrollbar flex-1 bg-slate-50/50">
-          {currentPrices.length === 0 ? (
-            <div className="text-center text-slate-500 font-medium py-10 border-2 border-dashed border-slate-200 rounded-2xl">
-              Nincsenek még árak felvéve ehhez a szakrendeléshez.<br/>Kattints az "Új tétel hozzáadása" gombra!
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {currentPrices.map((item) => (
-                <div key={item.id} className="flex flex-col sm:flex-row gap-3 bg-white p-3 rounded-2xl shadow-sm border border-slate-200 hover:border-slate-300 transition-all items-center">
-                  <div className="w-full sm:flex-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest block mb-1">Vizsgálat megnevezése</label>
-                    <input type="text" value={item.name} onChange={(e) => updatePriceItem(item.id, 'name', e.target.value)} placeholder="pl. Hasi ultrahang" className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none font-semibold text-slate-800 transition-all" />
-                  </div>
-                  <div className="w-full sm:w-40">
-                    <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest block mb-1">Ár</label>
-                    <input type="text" value={item.price} onChange={(e) => updatePriceItem(item.id, 'price', e.target.value)} placeholder="pl. 15.000 Ft" className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none font-semibold text-slate-800 transition-all" />
-                  </div>
-                  <button onClick={() => removePriceItem(item.id)} className="w-full sm:w-auto mt-4 sm:mt-5 p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors flex justify-center" title="Tétel törlése">
-                    <TrashIcon />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          
-          <button onClick={addPriceItem} className="mt-4 w-full border-2 border-dashed border-slate-300 text-slate-600 hover:border-emerald-500 hover:text-emerald-700 bg-white py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
-            <PlusIcon /> Új tétel hozzáadása
-          </button>
-        </div>
-
-        <div className="p-6 border-t border-slate-100 shrink-0 bg-white rounded-b-3xl">
-           <button onClick={savePrices} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-md hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-2">
-             Mentés és Bezárás
-           </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const deptModalUI = (
-    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${isDeptModalOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsDeptModalOpen(false)}></div>
-      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-lg border border-slate-200 flex flex-col transform transition-all duration-300 max-h-[80vh] ${isDeptModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
-        
-        <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="bg-slate-100 text-slate-600 p-2.5 rounded-xl"><SettingsIcon size={20} /></div>
-            <div>
-              <h3 className="text-xl font-extrabold text-slate-900">Szakrendelések kezelése</h3>
-              <p className="text-sm font-bold text-slate-500">Új hozzáadása vagy meglévő törlése</p>
-            </div>
-          </div>
-          <button onClick={() => setIsDeptModalOpen(false)} className="p-2 bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 rounded-xl transition-colors font-bold text-sm">Bezár</button>
-        </div>
-
-        <div className="overflow-y-auto p-6 custom-scrollbar flex-1 bg-slate-50/50">
-          {categories.length === 0 ? (
-            <p className="text-center text-slate-500 font-medium py-4">Nincs még szakrendelés a rendszerben.</p>
-          ) : (
-            <div className="space-y-2">
-              {categories.map((cat) => (
-                <div key={cat} className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                  <span className="font-bold text-slate-800">{cat}</span>
-                  <button onClick={() => handleDeleteDepartment(cat)} className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors" title="Törlés">
-                    <TrashIcon />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="p-6 border-t border-slate-100 shrink-0 bg-white rounded-b-3xl">
-           <div className="flex flex-col sm:flex-row gap-3">
-             <input 
-               type="text" 
-               placeholder="Új szakrendelés neve..." 
-               value={newDeptName} 
-               onChange={(e) => setNewDeptName(e.target.value)} 
-               onKeyDown={(e) => e.key === "Enter" && handleAddDepartment()}
-               className="flex-1 bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-slate-200 focus:border-slate-500 outline-none font-semibold text-slate-800 transition-all"
-             />
-             <button onClick={handleAddDepartment} className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-2">
-               <PlusIcon /> Hozzáadás
-             </button>
-           </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const bugModalUI = (
-    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${isBugModalOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !isSubmittingBug && setIsBugModalOpen(false)}></div>
-      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-lg border border-slate-200 flex flex-col transform transition-all duration-300 ${isBugModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
-        
-        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50 rounded-t-3xl shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="bg-amber-100 text-amber-600 p-2.5 rounded-xl"><FeedbackIcon size={24} /></div>
-            <div>
-              <h3 className="text-xl font-extrabold text-slate-900">Hibabejelentő</h3>
-              <p className="text-sm font-bold text-slate-500">Ötlet vagy probléma küldése a fejlesztőnek</p>
-            </div>
-          </div>
-          <button disabled={isSubmittingBug} onClick={() => setIsBugModalOpen(false)} className="p-2 bg-white border border-slate-200 hover:bg-red-50 hover:text-red-600 text-slate-600 rounded-xl transition-colors font-bold text-sm shadow-sm disabled:opacity-50">Mégsem</button>
-        </div>
-
-        <div className="p-6 flex-1 bg-white">
-          <div className="mb-4">
-            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest block mb-2">Mit tapasztaltál? Milyen ötleted van?</label>
-            <textarea 
-              value={bugDescription}
-              onChange={(e) => setBugDescription(e.target.value)}
-              placeholder="Írd le ide részletesen..."
-              rows={4}
-              disabled={isSubmittingBug}
-              className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-amber-100 focus:border-amber-500 outline-none font-medium text-slate-800 transition-all custom-scrollbar resize-none"
-            />
-          </div>
-          <div>
-            <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest block mb-2">Kép csatolása (Opcionális)</label>
-            <input 
-              type="file" 
-              accept="image/png, image/jpeg, image/jpg"
-              onChange={(e) => setBugFile(e.target.files ? e.target.files[0] : null)}
-              disabled={isSubmittingBug}
-              className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 transition-all cursor-pointer"
-            />
-          </div>
-        </div>
-
-        <div className="p-6 border-t border-slate-100 shrink-0 bg-white rounded-b-3xl">
-           <button 
-             onClick={handleBugSubmit} 
-             disabled={isSubmittingBug}
-             className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-md hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed"
-           >
-             {isSubmittingBug ? <span className="flex items-center gap-2 animate-pulse"><RefreshIcon /> Küldés folyamatban...</span> : "E-mail küldése"}
-           </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const patientHistoryModalUI = (
-    <div className={`fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${historyModal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeHistoryModal}></div>
-      <div className={`relative bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-2xl border border-slate-200 flex flex-col transform transition-all duration-300 max-h-[80vh] ${historyModal.isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
-        
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-white/50 rounded-t-3xl shrink-0">
-          <div>
-            <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2"><HistoryIcon /> {historyModal.patientName} - Előzmények</h3>
-            {historyModal.taj && <p className="text-sm font-bold text-slate-500 mt-1">TAJ: {formatTAJ(historyModal.taj)}</p>}
-          </div>
-          <button onClick={closeHistoryModal} className="p-2 bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 rounded-xl transition-colors font-bold text-sm">Bezár (Esc)</button>
-        </div>
-
-        <div className="overflow-y-auto p-6 custom-scrollbar h-full">
-          {historyModal.data.length === 0 ? (
-             <p className="text-center text-slate-500 font-medium py-8">Nem található korábbi bejegyzés ehhez a TAJ számhoz.</p>
-          ) : (
-            <div className="space-y-4">
-              {historyModal.data.map((app, idx) => (
-                <div key={idx} className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center gap-4 justify-between hover:border-slate-300 transition-colors">
-                   <div>
-                     <div className="flex items-center gap-2 mb-1">
-                        <span className="font-bold text-slate-900">{formatShortDate(app.appointment_date)}</span>
-                        <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-extrabold">{app.time_slot}</span>
-                        <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider border border-blue-100">{app.department}</span>
-                     </div>
-                     <div className="text-sm font-medium text-slate-600 mt-2">
-                        {app.examination_type ? <span>Vizsgálat: <b className="text-slate-800">{app.examination_type}</b></span> : <span className="italic opacity-60">Nincs vizsgálat rögzítve</span>}
-                        {app.notes && <span className="ml-3 border-l pl-3 border-slate-300">Jegyzet: <b className="text-slate-800">{app.notes}</b></span>}
-                     </div>
-                   </div>
-                   <div className="shrink-0">
-                     <span className={`text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded-lg border shadow-sm
-                       ${app.status === "Megérkezett" ? "bg-amber-100 text-amber-800 border-amber-200" :
-                         app.status === "Vizsgálaton" ? "bg-blue-100 text-blue-800 border-blue-200" :
-                         app.status === "Befejezve" ? "bg-emerald-100 text-emerald-800 border-emerald-200" :
-                         app.status === "Nem jelent meg" ? "bg-slate-800 text-white border-slate-900" :
-                         "bg-slate-100 text-slate-700 border-slate-200"
-                       }`}>
-                       {app.status || "Előjegyzett"}
-                     </span>
-                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  const infoModalUI = (
-    <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${appInfoModal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeAppInfoModal}></div>
-      <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] w-full max-w-lg border border-slate-100 flex flex-col transform transition-all duration-300 max-h-[80vh] ${appInfoModal.isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
-        
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl shrink-0">
-           <div className="flex items-center gap-3">
-             <div className="bg-blue-100 text-blue-600 p-2.5 rounded-xl"><InfoIcon /></div>
-             <div>
-               <h3 className="text-xl font-extrabold text-slate-900">Napló</h3>
-               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{appInfoModal.data?.time_slot} {appInfoModal.data?.patient_name && `• ${appInfoModal.data.patient_name}`}</p>
-             </div>
-           </div>
-           <button onClick={closeAppInfoModal} className="p-2 bg-white hover:bg-slate-200 text-slate-600 rounded-xl transition-colors font-bold shadow-sm border border-slate-200"><TrashIcon size={14}/></button>
-        </div>
-        
-        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
-          {appInfoModal.loading ? (
-             <div className="flex justify-center items-center py-10 opacity-50 animate-pulse"><RefreshIcon /></div>
-          ) : appInfoModal.logs.length === 0 ? (
-             <p className="text-center text-slate-500 text-sm font-medium py-6 italic">Nincs még bejegyzés erről az időpontról.</p>
-          ) : (
-            <div className="relative border-l-2 border-slate-200 ml-4 space-y-6 pb-4">
-              {appInfoModal.logs.map((log, idx) => {
-                 let bgColor = "bg-blue-100 border-blue-200 text-blue-600";
-                 if (log.action === "Törlés") bgColor = "bg-red-100 border-red-200 text-red-600";
-                 if (log.action === "Létrehozás") bgColor = "bg-emerald-100 border-emerald-200 text-emerald-600";
-                 if (log.action === "Visszaállítás") bgColor = "bg-amber-100 border-amber-200 text-amber-600";
-                 
-                 return (
-                   <div key={idx} className="relative pl-6">
-                      <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${bgColor.split(" ")[0]}`}></div>
-                      <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl shadow-sm">
-                         <div className="flex justify-between items-center mb-1.5 gap-2">
-                           <span className={`text-[10px] uppercase font-extrabold tracking-widest px-2 py-0.5 rounded ${bgColor}`}>{log.action}</span>
-                           <span className="text-xs font-bold text-slate-400">{formatDateTime(log.modified_at)}</span>
-                         </div>
-                         <p className="text-sm font-bold text-slate-800 mb-1">{log.modified_by}</p>
-                         <p className="text-xs text-slate-600 leading-relaxed font-medium bg-white p-2 rounded-xl border border-slate-100">{log.details}</p>
-                      </div>
-                   </div>
-                 );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
   const toastUI = (
     <div className={`fixed bottom-6 right-6 z-[999] bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] border border-slate-100 p-4 flex items-center gap-3 transform transition-all duration-500 ease-out pointer-events-none
       ${toast.visible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-12 opacity-0 scale-95'}`}>
@@ -1184,6 +1076,7 @@ export default function Home() {
     </div>
   );
 
+  // Belépés ellenőrzés
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
@@ -1215,34 +1108,256 @@ export default function Home() {
             </p>
           </div>
         </div>
-
-        <div className="absolute bottom-6 right-4 md:right-8 text-slate-600/70 text-xs font-bold z-10">
-          &copy; 2026 Created by Zozi
-        </div>
       </div>
     );
   }
 
-  if (needsProfileName) {
+  // --- HA A LABOR KALKULÁTOR VAN NYITVA (NYOMTATÁSI NÉZET IS ITT) ---
+  if (showLabCalculator) {
+    const selectedItems = getSelectedLabItemsData();
+    const totalPrice = calculateLabTotal();
+    const formattedTotal = new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(totalPrice);
+
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
+      <div className={`min-h-screen font-sans pb-10 relative ${printingLabQuote ? 'bg-white print-mode' : 'bg-slate-50'}`}>
         {customModalUI}
-        <div className="absolute inset-0 bg-slate-100/60 backdrop-blur-2xl z-0 pointer-events-none"></div>
-        <div className="relative z-10 bg-white/80 backdrop-blur-xl p-10 md:p-14 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] w-full max-w-md border border-white/50 text-center">
-          <div className="flex justify-center text-red-600 mb-6 drop-shadow-sm"><UserIcon /></div>
-          <h2 className="text-2xl font-bold mb-2 text-slate-900">Üdvözlünk a rendszerben!</h2>
-          <p className="text-slate-600 mb-8 text-sm font-medium">Kérjük, add meg a teljes nevedet a naplózáshoz (pl. Dr. Kovács).</p>
-          <input type="text" placeholder="Teljes neved..." value={profileNameInput} onChange={(e) => setProfileNameInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSaveProfileName()} className="w-full p-3.5 bg-white/90 border border-white/50 rounded-xl focus:bg-white focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition-all text-slate-900 font-medium placeholder:text-slate-400 mb-4 text-center shadow-sm" />
-          <button onClick={handleSaveProfileName} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-semibold shadow-md hover:bg-black transition-all active:scale-95">Mentés és Tovább</button>
+        {toastUI}
+        
+        {/* FEJLÉC (csak nem nyomtatáskor) */}
+        {!printingLabQuote && (
+          <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm no-print">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                 <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain" />
+                 <div>
+                   <h1 className="text-xl font-bold tracking-tight text-slate-900">Labor Kalkulátor</h1>
+                   <p className="text-emerald-600 font-medium text-[11px] tracking-widest uppercase">Ajánlatkészítő</p>
+                 </div>
+              </div>
+              <button onClick={() => setShowLabCalculator(false)} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold shadow-sm hover:bg-black transition-all active:scale-95 flex items-center gap-2">
+                <ChevronLeftIcon /> Vissza az Előjegyzéshez
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* LABOR TARTALOM */}
+        <div className={`max-w-[1600px] mx-auto px-4 md:px-8 pt-8 ${printingLabQuote ? 'p-0 pt-0 max-w-none' : ''}`}>
+          
+          {/* NYOMTATÁSI NÉZET - KIZÁRÓLAG NYOMTATÁSKOR JELENIK MEG */}
+          {printingLabQuote && (
+            <div className="bg-white text-black p-8 max-w-4xl mx-auto printable-quote">
+              <div className="flex justify-between items-start border-b-2 border-emerald-600 pb-6 mb-8">
+                <div>
+                  <img src="/logo.png" alt="Medical-Aqua" className="h-20 object-contain mb-4" />
+                  <h1 className="text-3xl font-extrabold text-slate-900">Laboratóriumi Ajánlat</h1>
+                  <p className="text-slate-500 mt-1 font-medium text-lg">Dátum: {new Date().toLocaleDateString('hu-HU')}</p>
+                </div>
+                <div className="text-right text-sm text-slate-600 mt-2 space-y-1">
+                  <p className="font-bold text-slate-800">Medical-Aqua Kft.</p>
+                  <p>1234 Budapest, Példa utca 1.</p>
+                  <p>Telefon: +36 20 123 4567</p>
+                  <p>Email: info@medical-aqua.hu</p>
+                </div>
+              </div>
+
+              <div className="mb-8 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <h2 className="text-sm uppercase tracking-widest font-bold text-slate-500 mb-2">Páciens neve</h2>
+                <p className="text-2xl font-bold text-slate-900">{labPatientName || "Nincs megadva"}</p>
+              </div>
+
+              <div className="mb-8">
+                <h3 className="text-lg font-bold text-slate-800 border-b border-slate-200 pb-2 mb-4">Kiválasztott vizsgálatok ({selectedItems.length} db)</h3>
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b-2 border-slate-300">
+                      <th className="py-3 px-2 text-sm font-bold text-slate-600">Vizsgálat megnevezése</th>
+                      <th className="py-3 px-2 text-sm font-bold text-slate-600">Kategória</th>
+                      <th className="py-3 px-2 text-sm font-bold text-slate-600 text-right">Eredmény várható</th>
+                      <th className="py-3 px-2 text-sm font-bold text-slate-600 text-right">Díj (HUF)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {selectedItems.map(item => (
+                      <tr key={item.id}>
+                        <td className="py-3 px-2 font-bold text-slate-900">{item.name}</td>
+                        <td className="py-3 px-2 text-sm text-slate-500">{LAB_DATABASE.find(c => c.items.some(i => i.id === item.id))?.category}</td>
+                        <td className="py-3 px-2 text-sm text-slate-600 text-right">{item.time}</td>
+                        <td className="py-3 px-2 font-bold text-slate-900 text-right">{item.price === 0 ? "-" : `${item.price.toLocaleString('hu-HU')} Ft`}</td>
+                      </tr>
+                    ))}
+                    {includeBloodDrawFee && (
+                      <tr className="bg-slate-50">
+                        <td className="py-3 px-2 font-bold text-slate-900">Vérvételi / Kezelési díj</td>
+                        <td className="py-3 px-2 text-sm text-slate-500">Egyéb</td>
+                        <td className="py-3 px-2 text-sm text-slate-600 text-right">-</td>
+                        <td className="py-3 px-2 font-bold text-slate-900 text-right">3 000 Ft</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex justify-end border-t-2 border-emerald-600 pt-6">
+                <div className="text-right">
+                  <p className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-1">Fizetendő végösszeg</p>
+                  <p className="text-4xl font-extrabold text-emerald-700">{formattedTotal}</p>
+                </div>
+              </div>
+              
+              <div className="mt-16 text-center text-sm text-slate-500 border-t border-slate-200 pt-8">
+                A fenti árak tájékoztató jellegűek. Az ajánlat a kiállítás napjától számított 30 napig érvényes.
+              </div>
+            </div>
+          )}
+
+          {/* INTERAKTÍV FELÜLET (NEM NYOMTATÁSKOR) */}
+          {!printingLabQuote && (
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+              
+              {/* BAL OSZLOP: Vizsgálatok listája */}
+              <div className="w-full lg:w-2/3 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><ListPlusIcon /> Vizsgálatok kiválasztása</h2>
+                  
+                  <div className="relative w-64 group">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"><SearchIcon size={16} /></div>
+                    <input 
+                      type="text" 
+                      placeholder="Keresés a vizsgálatok között..." 
+                      value={labSearchTerm}
+                      onChange={(e) => setLabSearchTerm(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 py-2.5 pl-9 pr-4 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 font-semibold text-slate-800 transition-all outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar pr-4 pb-4">
+                  {LAB_DATABASE.map(cat => {
+                    const filteredItems = cat.items.filter(i => i.name.toLowerCase().includes(labSearchTerm.toLowerCase()));
+                    if (filteredItems.length === 0) return null;
+
+                    return (
+                      <div key={cat.category} className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                        <div className="bg-slate-50/80 px-5 py-3 border-b border-slate-100 flex justify-between items-center">
+                          <h3 className="font-extrabold text-slate-800 text-sm">{cat.category}</h3>
+                          <span className="text-xs font-bold text-slate-400">{filteredItems.length} vizsgálat</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+                          {filteredItems.map(item => {
+                            const isSelected = selectedLabTests.includes(item.id);
+                            return (
+                              <label key={item.id} className={`flex items-start gap-3 p-3.5 border-b border-r border-slate-50 cursor-pointer transition-all hover:bg-slate-50 ${isSelected ? 'bg-emerald-50/50' : ''}`}>
+                                <div className="relative flex items-center justify-center mt-0.5">
+                                  <input type="checkbox" className="sr-only" checked={isSelected} onChange={() => toggleLabTest(item.id)} />
+                                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent'}`}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                  </div>
+                                </div>
+                                <div className="flex-1">
+                                  <p className={`text-sm font-bold leading-tight ${isSelected ? 'text-emerald-900' : 'text-slate-700'}`}>{item.name}</p>
+                                  <div className="flex gap-3 mt-1.5">
+                                    <span className="text-[10px] font-extrabold text-slate-400 bg-white px-2 py-0.5 rounded-md border border-slate-100 shadow-sm">{item.price === 0 ? "Ár hiányzik" : `${item.price.toLocaleString('hu-HU')} Ft`}</span>
+                                    <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1"><HistoryIcon /> {item.time}</span>
+                                  </div>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* JOBB OSZLOP: Kalkuláció és Nyomtatás */}
+              <div className="w-full lg:w-1/3 bg-white p-6 rounded-3xl shadow-sm border border-slate-200 sticky top-24">
+                <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2"><DocumentIcon /> Ajánlat Összegzése</h2>
+                
+                <div className="mb-6">
+                  <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-2">Páciens neve (Opcionális)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Kovács János" 
+                    value={labPatientName}
+                    onChange={(e) => setLabPatientName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm"
+                  />
+                </div>
+
+                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 mb-6">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-200 pb-2">Kiválasztott tételek ({selectedItems.length})</h3>
+                  
+                  {selectedItems.length === 0 ? (
+                    <p className="text-sm text-slate-400 font-medium italic text-center py-4">Nincs kiválasztott vizsgálat.</p>
+                  ) : (
+                    <div className="space-y-3 max-h-[30vh] overflow-y-auto custom-scrollbar pr-2">
+                      {selectedItems.map(item => (
+                        <div key={item.id} className="flex justify-between items-start gap-2">
+                          <span className="text-sm font-bold text-slate-700 leading-tight">{item.name}</span>
+                          <span className="text-sm font-extrabold text-slate-900 whitespace-nowrap">{item.price === 0 ? "-" : `${item.price.toLocaleString('hu-HU')} Ft`}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-4 pt-4 border-t border-slate-200">
+                    <label className="flex items-center justify-between cursor-pointer group">
+                      <div className="flex items-center gap-2">
+                         <div className="relative flex items-center justify-center">
+                           <input type="checkbox" className="sr-only" checked={includeBloodDrawFee} onChange={(e) => setIncludeBloodDrawFee(e.target.checked)} />
+                           <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${includeBloodDrawFee ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent'}`}>
+                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                           </div>
+                         </div>
+                         <span className="text-xs font-bold text-slate-600 group-hover:text-slate-800 transition-colors">Vérvételi / Kezelési díj</span>
+                      </div>
+                      <span className="text-sm font-extrabold text-slate-900">3 000 Ft</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-end mb-8">
+                  <span className="text-sm font-bold uppercase tracking-widest text-slate-500">Végösszeg</span>
+                  <span className="text-3xl font-extrabold text-emerald-600">{formattedTotal}</span>
+                </div>
+
+                <button 
+                  onClick={handlePrintLabQuote} 
+                  disabled={selectedItems.length === 0}
+                  className="w-full py-4 rounded-xl font-bold shadow-md transition-all active:scale-95 flex justify-center items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <PrintIcon /> Árajánlat Nyomtatása (PDF)
+                </button>
+              </div>
+
+            </div>
+          )}
         </div>
 
-        <div className="absolute bottom-6 right-4 md:right-8 text-slate-600/70 text-xs font-bold z-10">
-          &copy; 2026 Created by Zozi
-        </div>
+        <style dangerouslySetInnerHTML={{__html: `
+          .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+          .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 10px; margin: 0 4px; }
+          .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 10px; }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
+          
+          @media print {
+            @page { margin: 1cm; size: portrait; }
+            body, html { background: white !important; color: black !important; font-family: sans-serif; }
+            .no-print { display: none !important; }
+            .print-mode { background: white !important; min-height: auto !important; padding: 0 !important; }
+            .printable-quote { width: 100% !important; max-width: none !important; padding: 0 !important; box-shadow: none !important; border: none !important; }
+            .printable-quote table { width: 100% !important; border-collapse: collapse !important; }
+            .printable-quote th { border-bottom: 2px solid #ccc !important; }
+            .printable-quote td { border-bottom: 1px solid #eee !important; }
+          }
+        `}} />
       </div>
     );
   }
 
+  // --- NORMÁL ELŐJEGYZÉS NÉZET ---
   const filteredCategories = categories.filter(c => c.toLowerCase().includes(departmentSearch.toLowerCase()));
 
   let filteredAppointments = appointments;
@@ -1314,10 +1429,16 @@ export default function Home() {
 
           <div className="flex items-center gap-2 sm:gap-4 w-full md:w-auto justify-end">
             
+            {/* --- LABOR KALKULÁTOR GOMB --- */}
+            <button onClick={() => setShowLabCalculator(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Labor Árkalkulátor">
+              <CalculatorIcon size={16} />
+              <span className="hidden sm:inline">Labor Kalkulátor</span>
+            </button>
+
             {/* --- HIBABEJELENTŐ GOMB --- */}
             <button onClick={() => setIsBugModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Hibabejelentés / Ötlet">
               <FeedbackIcon size={16} />
-              <span className="hidden sm:inline">Hibabejelentő</span>
+              <span className="hidden lg:inline">Hibabejelentő</span>
             </button>
 
             {/* --- ÉRTESÍTÉSEK --- */}
@@ -1361,7 +1482,7 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-2 text-slate-800 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/60 shadow-sm z-10 relative ml-1">
-              <UserIcon /><span className="font-semibold text-sm">{getDisplayName()}</span>
+              <UserIcon /><span className="font-semibold text-sm hidden md:inline">{getDisplayName()}</span>
             </div>
             <button onClick={handleLogout} className="text-slate-500 hover:text-red-600 transition-colors p-2 z-10 relative cursor-pointer" title="Kijelentkezés"><LogoutIcon /></button>
           </div>
@@ -1459,11 +1580,11 @@ export default function Home() {
                       </div>
 
                       <div className="w-[calc(50%-0.375rem)] sm:w-20 md:w-24">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Kezd&eacute;s</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Kezdés</label>
                         <input type="time" value={genStart} onChange={(e) => setGenStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" />
                       </div>
                       <div className="w-[calc(50%-0.375rem)] sm:w-20 md:w-24">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Befejez&eacute;s</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Befejezés</label>
                         <input type="time" value={genEnd} onChange={(e) => setGenEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" />
                       </div>
                       <div className="w-full sm:w-16 md:w-20">
@@ -1474,11 +1595,11 @@ export default function Home() {
 
                     <div className="flex flex-wrap items-end gap-3">
                       <div className="w-[calc(50%-0.375rem)] sm:w-28">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sz&uuml;net kezdete</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet kezdete</label>
                         <input type="time" value={genBreakStart} onChange={(e) => setGenBreakStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" />
                       </div>
                       <div className="w-[calc(50%-0.375rem)] sm:w-28">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sz&uuml;net v&eacute;ge</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet vége</label>
                         <input type="time" value={genBreakEnd} onChange={(e) => setGenBreakEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" />
                       </div>
                       

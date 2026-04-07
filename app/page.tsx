@@ -85,11 +85,16 @@ export default function Home() {
   const [isDeptDropdownOpen, setIsDeptDropdownOpen] = useState(false);
   const deptDropdownRef = useRef<HTMLDivElement>(null);
 
+  // --- ONLINE FELHASZNÁLÓK ÁLLAPOTAI ---
+  const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
+  const [isOnlineDropdownOpen, setIsOnlineDropdownOpen] = useState(false);
+  const onlineRef = useRef<HTMLDivElement>(null);
+
   const [appointments, setAppointments] = useState<any[]>([]);
   const [departmentSearch, setDepartmentSearch] = useState(""); 
   const [showDeleted, setShowDeleted] = useState(false);
   
-  // OPTIMALIZÁCIÓ 2: Kereső Debounce (Késleltetés) állapotai
+  // Kereső Debounce (Késleltetés) állapotai
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   
@@ -123,10 +128,6 @@ export default function Home() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null); 
-    // --- ONLINE FELHASZNÁLÓK ÁLLAPOTAI ---
-  const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
-  const [isOnlineDropdownOpen, setIsOnlineDropdownOpen] = useState(false);
-  const onlineRef = useRef<HTMLDivElement>(null);
 
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   const [bugDescription, setBugDescription] = useState("");
@@ -149,7 +150,7 @@ export default function Home() {
     visible: false, message: "", type: 'success'
   });
 
-  // OPTIMALIZÁCIÓ 2 LOGIKA: Kereső debounce effekt (Vár 300ms-t gépelés után a szűréssel)
+  // Kereső debounce effekt
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -215,7 +216,6 @@ export default function Home() {
     setPrintingLabQuote(true);
     setTimeout(() => { window.print(); }, 300);
   };
-
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ visible: true, message, type });
@@ -341,7 +341,7 @@ export default function Home() {
     setModal({ isOpen: true, title, message, type: "confirm", confirmText, confirmColor, onConfirm: () => { onConfirmCallback(); closeModal(); }});
   };
 
- useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setIsNotifOpen(false);
@@ -349,7 +349,6 @@ export default function Home() {
       if (deptDropdownRef.current && !deptDropdownRef.current.contains(e.target as Node)) {
         setIsDeptDropdownOpen(false);
       }
-      // EZT A HÁROM SORT ADD HOZZÁ:
       if (onlineRef.current && !onlineRef.current.contains(e.target as Node)) {
         setIsOnlineDropdownOpen(false);
       }
@@ -417,7 +416,7 @@ export default function Home() {
       if (e.key === 'Escape') { 
         closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); 
         closeAppInfoModal(); setIsNotifOpen(false); setIsDeptModalOpen(false);
-        setIsBugModalOpen(false); setIsDeptDropdownOpen(false);
+        setIsBugModalOpen(false); setIsDeptDropdownOpen(false); setIsOnlineDropdownOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -485,15 +484,11 @@ export default function Home() {
     }
   };
 
-  // OPTIMALIZÁCIÓ 1: Csak az elmúlt 2 hónap és jövőbeli 1 év lekérése
+  // Csak az elmúlt 2 hónap és jövőbeli 1 év lekérése
   const fetchAppointments = async () => {
     const today = new Date();
-    
-    // -2 hónap a jelenlegi dátumból
     const pastDate = new Date();
     pastDate.setMonth(today.getMonth() - 2);
-    
-    // +1 év a jelenlegi dátumból
     const futureDate = new Date();
     futureDate.setFullYear(today.getFullYear() + 1);
 
@@ -523,7 +518,6 @@ export default function Home() {
   };
 
   useEffect(() => { 
-     useEffect(() => { 
     if (user && !needsProfileName) {
       loadInitialData(); 
 
@@ -543,12 +537,11 @@ export default function Home() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'departments' }, () => fetchCategories())
         .subscribe();
 
-      // --- ÚJ: ONLINE FELHASZNÁLÓK (PRESENCE) ---
+      // --- ONLINE FELHASZNÁLÓK (PRESENCE) ---
       const presenceChannel = supabase.channel('online-users');
       presenceChannel
         .on('presence', { event: 'sync' }, () => {
           const state = presenceChannel.presenceState();
-          // Kinyerjük a bejelentkezett usereket a state-ből
           const users = Object.values(state).map((presences: any) => presences[0]);
           setOnlineUsers(users);
         })
@@ -556,7 +549,7 @@ export default function Home() {
           if (status === 'SUBSCRIBED') {
             await presenceChannel.track({
               email: user.email,
-              name: getDisplayName(),
+              name: getDisplayName() || user.email,
             });
           }
         });
@@ -566,7 +559,7 @@ export default function Home() {
         supabase.removeChannel(pricesChannel); 
         supabase.removeChannel(notifChannel); 
         supabase.removeChannel(deptChannel); 
-        supabase.removeChannel(presenceChannel); // Ezt is lezárjuk!
+        supabase.removeChannel(presenceChannel); 
       };
     } 
   }, [user, needsProfileName]);
@@ -778,7 +771,7 @@ export default function Home() {
 
   const generateDailySlots = async () => {
     if (!selectedDate) return showAlert("Hiányzó adat", "Kérlek, válassz ki egy dátumot a naptárból!");
-    if (!genStart || !genEnd || !genDuration) return showAlert("Hiányzó adat", "Minden generátor mezőt ki kell tölteni a művelethez!");
+    if (!genStart || !genEnd || !genDuration) return showAlert("Hi��nyzó adat", "Minden generátor mezőt ki kell tölteni a művelethez!");
     
     const durationMins = parseInt(genDuration);
     if (isNaN(durationMins) || durationMins <= 0) return showAlert("Hibás érték", "A vizsgálat hossza (perc) nullánál nagyobb kell, hogy legyen!");
@@ -1658,7 +1651,6 @@ export default function Home() {
 
   let filteredAppointments = appointments;
   
-  // OPTIMALIZÁCIÓ 2: Itt most a debouncedSearchTerm-et használjuk a villámgyors gépelésért!
   if (debouncedSearchTerm.trim() !== "") {
     const term = debouncedSearchTerm.toLowerCase();
     const termNoSpace = term.replace(/\s+/g, ''); 
@@ -1784,7 +1776,7 @@ export default function Home() {
               )}
             </div>
 
-            {/* --- ONLINE FELHASZNÁLÓK GOMB ÉS LISTA (IDE KERÜLT BE) --- */}
+            {/* --- ONLINE FELHASZNÁLÓK GOMB ÉS LISTA --- */}
             <div className="relative ml-1" ref={onlineRef}>
               <button onClick={() => setIsOnlineDropdownOpen(!isOnlineDropdownOpen)} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Aktív felhasználók">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.8)]"></div>
@@ -1813,7 +1805,7 @@ export default function Home() {
               )}
             </div>
 
-            {/* --- PROFIL ÉS KIJELENTKEZÉS (Ez az eredeti részed) --- */}
+            {/* --- PROFIL ÉS KIJELENTKEZÉS --- */}
             <div className="flex items-center gap-2 text-slate-800 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/60 shadow-sm z-10 relative ml-1">
               <UserIcon /><span className="font-semibold text-sm hidden md:inline">{getDisplayName()}</span>
             </div>

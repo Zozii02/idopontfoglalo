@@ -26,6 +26,8 @@ const TrendingUpIcon = ({ size = 20 }: { size?: number }) => (
     <polyline points="17 6 23 6 23 12"></polyline>
   </svg>
 );
+
+// Új ikonok a vezérlőpultba
 const ActivityIcon = ({ size = 20 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
@@ -42,6 +44,7 @@ const CalendarPlusIcon = ({ size = 20 }: { size?: number }) => (
     <line x1="12" y1="14" x2="12" y2="18"></line>
   </svg>
 );
+
 import { BACKGROUND_IMAGE_URL, LAB_DATABASE } from "../lib/constants";
 
 import { 
@@ -1399,7 +1402,7 @@ export default function Home() {
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"><SearchIcon size={16} /></div>
                     <input 
                       type="text" 
-                      placeholder="Keres��s a vizsgálatok között..." 
+                      placeholder="Keresés a vizsgálatok között..." 
                       value={labSearchTerm}
                       onChange={(e) => setLabSearchTerm(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 py-2 pl-9 pr-4 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 font-semibold text-slate-800 transition-all outline-none"
@@ -1768,9 +1771,9 @@ export default function Home() {
 
               <div className="w-full xl:w-auto flex-1 relative z-0">
                  <div className="flex items-center gap-2.5 mb-4 text-slate-800 font-extrabold text-lg">
-   <div className="bg-red-100 text-red-600 p-1.5 rounded-lg shadow-sm"><CalendarPlusIcon size={18} /></div>
-   <span>Napi előjegyzési lista létrehozása</span>
-</div>
+                    <div className="bg-red-100 text-red-600 p-1.5 rounded-lg shadow-sm"><CalendarPlusIcon size={18} /></div>
+                    <span>Napi előjegyzési lista létrehozása</span>
+                 </div>
                  
                  <div className="flex flex-col gap-3 w-full">
                     <div className="flex flex-wrap items-end gap-3">

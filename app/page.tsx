@@ -1768,9 +1768,9 @@ export default function Home() {
 
               <div className="w-full xl:w-auto flex-1 relative z-0">
                  <div className="flex items-center gap-2.5 mb-4 text-slate-800 font-extrabold text-lg">
-                    <div className="bg-red-100 text-red-600 p-1.5 rounded-lg shadow-sm"><CalendarPlusIcon size={18} /></div>>
-                    <span>Napi előjegyzési lista létrehozása</span>
-                 </div>
+   <div className="bg-red-100 text-red-600 p-1.5 rounded-lg shadow-sm"><CalendarPlusIcon size={18} /></div>
+   <span>Napi előjegyzési lista létrehozása</span>
+</div>
                  
                  <div className="flex flex-col gap-3 w-full">
                     <div className="flex flex-wrap items-end gap-3">

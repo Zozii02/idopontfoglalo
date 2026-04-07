@@ -344,6 +344,34 @@ export default function Home() {
   }, []);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+    // --- AUTOMATIKUS KIJELENTKEZÉS INAKTIVITÁS MIATT (15 PERC) ---
+  useEffect(() => {
+    if (!user) return; // Ha nincs bejelentkezve, nem kell időzítő
+
+    let timeoutId: NodeJS.Timeout;
+
+    const logoutUser = async () => {
+      await handleLogout();
+      showAlert("Munkamenet lejárt", "Biztonsági okokból, 15 perc inaktivitás után a rendszer automatikusan kijelentkeztetett.");
+    };
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      // 15 perc (15 * 60 * 1000 = 900000 ms). Ha rövidebbet/hosszabbat akarsz, itt írd át a számot!
+      timeoutId = setTimeout(logoutUser, 900000);
+    };
+
+    // Aktivitás figyelése (egérmozgás, kattintás, gépelés, görgetés)
+    const events = ['mousemove', 'keydown', 'mousedown', 'scroll', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, resetTimer));
+
+    resetTimer(); // Indítás
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+    };
+  }, [user]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

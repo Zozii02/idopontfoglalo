@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "./supabase";
 
-// --- ÚJ IMPORTOK A KISZERVEZETT FÁJLOKBÓL ---
 import { 
   UserIcon, LogoutIcon, ListPlusIcon, CalendarIcon, TrashIcon, RestoreIcon, 
   PlusIcon, PrintIcon, SearchIcon, AlertModalIcon, QuestionModalIcon, 
@@ -23,6 +22,7 @@ import {
 import { EditableCell } from "../components/EditableCell";
 import { ModernStatusSelect } from "../components/ModernStatusSelect";
 import { ModernDatePicker } from "../components/ModernDatePicker";
+import { PatientAutocomplete } from "../components/PatientAutocomplete";
 
 
 // --- Főoldal ---
@@ -145,6 +145,44 @@ export default function Home() {
       return;
     }
     setActiveTab(c);
+  };
+
+  // --- BETEGTÖRZS (CRM) FUNKCIÓK ---
+
+  // Betegek keresése gépelés közben az adatbázisból
+  const searchPatients = async (term: string) => {
+    if (!term || term.length < 2) return [];
+    const { data, error } = await supabase.from('patients').select('*').ilike('name', `%${term}%`).limit(6);
+    if (error) console.error("Keresési hiba:", error);
+    return data || [];
+  };
+
+  // Ha a felhasználó rákattint egy találatra a listában
+  const handleSelectPatient = async (appId: number, patient: any) => {
+    const modifierName = getDisplayName();
+    const now = new Date().toISOString();
+    
+    // UI frissítése azonnal
+    setAppointments(appointments.map((app: any) => app.id === appId ? { 
+      ...app, 
+      patient_name: patient.name, 
+      taj_szam: patient.taj_szam || app.taj_szam, 
+      phone_number: patient.phone_number || app.phone_number,
+      last_modified_by: modifierName, 
+      last_modified_at: now 
+    } : app));
+    
+    // Adatbázis frissítése (Több mező egyszerre)
+    await supabase.from("appointments").update({ 
+      patient_name: patient.name, 
+      taj_szam: patient.taj_szam, 
+      phone_number: patient.phone_number,
+      last_modified_by: modifierName, 
+      last_modified_at: now 
+    }).eq("id", appId);
+    
+    await logAction(appId, "Módosítás", `Beteg betöltve a törzsből: ${patient.name}`);
+    showToast(`${patient.name} adatai sikeresen kitöltve!`);
   };
 
   // --- LABOR KALKULÁTOR FUNKCIÓK ---
@@ -439,10 +477,11 @@ export default function Home() {
   const handleLogout = async () => await supabase.auth.signOut();
   const getDisplayName = () => user?.user_metadata?.display_name || user?.email;
 
+  // --- IDŐPONT MÓDOSÍTÁSA ÉS AUTOMATIKUS BETEG MENTÉS ---
   const updateAppointment = async (id: number, field: string, newValue: string) => {
     if (!user) return;
     
-    const oldApp = appointments.find(a => a.id === id);
+    const oldApp = appointments.find((a: any) => a.id === id);
     const oldValue = oldApp ? oldApp[field] : "";
     
     if (oldValue !== newValue) {
@@ -459,10 +498,41 @@ export default function Home() {
       const newDisp = newValue ? newValue : "(üres)";
       const details = `${fieldLabel}: "${oldDisp}" ➔ "${newDisp}"`;
 
+      // 1. Táblázat vizuális frissítése azonnal
       setAppointments(appointments.map((app: any) => app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app));
       
+      // 2. Adatbázis tábla frissítése
       await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
       await logAction(id, "Módosítás", details);
+
+      // 3. AUTOMATIKUS BETEG MENTÉS / FRISSÍTÉS A CRM-be
+      if (["patient_name", "taj_szam", "phone_number"].includes(field)) {
+        const currentName = field === "patient_name" ? newValue : oldApp.patient_name;
+        const currentTaj = field === "taj_szam" ? newValue : oldApp.taj_szam;
+        const currentPhone = field === "phone_number" ? newValue : oldApp.phone_number;
+        
+        // Csak akkor mentjük el a beteget, ha legalább a neve megvan és értelmes hosszúságú
+        if (currentName && currentName.trim().length >= 3) {
+          const { data: existingPatients } = await supabase.from('patients').select('id').eq('name', currentName.trim());
+          
+          if (existingPatients && existingPatients.length > 0) {
+             // Ha már létezik, csak frissítjük az utolsó látogatást, és a TAJ/Telefon adatokat, ha most beírták
+             await supabase.from('patients').update({
+                taj_szam: currentTaj || null,
+                phone_number: currentPhone || null,
+                last_visit: now
+             }).eq('id', existingPatients[0].id);
+          } else {
+             // Ha még nincs ilyen beteg, beszúrjuk az új beteget a törzsbe
+             await supabase.from('patients').insert([{
+                name: currentName.trim(),
+                taj_szam: currentTaj || null,
+                phone_number: currentPhone || null,
+                last_visit: now
+             }]);
+          }
+        }
+      }
     }
   };
 
@@ -598,8 +668,8 @@ export default function Home() {
   const openPatientHistory = (name: string, taj: string) => {
     if (!name || !taj) return showAlert("Hiányzó adat", "Az előzmények megtekintéséhez a beteg nevének és TAJ számának is kitöltve kell lennie!");
     
-    let matches = appointments.filter(a => !a.is_deleted && a.taj_szam === taj && a.patient_name === name);
-    matches = matches.sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime());
+    let matches = appointments.filter((a: any) => !a.is_deleted && a.taj_szam === taj && a.patient_name === name);
+    matches = matches.sort((a: any, b: any) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime());
     
     setHistoryModal({ isOpen: true, patientName: name, taj: taj, data: matches });
   };
@@ -850,7 +920,7 @@ export default function Home() {
              disabled={isSubmittingBug}
              className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-md hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed"
            >
-             {isSubmittingBug ? <span className="flex items-center gap-2 animate-pulse"><RefreshIcon /> Küldés folyamatban...</span> : "E-mail küldése"}
+             {isSubmittingBug ? <span className="flex items-center gap-2 animate-pulse"><RefreshIcon /> Küld��s folyamatban...</span> : "E-mail küldése"}
            </button>
         </div>
       </div>
@@ -1725,10 +1795,19 @@ export default function Home() {
                               </div>
                             </td>
                             
+                            {/* --- AZ ÚJ OKOS KERESŐ A TÁBLÁZATBAN --- */}
                             <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black font-bold text-sm border-l border-gray-300' : ''}`}>
                               {printingDate ? app.patient_name : (
                                 <div className="relative">
-                                  <EditableCell disabled={isDel} highlight={isBooked} formatter={formatName} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} searchTerm={searchTerm} />
+                                  <PatientAutocomplete 
+                                    disabled={isDel} 
+                                    highlight={isBooked} 
+                                    value={app.patient_name} 
+                                    onSave={(val) => updateAppointment(app.id, "patient_name", val)} 
+                                    onSelectPatient={(p) => handleSelectPatient(app.id, p)}
+                                    searchPatients={searchPatients}
+                                    searchTerm={searchTerm} 
+                                  />
                                   {canShowHistory && (
                                     <button 
                                       onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} 
@@ -1835,7 +1914,16 @@ export default function Home() {
                                   <div className="w-[130px]"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></div>
                                 </div>
                               </div>
-                              <EditableCell disabled={isDel} highlight={isBooked} formatter={formatName} value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} searchTerm={searchTerm} />
+                              {/* --- MOBIL NÉZET KERESŐ --- */}
+                              <PatientAutocomplete 
+                                disabled={isDel} 
+                                highlight={isBooked} 
+                                value={app.patient_name} 
+                                onSave={(val) => updateAppointment(app.id, "patient_name", val)} 
+                                onSelectPatient={(p) => handleSelectPatient(app.id, p)}
+                                searchPatients={searchPatients}
+                                searchTerm={searchTerm} 
+                              />
                             </div>
                             <div className="grid grid-cols-2 gap-3 relative z-0">
                               <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
@@ -1901,7 +1989,7 @@ export default function Home() {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
         @media print {
-          @page { size: auto; margin: 0mm; } /* Ez távolítja el a böngésző fejléceit (dátum, cím, URL) */
+          @page { size: auto; margin: 0mm; }
           body, html { background: white !important; color: black !important; font-family: sans-serif; height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
           .no-print { display: none !important; }
           

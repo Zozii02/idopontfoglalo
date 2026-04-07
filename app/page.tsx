@@ -12,6 +12,21 @@ import {
   FeedbackIcon, CalculatorIcon, DocumentIcon 
 } from "../components/icons";
 
+// Új ikon a statisztikához
+const ChartPieIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+    <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+  </svg>
+);
+
+const TrendingUpIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+    <polyline points="17 6 23 6 23 12"></polyline>
+  </svg>
+);
+
 import { BACKGROUND_IMAGE_URL, LAB_DATABASE } from "../lib/constants";
 
 import { 
@@ -41,6 +56,10 @@ export default function Home() {
   const [labSearchTerm, setLabSearchTerm] = useState("");
   const [includeBloodDrawFee, setIncludeBloodDrawFee] = useState(true);
 
+  // --- STATISZTIKA ÁLLAPOTOK ---
+  const [showStats, setShowStats] = useState(false);
+  const [statsPeriod, setStatsPeriod] = useState<'today' | 'week' | 'month' | 'all'>('month');
+
   const [appointments, setAppointments] = useState<any[]>([]);
   const [departmentSearch, setDepartmentSearch] = useState(""); 
   const [showDeleted, setShowDeleted] = useState(false);
@@ -65,7 +84,6 @@ export default function Home() {
   const [printingLabQuote, setPrintingLabQuote] = useState(false); 
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // --- Globális Árlista & Szakrendelések Állapotok ---
   const [allPrices, setAllPrices] = useState<any[]>([]);
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
   const [currentPrices, setCurrentPrices] = useState<{id: string, name: string, price: string}[]>([]);
@@ -73,19 +91,16 @@ export default function Home() {
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
   const [newDeptName, setNewDeptName] = useState("");
 
-  // --- Értesítések Állapotai ---
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null); 
 
-  // --- Hibabejelentő Állapotok ---
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   const [bugDescription, setBugDescription] = useState("");
   const [bugFile, setBugFile] = useState<File | null>(null);
   const [isSubmittingBug, setIsSubmittingBug] = useState(false);
 
-  // --- Modálok és Toastok ---
   const [historyModal, setHistoryModal] = useState<{isOpen: boolean, patientName: string, taj: string, data: any[]}>({
     isOpen: false, patientName: "", taj: "", data: []
   });
@@ -102,7 +117,6 @@ export default function Home() {
     visible: false, message: "", type: 'success'
   });
 
-  // --- Húzásos görgetés (Drag to scroll) Állapotok ---
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isDraggingTabs = useRef(false);
   const startX = useRef(0);
@@ -147,7 +161,6 @@ export default function Home() {
     setActiveTab(c);
   };
 
-  // --- BETEGTÖRZS (CRM) FUNKCIÓK ---
   const searchPatients = async (term: string) => {
     if (!term || term.length < 2) return [];
     const { data, error } = await supabase.from('patients').select('*').ilike('name', `%${term}%`).limit(6);
@@ -180,7 +193,6 @@ export default function Home() {
     showToast(`${patient.name} adatai sikeresen kitöltve!`);
   };
 
-  // --- LABOR KALKULÁTOR FUNKCIÓK ---
   const toggleLabTest = (id: string) => {
     setSelectedLabTests(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
   };
@@ -472,7 +484,6 @@ export default function Home() {
   const handleLogout = async () => await supabase.auth.signOut();
   const getDisplayName = () => user?.user_metadata?.display_name || user?.email;
 
-  // --- IDŐPONT MÓDOSÍTÁSA ÉS AUTOMATIKUS BETEG MENTÉS ---
   const updateAppointment = async (id: number, field: string, newValue: string) => {
     if (!user) return;
     
@@ -724,7 +735,7 @@ export default function Home() {
     }]).select();
     
     if (data && data[0]) {
-       await logAction(data[0].id, "Létrehoz��s", "Egyedi időpont manuálisan hozzáadva");
+       await logAction(data[0].id, "Létrehozás", "Egyedi időpont manuálisan hozzáadva");
     }
     setNewTimeSlot("");
     showToast("Új időpont sikeresen hozzáadva!");
@@ -1080,6 +1091,210 @@ export default function Home() {
     );
   }
 
+  // --- HA A STATISZTIKA NÉZET VAN NYITVA ---
+  if (showStats) {
+    // Csak az aktív, kitöltött (pácienssel rendelkező) időpontokat vesszük figyelembe
+    let validApps = appointments.filter(a => !a.is_deleted && a.patient_name && a.patient_name.trim() !== "");
+    
+    // Időszak szűrése
+    const todayStr = new Date().toISOString().split('T')[0];
+    const currentMonthStr = todayStr.substring(0, 7); // YYYY-MM
+    
+    // Heti kezdő és végpont kiszámítása
+    const now = new Date();
+    const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+    const mon = new Date(now); mon.setDate(now.getDate() - dayOfWeek + 1);
+    const sun = new Date(now); sun.setDate(now.getDate() - dayOfWeek + 7);
+    const monStr = mon.toISOString().split('T')[0];
+    const sunStr = sun.toISOString().split('T')[0];
+
+    if (statsPeriod === 'today') {
+      validApps = validApps.filter(a => a.appointment_date === todayStr);
+    } else if (statsPeriod === 'week') {
+      validApps = validApps.filter(a => a.appointment_date >= monStr && a.appointment_date <= sunStr);
+    } else if (statsPeriod === 'month') {
+      validApps = validApps.filter(a => a.appointment_date.startsWith(currentMonthStr));
+    }
+
+    // Mutatók kiszámítása
+    const totalBooked = validApps.length;
+    const completed = validApps.filter(a => a.status === 'Befejezve').length;
+    const noShow = validApps.filter(a => a.status === 'Nem jelent meg').length;
+    
+    // Szakrendelések statisztikája (Darabszám)
+    const deptCounts: Record<string, number> = {};
+    validApps.forEach(a => {
+        deptCounts[a.department] = (deptCounts[a.department] || 0) + 1;
+    });
+    const deptStats = Object.entries(deptCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+    const maxDeptCount = Math.max(...deptStats.map(d => d.count), 1);
+
+    // Státuszok eloszlása
+    const statuses = ['Előjegyzett', 'Megérkezett', 'Vizsgálaton', 'Befejezve', 'Nem jelent meg'];
+    const statusCounts = statuses.map(st => {
+       const count = validApps.filter(a => (a.status || 'Előjegyzett') === st).length;
+       return { name: st, count };
+    }).filter(s => s.count > 0);
+    const maxStatusCount = Math.max(...statusCounts.map(s => s.count), 1);
+
+    // Várható bevétel számítása az árlisták alapján
+    let totalRevenue = 0;
+    validApps.forEach(app => {
+       if (!app.examination_type) return;
+       const deptPrices = allPrices.filter(p => p.department === app.department);
+       const examStr = app.examination_type.toLowerCase();
+       // Megkeressük, szerepel-e a beírt vizsgálatban az árlista eleme
+       const matchedPrice = deptPrices.find(p => examStr.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(examStr));
+       if (matchedPrice) {
+          const priceVal = parseInt(matchedPrice.price.replace(/[^0-9]/g, ''), 10);
+          if (!isNaN(priceVal)) totalRevenue += priceVal;
+       }
+    });
+
+    return (
+      <div className="min-h-screen bg-slate-50 font-sans relative pb-10">
+        
+        {/* FEJLÉC */}
+        <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm h-[73px]">
+          <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+               <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain" />
+               <div>
+                 <h1 className="text-xl font-bold tracking-tight text-slate-900">Vezetői Műszerfal</h1>
+                 <p className="text-blue-600 font-medium text-[11px] tracking-widest uppercase">Statisztikák és Kimutatások</p>
+               </div>
+            </div>
+            <button onClick={() => setShowStats(false)} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold shadow-sm hover:bg-black transition-all active:scale-95 flex items-center gap-2">
+              <ChevronLeftIcon /> Vissza az Előjegyzéshez
+            </button>
+          </div>
+        </div>
+
+        <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8">
+          
+          {/* Időszak választó */}
+          <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-2 w-max mx-auto md:mx-0 mb-8">
+            {[
+              { id: 'today', label: 'Ma' },
+              { id: 'week', label: 'Ezen a héten' },
+              { id: 'month', label: 'Ebben a hónapban' },
+              { id: 'all', label: 'Összesített' }
+            ].map(period => (
+              <button 
+                key={period.id}
+                onClick={() => setStatsPeriod(period.id as any)}
+                className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${statsPeriod === period.id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
+              >
+                {period.label}
+              </button>
+            ))}
+          </div>
+
+          {/* KPI Kártyák */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+             <div className="bg-white p-6 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] border border-slate-200">
+               <div className="flex items-center gap-3 mb-4">
+                 <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><UserIcon /></div>
+                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Összes Páciens</h3>
+               </div>
+               <p className="text-4xl font-extrabold text-slate-900">{totalBooked}</p>
+               <p className="text-xs font-medium text-slate-400 mt-2">Sikeresen rögzítve az időszakban</p>
+             </div>
+
+             <div className="bg-white p-6 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] border border-slate-200">
+               <div className="flex items-center gap-3 mb-4">
+                 <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><CheckCircleIcon /></div>
+                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Befejezett Vizsgálatok</h3>
+               </div>
+               <p className="text-4xl font-extrabold text-emerald-600">{completed}</p>
+               <p className="text-xs font-bold text-emerald-500/70 mt-2">{totalBooked > 0 ? Math.round((completed / totalBooked) * 100) : 0}%-os sikerességi arány</p>
+             </div>
+
+             <div className="bg-white p-6 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] border border-slate-200">
+               <div className="flex items-center gap-3 mb-4">
+                 <div className="p-3 bg-slate-100 text-slate-600 rounded-xl"><XCircleIcon /></div>
+                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Meg Nem Jelent</h3>
+               </div>
+               <p className="text-4xl font-extrabold text-slate-800">{noShow}</p>
+               <p className="text-xs font-bold text-slate-400 mt-2">{totalBooked > 0 ? Math.round((noShow / totalBooked) * 100) : 0}%-os lemorzsolódás</p>
+             </div>
+
+             <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-6 rounded-3xl shadow-lg border border-amber-400 text-white relative overflow-hidden">
+               <div className="absolute right-0 bottom-0 opacity-10 translate-x-1/4 translate-y-1/4"><TrendingUpIcon size={120} /></div>
+               <div className="relative z-10">
+                 <div className="flex items-center gap-3 mb-4">
+                   <div className="p-3 bg-white/20 rounded-xl"><CalculatorIcon size={24} /></div>
+                   <h3 className="text-xs font-extrabold uppercase tracking-widest text-amber-100">Becsült Bevétel</h3>
+                 </div>
+                 <p className="text-3xl font-extrabold">{new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(totalRevenue)}</p>
+                 <p className="text-xs font-medium text-amber-200 mt-2">Árlisták és beírt vizsgálatok alapján</p>
+               </div>
+             </div>
+          </div>
+
+          {/* Grafikonok / Sávok */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
+                <h2 className="text-lg font-extrabold text-slate-900 mb-6 flex items-center gap-2"><ListPlusIcon /> Szakrendelések forgalma</h2>
+                
+                {deptStats.length === 0 ? (
+                  <p className="text-sm font-medium text-slate-400 italic">Nincs adat az adott időszakra.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {deptStats.map(dept => (
+                      <div key={dept.name} className="flex items-center gap-4">
+                        <div className="w-32 text-sm font-bold text-slate-700 truncate" title={dept.name}>{dept.name}</div>
+                        <div className="flex-1 h-3.5 bg-slate-100 rounded-full overflow-hidden relative">
+                           <div 
+                             className="absolute top-0 left-0 h-full bg-blue-500 rounded-full transition-all duration-1000" 
+                             style={{ width: `${(dept.count / maxDeptCount) * 100}%` }}
+                           ></div>
+                        </div>
+                        <div className="w-10 text-right text-sm font-extrabold text-slate-900">{dept.count} <span className="text-[10px] text-slate-400 font-medium">db</span></div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+             </div>
+
+             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
+                <h2 className="text-lg font-extrabold text-slate-900 mb-6 flex items-center gap-2"><ChartPieIcon /> Státuszok eloszlása</h2>
+                
+                {statusCounts.length === 0 ? (
+                  <p className="text-sm font-medium text-slate-400 italic">Nincs adat az adott időszakra.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {statusCounts.map(st => {
+                      const color = 
+                        st.name === 'Befejezve' ? 'bg-emerald-500' :
+                        st.name === 'Vizsgálaton' ? 'bg-blue-400' :
+                        st.name === 'Megérkezett' ? 'bg-amber-400' :
+                        st.name === 'Nem jelent meg' ? 'bg-slate-800' :
+                        'bg-slate-300';
+                      
+                      return (
+                        <div key={st.name} className="flex items-center gap-4">
+                          <div className="w-32 text-sm font-bold text-slate-700 truncate" title={st.name}>{st.name}</div>
+                          <div className="flex-1 h-3.5 bg-slate-100 rounded-full overflow-hidden relative">
+                            <div 
+                              className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ${color}`} 
+                              style={{ width: `${(st.count / maxStatusCount) * 100}%` }}
+                            ></div>
+                          </div>
+                          <div className="w-10 text-right text-sm font-extrabold text-slate-900">{st.count} <span className="text-[10px] text-slate-400 font-medium">db</span></div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+             </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
   // --- HA A LABOR KALKULÁTOR VAN NYITVA (NYOMTATÁSI NÉZET IS ITT) ---
   if (showLabCalculator) {
     const selectedItems = getSelectedLabItemsData();
@@ -1418,8 +1633,14 @@ export default function Home() {
 
           <div className="flex items-center gap-2 sm:gap-4 w-full md:w-auto justify-end">
             
+            {/* --- STATISZTIKA GOMB --- */}
+            <button onClick={() => { setShowStats(true); setShowLabCalculator(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Statisztikák és Kimutatások">
+              <ChartPieIcon size={16} />
+              <span className="hidden xl:inline">Statisztika</span>
+            </button>
+
             {/* --- LABOR KALKULÁTOR GOMB --- */}
-            <button onClick={() => setShowLabCalculator(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Labor Árkalkulátor">
+            <button onClick={() => { setShowLabCalculator(true); setShowStats(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Labor Árkalkulátor">
               <CalculatorIcon size={16} />
               <span className="hidden sm:inline">Labor kalkulátor</span>
             </button>

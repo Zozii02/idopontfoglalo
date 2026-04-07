@@ -210,7 +210,7 @@ export default function Home() {
   const calculateLabTotal = () => {
     const items = getSelectedLabItemsData();
     const testsTotal = items.reduce((sum, item) => sum + item.price, 0);
-    const baseFee = includeBloodDrawFee ? 3000 : 0;
+    const baseFee = includeBloodDrawFee ? 6000 : 0;
     return testsTotal + baseFee;
   };
 
@@ -1386,7 +1386,7 @@ export default function Home() {
                         <td className="py-1 px-1 font-bold text-slate-900">Vérvételi / Kezelési díj</td>
                         <td className="py-1 px-1 text-slate-500">Egyéb</td>
                         <td className="py-1 px-1 text-slate-600 text-right">-</td>
-                        <td className="py-1 px-1 font-bold text-slate-900 text-right">3 000 Ft</td>
+                        <td className="py-1 px-1 font-bold text-slate-900 text-right">6 000 Ft</td>
                       </tr>
                     )}
                   </tbody>
@@ -1533,7 +1533,7 @@ export default function Home() {
                          </div>
                          <span className="text-[11px] font-bold text-slate-600 group-hover:text-slate-800 transition-colors">Vérvételi / Kezelési díj</span>
                       </div>
-                      <span className="text-xs font-extrabold text-slate-900">3 000 Ft</span>
+                      <span className="text-xs font-extrabold text-slate-900">6 000 Ft</span>
                     </label>
                   </div>
                 </div>

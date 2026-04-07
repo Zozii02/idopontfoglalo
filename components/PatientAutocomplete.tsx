@@ -60,8 +60,6 @@ export function PatientAutocomplete({
     }
     const timer = setTimeout(async () => {
       const data = await searchPatients(currentValue);
-      // JAVÍTÁS: Most már MINDIG megjelenítjük a találatokat, 
-      // ha van a beírt betűknek megfelelő beteg az adatbázisban!
       setResults(data || []);
     }, 300); 
     return () => clearTimeout(timer);

@@ -148,8 +148,6 @@ export default function Home() {
   };
 
   // --- BETEGTÖRZS (CRM) FUNKCIÓK ---
-
-  // Betegek keresése gépelés közben az adatbázisból
   const searchPatients = async (term: string) => {
     if (!term || term.length < 2) return [];
     const { data, error } = await supabase.from('patients').select('*').ilike('name', `%${term}%`).limit(6);
@@ -157,12 +155,10 @@ export default function Home() {
     return data || [];
   };
 
-  // Ha a felhasználó rákattint egy találatra a listában
   const handleSelectPatient = async (appId: number, patient: any) => {
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
     
-    // UI frissítése azonnal
     setAppointments(appointments.map((app: any) => app.id === appId ? { 
       ...app, 
       patient_name: patient.name, 
@@ -172,7 +168,6 @@ export default function Home() {
       last_modified_at: now 
     } : app));
     
-    // Adatbázis frissítése (Több mező egyszerre)
     await supabase.from("appointments").update({ 
       patient_name: patient.name, 
       taj_szam: patient.taj_szam, 
@@ -498,32 +493,26 @@ export default function Home() {
       const newDisp = newValue ? newValue : "(üres)";
       const details = `${fieldLabel}: "${oldDisp}" ➔ "${newDisp}"`;
 
-      // 1. Táblázat vizuális frissítése azonnal
       setAppointments(appointments.map((app: any) => app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app));
       
-      // 2. Adatbázis tábla frissítése
       await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
       await logAction(id, "Módosítás", details);
 
-      // 3. AUTOMATIKUS BETEG MENTÉS / FRISSÍTÉS A CRM-be
       if (["patient_name", "taj_szam", "phone_number"].includes(field)) {
         const currentName = field === "patient_name" ? newValue : oldApp.patient_name;
         const currentTaj = field === "taj_szam" ? newValue : oldApp.taj_szam;
         const currentPhone = field === "phone_number" ? newValue : oldApp.phone_number;
         
-        // Csak akkor mentjük el a beteget, ha legalább a neve megvan és értelmes hosszúságú
         if (currentName && currentName.trim().length >= 3) {
           const { data: existingPatients } = await supabase.from('patients').select('id').eq('name', currentName.trim());
           
           if (existingPatients && existingPatients.length > 0) {
-             // Ha már létezik, csak frissítjük az utolsó látogatást, és a TAJ/Telefon adatokat, ha most beírták
              await supabase.from('patients').update({
                 taj_szam: currentTaj || null,
                 phone_number: currentPhone || null,
                 last_visit: now
              }).eq('id', existingPatients[0].id);
           } else {
-             // Ha még nincs ilyen beteg, beszúrjuk az új beteget a törzsbe
              await supabase.from('patients').insert([{
                 name: currentName.trim(),
                 taj_szam: currentTaj || null,
@@ -735,7 +724,7 @@ export default function Home() {
     }]).select();
     
     if (data && data[0]) {
-       await logAction(data[0].id, "Létrehozás", "Egyedi időpont manuálisan hozzáadva");
+       await logAction(data[0].id, "Létrehoz��s", "Egyedi időpont manuálisan hozzáadva");
     }
     setNewTimeSlot("");
     showToast("Új időpont sikeresen hozzáadva!");
@@ -920,7 +909,7 @@ export default function Home() {
              disabled={isSubmittingBug}
              className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-md hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:scale-100 disabled:cursor-not-allowed"
            >
-             {isSubmittingBug ? <span className="flex items-center gap-2 animate-pulse"><RefreshIcon /> Küld��s folyamatban...</span> : "E-mail küldése"}
+             {isSubmittingBug ? <span className="flex items-center gap-2 animate-pulse"><RefreshIcon /> Küldés folyamatban...</span> : "E-mail küldése"}
            </button>
         </div>
       </div>
@@ -1353,157 +1342,9 @@ export default function Home() {
             </div>
           )}
         </div>
-
-        "use client";
-
-import { useState, useRef, useEffect } from "react";
-
-// Keresett szó kiemelése
-const HighlightText = ({ text, highlight }: { text: string, highlight: string }) => {
-  if (!highlight.trim()) return <>{text}</>;
-  const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
-  return (
-    <>
-      {parts.map((part, i) => 
-        part.toLowerCase() === highlight.toLowerCase() ? 
-          <mark key={i} className="bg-yellow-200 text-yellow-900 rounded-sm px-0.5 py-0 font-bold">{part}</mark> : part
-      )}
-    </>
-  );
-};
-
-export function PatientAutocomplete({ 
-  value, 
-  onSave, 
-  onSelectPatient,
-  searchPatients,
-  disabled = false, 
-  highlight = false, 
-  searchTerm = "" 
-}: { 
-  value: string; 
-  onSave: (val: string) => void; 
-  onSelectPatient: (patient: any) => void;
-  searchPatients: (term: string) => Promise<any[]>;
-  disabled?: boolean; 
-  highlight?: boolean; 
-  searchTerm?: string;
-}) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentValue, setCurrentValue] = useState(value || "");
-  const [results, setResults] = useState<any[]>([]);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const isSelecting = useRef(false); 
-
-  // Bezárás, ha mellékattintanak
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        if (!isSelecting.current) {
-          handleBlur();
-        }
-      }
-    };
-    if (isEditing) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isEditing, currentValue]);
-
-  // Gépelés figyelése és keresés az adatbázisban
-  useEffect(() => {
-    if (!isEditing || currentValue.length < 2) {
-      setResults([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      const data = await searchPatients(currentValue);
-      // JAVÍTÁS: Most már MINDIG megjelenítjük a találatokat, 
-      // ha van a beírt betűknek megfelelő beteg az adatbázisban!
-      setResults(data || []);
-    }, 300); 
-    return () => clearTimeout(timer);
-  }, [currentValue, isEditing]);
-
-  const handleBlur = () => {
-    if (isSelecting.current) return; 
-    
-    setIsEditing(false); 
-    setResults([]);
-    
-    const finalVal = currentValue.trim();
-    const formattedVal = finalVal ? finalVal.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : "";
-    
-    if (formattedVal !== value) {
-      onSave(formattedVal); 
-    }
-    setCurrentValue(formattedVal);
-  };
-
-  const handleSelect = (patient: any) => {
-    isSelecting.current = true;
-    setCurrentValue(patient.name);
-    setIsEditing(false);
-    setResults([]);
-    
-    onSelectPatient(patient);
-    
-    setTimeout(() => { isSelecting.current = false; }, 200);
-  };
-
-  if (disabled) return <div className="p-2 text-slate-400 font-medium line-through bg-slate-50/50 rounded-lg break-words">{value || "-"}</div>;
-
-  if (isEditing) {
-    return (
-      <div className="relative w-full" ref={wrapperRef}>
-        <input 
-          autoFocus 
-          value={currentValue} 
-          onChange={(e) => setCurrentValue(e.target.value)} 
-          onBlur={handleBlur} 
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleBlur();
-            }
-          }}
-          placeholder="Név keresése..."
-          className="w-full min-w-0 bg-white border border-emerald-400 p-2 rounded-lg focus:outline-none focus:ring-4 focus:ring-emerald-100 text-slate-900 font-semibold shadow-sm transition-all"
-        />
-        {/* Lenyíló találati lista */}
-        {results.length > 0 && (
-          <ul className="absolute z-50 top-full left-0 w-[280px] mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar">
-            <li className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 border-b border-slate-100 sticky top-0">Ismert betegek (Kattints rá)</li>
-            {results.map(p => (
-              <li 
-                key={p.id} 
-                onMouseDown={(e) => {
-                  e.preventDefault(); 
-                  handleSelect(p);
-                }}
-                className="px-3 py-2 border-b border-slate-50 hover:bg-emerald-50 cursor-pointer transition-colors"
-              >
-                <div className="font-bold text-slate-800 text-sm">{p.name}</div>
-                <div className="flex gap-2 mt-0.5">
-                  {p.taj_szam && <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono border border-slate-200">{p.taj_szam}</span>}
-                  {p.phone_number && <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">{p.phone_number}</span>}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
     );
   }
-
-  return (
-    <div onClick={() => { setIsEditing(true); setCurrentValue(value || ""); }}
-      className={`cursor-pointer min-h-[38px] p-2 rounded-lg transition-all border border-transparent hover:bg-white/80 hover:border-slate-200 font-medium break-words
-        ${highlight ? "text-red-950 font-bold" : "text-emerald-950"}`}
-      title="Kattints a kereséshez vagy szerkesztéshez"
-    >
-      {value ? <HighlightText text={value} highlight={searchTerm} /> : <span className="text-slate-400 italic text-sm font-normal opacity-70">Üres (kattints)</span>}
-    </div>
-  );
-
 
   // --- NORMÁL ELŐJEGYZÉS NÉZET ---
   const filteredCategories = categories.filter(c => c.toLowerCase().includes(departmentSearch.toLowerCase()));
@@ -1922,7 +1763,6 @@ export function PatientAutocomplete({
                               </div>
                             </td>
                             
-                            {/* --- AZ ÚJ OKOS KERESŐ A TÁBLÁZATBAN --- */}
                             <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black font-bold text-sm border-l border-gray-300' : ''}`}>
                               {printingDate ? app.patient_name : (
                                 <div className="relative">
@@ -2041,7 +1881,6 @@ export function PatientAutocomplete({
                                   <div className="w-[130px]"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></div>
                                 </div>
                               </div>
-                              {/* --- MOBIL NÉZET KERESŐ --- */}
                               <PatientAutocomplete 
                                 disabled={isDel} 
                                 highlight={isBooked} 
@@ -2116,27 +1955,35 @@ export function PatientAutocomplete({
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
         @media print {
-          @page { size: auto; margin: 0mm; }
-          body, html { background: white !important; color: black !important; font-family: sans-serif; height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+          @page { 
+            size: A4 portrait;
+            margin: 10mm 15mm;
+          }
+          body, html { background: white !important; color: black !important; font-family: Arial, Helvetica, sans-serif; font-size: 10px !important; }
           .no-print { display: none !important; }
           
           .print-mode { background: white !important; min-height: auto !important; padding: 0 !important; display: block !important; position: static !important; overflow: visible !important; }
           
-          .print-container { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; page-break-after: auto; overflow: visible !important; }
-          .overflow-visible { overflow: visible !important; }
+          /* Labor ajánlat sűrítése */
+          .printable-quote { padding: 0 !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
+          .printable-quote h1 { font-size: 18px !important; margin-bottom: 2px !important; }
+          .printable-quote h2, .printable-quote h3 { font-size: 12px !important; margin-bottom: 2px !important; }
+          .printable-quote p { font-size: 10px !important; margin-bottom: 1px !important; line-height: 1.2 !important; }
+          .printable-quote .text-2xl { font-size: 16px !important; }
           
-          .print-table { width: 100% !important; border-collapse: collapse !important; margin-top: 10px !important; table-layout: fixed; page-break-inside: auto; }
-          .print-table thead { display: table-header-group; position: static !important; }
-          .print-table tr { page-break-inside: avoid; page-break-after: auto; }
+          /* Táblázatok sűrítése */
+          .print-table, .printable-quote table { width: 100% !important; border-collapse: collapse !important; margin-top: 5px !important; table-layout: fixed; }
+          .print-table th, .printable-quote th { border-bottom: 1px solid #999 !important; padding: 3px 2px !important; font-size: 9px !important; background: transparent !important; color: black !important; }
+          .print-table td, .printable-quote td { border-bottom: 1px dotted #ccc !important; padding: 3px 2px !important; font-size: 10px !important; line-height: 1.1 !important; word-break: break-word; }
           
-          .print-table th { border: 1px solid #333 !important; padding: 6px !important; color: black !important; font-size: 11px !important; font-weight: bold !important; background: #f3f4f6 !important; -webkit-print-color-adjust: exact; text-align: left; }
-          .print-table td { border: 1px solid #666 !important; padding: 4px 6px !important; color: black !important; font-size: 11px !important; line-height: 1.2 !important; word-break: break-word; }
-          
-          .print-header { padding: 0 0 5px 0 !important; margin-bottom: 5px !important; border-bottom: 2px solid black !important; display: flex !important; justify-content: space-between !important; }
-          .print-header h2 { font-size: 18px !important; margin: 0 !important; font-weight: bold !important; }
-          .print-header span { border: none !important; background: none !important; padding: 0 !important; margin-right: 15px !important; color: black !important; font-size: 12px !important; font-weight: bold !important; }
-          
+          /* Előjegyzés specifikus print */
+          .print-container { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; page-break-after: auto; }
+          .print-header { padding: 0 0 5px 0 !important; margin-bottom: 5px !important; border-bottom: 1.5px solid black !important; display: flex !important; justify-content: space-between !important; }
+          .print-header h2 { font-size: 14px !important; margin: 0 !important; }
+          .print-header span { display: none !important; }
           .print-hidden { display: none !important; }
+          
+          mark { background: transparent !important; color: black !important; font-weight: normal !important; }
         }
       `}} />
     </div>

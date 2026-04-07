@@ -480,7 +480,7 @@ export default function Home() {
 
   const updateUnreadCount = (notifs: any[]) => {
     if (!user) return;
-    const lastRead = localStorage.getItem(`medaqua_notif_${user.email}`);
+    const lastRead = localStorage.getItem(`medaqua_notif_${user?.email}`);
     if (!lastRead) {
       setUnreadCount(notifs.length);
     } else {
@@ -544,8 +544,13 @@ export default function Home() {
     setIsInitialLoading(false);
   };
 
+  // --- ITT AZ UGRÁLÁST MEGOLDÓ JAVÍTÁS (Külön kimentett változók az Effect dependency-hez) ---
+  const userId = user?.id;
+  const userEmail = user?.email;
+  const userName = user?.user_metadata?.display_name;
+
   useEffect(() => { 
-    if (user && !needsProfileName) {
+    if (userId && !needsProfileName) {
       loadInitialData(); 
 
       const channel = supabase.channel('live-appointments')
@@ -574,8 +579,8 @@ export default function Home() {
         .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             await presenceChannel.track({
-              email: user.email,
-              name: getDisplayName() || user.email,
+              email: userEmail,
+              name: userName || userEmail,
             });
           }
         });
@@ -588,7 +593,7 @@ export default function Home() {
         supabase.removeChannel(presenceChannel); 
       };
     } 
-  }, [user, needsProfileName]);
+  }, [userId, userEmail, userName, needsProfileName]);
 
   const handleLogin = async () => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -603,7 +608,7 @@ export default function Home() {
   };
 
   const handleLogout = async () => await supabase.auth.signOut();
-  const getDisplayName = () => user?.user_metadata?.display_name || user?.email;
+  const getDisplayName = () => userName || userEmail;
 
   const updateAppointment = async (id: number, field: string, newValue: string) => {
     if (!user) return;
@@ -955,7 +960,7 @@ export default function Home() {
                     <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest block mb-1">Ár</label>
                     <input type="text" value={item.price} onChange={(e) => updatePriceItem(item.id, 'price', e.target.value)} placeholder="pl. 15.000 Ft" className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none font-semibold text-slate-800 transition-all" />
                   </div>
-                  <button onClick={() => removePriceItem(item.id)} className="w-full sm:w-auto mt-4 sm:mt-5 p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors flex justify-center" title="Tétel t��rlése">
+                  <button onClick={() => removePriceItem(item.id)} className="w-full sm:w-auto mt-4 sm:mt-5 p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors flex justify-center" title="Tétel törlése">
                     <TrashIcon />
                   </button>
                 </div>

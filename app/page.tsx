@@ -12,46 +12,29 @@ import {
   FeedbackIcon, CalculatorIcon, DocumentIcon 
 } from "../components/icons";
 
-// Új ikon a statisztikához
+// Új ikonok
 const ChartPieIcon = ({ size = 20 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-    <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-  </svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
 );
 
 const TrendingUpIcon = ({ size = 20 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-    <polyline points="17 6 23 6 23 12"></polyline>
-  </svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
 );
 
-// Új ikonok a vezérlőpultba
 const ActivityIcon = ({ size = 20 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-  </svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
 );
 
 const CalendarPlusIcon = ({ size = 20 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-    <line x1="16" y1="2" x2="16" y2="6"></line>
-    <line x1="8" y1="2" x2="8" y2="6"></line>
-    <line x1="3" y1="10" x2="21" y2="10"></line>
-    <line x1="10" y1="16" x2="14" y2="16"></line>
-    <line x1="12" y1="14" x2="12" y2="18"></line>
-  </svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><line x1="10" y1="16" x2="14" y2="16"></line><line x1="12" y1="14" x2="12" y2="18"></line></svg>
 );
 
 const UsersIcon = ({ size = 20 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-    <circle cx="9" cy="7" r="4"></circle>
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-  </svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+);
+
+const ClockIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
 );
 
 import { BACKGROUND_IMAGE_URL, LAB_DATABASE } from "../lib/constants";
@@ -67,6 +50,18 @@ import { ModernDatePicker } from "../components/ModernDatePicker";
 import { PatientAutocomplete } from "../components/PatientAutocomplete";
 
 
+// --- AUTO SZÍNEZŐ SEGÉDFÜGGVÉNY A VIZSGÁLATOKHOZ ---
+const getExamColor = (exam: string) => {
+  if (!exam) return "border-transparent";
+  const lower = exam.toLowerCase();
+  if (lower.includes("ultrahang") || lower.includes("uh")) return "bg-blue-50 text-blue-900 border-blue-200";
+  if (lower.includes("kontroll")) return "bg-emerald-50 text-emerald-900 border-emerald-200";
+  if (lower.includes("vérvétel") || lower.includes("labor")) return "bg-red-50 text-red-900 border-red-200";
+  if (lower.includes("konzultáció") || lower.includes("vizsgálat")) return "bg-purple-50 text-purple-900 border-purple-200";
+  if (lower.includes("röntgen") || lower.includes("rtg")) return "bg-amber-50 text-amber-900 border-amber-200";
+  return "bg-slate-50 text-slate-900 border-slate-200"; // Alapértelmezett kitöltött szín
+};
+
 // --- Főoldal ---
 export default function Home() {
   const searchInputRef = useRef<HTMLInputElement>(null); 
@@ -80,7 +75,7 @@ export default function Home() {
   // --- NÉZETEK (VIEWS) ---
   const [showLabCalculator, setShowLabCalculator] = useState(false);
   const [showStats, setShowStats] = useState(false);
-  const [showPatients, setShowPatients] = useState(false); // ÚJ: Páciens nézet
+  const [showPatients, setShowPatients] = useState(false);
 
   // --- PÁCIENS NÉZET ÁLLAPOTAI ---
   const [patientsList, setPatientsList] = useState<any[]>([]);
@@ -111,7 +106,6 @@ export default function Home() {
   const [departmentSearch, setDepartmentSearch] = useState(""); 
   const [showDeleted, setShowDeleted] = useState(false);
   
-  // Kereső Debounce (Késleltetés) állapotai
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   
@@ -163,11 +157,10 @@ export default function Home() {
     isOpen: false, title: "", message: "", type: "alert", confirmText: "Rendben", confirmColor: "bg-slate-900 text-white", onConfirm: () => {}
   });
 
-  const [toast, setToast] = useState<{visible: boolean, message: string, type: 'success' | 'error'}>({
+  const [toast, setToast] = useState<{visible: boolean, message: string, type: 'success' | 'error' | 'warning'}>({
     visible: false, message: "", type: 'success'
   });
 
-  // Kereső debounce effekt
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -234,9 +227,9 @@ export default function Home() {
     setTimeout(() => { window.print(); }, 300);
   };
 
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'success') => {
     setToast({ visible: true, message, type });
-    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3500);
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), type === 'warning' ? 5000 : 3500);
   };
 
   const logAction = async (appId: number, action: string, details: string) => {
@@ -261,7 +254,7 @@ export default function Home() {
   };
 
   const handleNotificationClick = (msg: string) => {
-    const parts = msg.split("m��dosította az árlistát: ");
+    const parts = msg.split("módosította az árlistát: ");
     if (parts.length === 2) {
       const dept = parts[1].trim();
       if (categories.includes(dept)) setActiveTab(dept);
@@ -382,34 +375,37 @@ export default function Home() {
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // --- AUTOMATIKUS KIJELENTKEZÉS INAKTIVITÁS MIATT (15 PERC) ---
+  // Visszaugrás a mai napra
+  const scrollToToday = () => {
+    const todayId = `date-${getTodayDateStr()}`;
+    const el = document.getElementById(todayId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      showToast('Erre a napra (még) nincsenek időpontok generálva!', 'warning');
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
-
     let timeoutId: NodeJS.Timeout;
-
     const logoutUser = async () => {
       await handleLogout();
       showAlert("Munkamenet lejárt", "Biztonsági okokból, 15 perc inaktivitás után a rendszer automatikusan kijelentkeztetett.");
     };
-
     const resetTimer = () => {
       if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(logoutUser, 900000);
     };
-
     const events = ['mousemove', 'keydown', 'mousedown', 'scroll', 'touchstart'];
     events.forEach(event => window.addEventListener(event, resetTimer));
-
     resetTimer(); 
-
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
       events.forEach(event => window.removeEventListener(event, resetTimer));
     };
   }, [user]);
 
-  // --- GYORSBILLENTYŰK (HOTKEYS) ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key.toLowerCase() === 'k') { 
@@ -426,9 +422,7 @@ export default function Home() {
       }
       if (e.altKey && e.key.toLowerCase() === 'n') { 
         e.preventDefault(); 
-        setShowStats(false); 
-        setShowLabCalculator(false);
-        setShowPatients(false);
+        setShowStats(false); setShowLabCalculator(false); setShowPatients(false);
         setTimeout(() => {
           newTimeSlotRef.current?.focus();
           document.getElementById('new-appointment-bar')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -570,7 +564,6 @@ export default function Home() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'departments' }, () => fetchCategories())
         .subscribe();
 
-      // --- ONLINE FELHASZNÁLÓK (PRESENCE) ---
       const presenceChannel = supabase.channel('online-users');
       presenceChannel
         .on('presence', { event: 'sync' }, () => {
@@ -666,7 +659,7 @@ export default function Home() {
 
   const clearEmptySlots = async (date: string) => {
     const dayApps = groupedByDate[date] || [];
-    const emptyApps = dayApps.filter((a: any) => !a.is_deleted && (!a.patient_name || a.patient_name.trim() === ""));
+    const emptyApps = dayApps.filter((a: any) => !a.is_deleted && a.time_slot !== "VÁRÓLISTA" && (!a.patient_name || a.patient_name.trim() === ""));
     
     if (emptyApps.length === 0) return showAlert("Nincs törölhető üres sor", "Ezen a napon nincsenek üres (páciens nélküli) időpontok.");
 
@@ -709,12 +702,23 @@ export default function Home() {
   };
 
   const executeDeleteApp = async (id: number) => {
+    const appToDelete = appointments.find(a => a.id === id);
+    const date = appToDelete?.appointment_date;
+    const isBooked = appToDelete?.patient_name && appToDelete.patient_name.trim() !== "";
+    
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
     setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app));
     await supabase.from("appointments").update({ is_deleted: true, deleted_by: modifierName, deleted_at: now }).eq("id", id);
     await logAction(id, "Törlés", "Időpont törölve a listából");
-    showToast("Időpont törölve");
+    
+    // Várólista ellenőrzés
+    const waitingCount = appointments.filter(a => a.appointment_date === date && a.time_slot === "VÁRÓLISTA" && !a.is_deleted).length;
+    if (waitingCount > 0 && appToDelete?.time_slot !== "VÁRÓLISTA" && isBooked) {
+       showToast(`Időpont törölve! Figyelem: ${waitingCount} beteg van a várólistán!`, 'warning');
+    } else {
+       showToast("Időpont törölve");
+    }
   };
 
   const handlePrintDay = (date: string) => {
@@ -793,14 +797,11 @@ export default function Home() {
     document.body.removeChild(link);
   };
 
-  // ÚJ: A karton mostantól a TELJES adatbázisban keres, évekre visszamenőleg!
   const openPatientHistory = async (name: string, taj: string) => {
     if (!name) return showAlert("Hiányzó adat", "A karton megnyitásához a beteg nevének kitöltve kell lennie!");
-    
-    setHistoryModal({ isOpen: true, patientName: name, taj: taj || "", data: [] }); // Nyissuk meg üresen tölteni
+    setHistoryModal({ isOpen: true, patientName: name, taj: taj || "", data: [] });
     
     let query = supabase.from("appointments").select("*").eq("patient_name", name).eq("is_deleted", false);
-    
     const { data } = await query;
     let matches = data || [];
     
@@ -809,8 +810,23 @@ export default function Home() {
     }
 
     matches = matches.sort((a: any, b: any) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime());
-    
     setHistoryModal({ isOpen: true, patientName: name, taj: taj || "", data: matches });
+  };
+
+  // ÚJ: Várólista funkció
+  const addToWaitingList = async (date: string) => {
+    const modifierName = getDisplayName();
+    const now = new Date().toISOString();
+    const { data } = await supabase.from("appointments").insert([{
+      department: activeTab, appointment_date: date, time_slot: "VÁRÓLISTA",
+      patient_name: "", taj_szam: "", phone_number: "", examination_type: "", notes: "", status: "Várólista",
+      last_modified_by: modifierName, last_modified_at: now, is_deleted: false
+    }]).select();
+    
+    if (data && data[0]) {
+       await logAction(data[0].id, "Létrehozás", "Új várólistás hely hozzáadva");
+    }
+    showToast("Új hely a várólistán létrehozva!");
   };
 
   const generateDailySlots = async () => {
@@ -939,7 +955,7 @@ export default function Home() {
                     <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest block mb-1">Ár</label>
                     <input type="text" value={item.price} onChange={(e) => updatePriceItem(item.id, 'price', e.target.value)} placeholder="pl. 15.000 Ft" className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none font-semibold text-slate-800 transition-all" />
                   </div>
-                  <button onClick={() => removePriceItem(item.id)} className="w-full sm:w-auto mt-4 sm:mt-5 p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors flex justify-center" title="Tétel törlése">
+                  <button onClick={() => removePriceItem(item.id)} className="w-full sm:w-auto mt-4 sm:mt-5 p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors flex justify-center" title="Tétel t��rlése">
                     <TrashIcon />
                   </button>
                 </div>
@@ -1173,8 +1189,8 @@ export default function Home() {
   const toastUI = (
     <div className={`fixed bottom-6 right-6 z-[999] bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] border border-slate-100 p-4 flex items-center gap-3 transform transition-all duration-500 ease-out pointer-events-none
       ${toast.visible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-12 opacity-0 scale-95'}`}>
-      <div className={`p-2 rounded-full ${toast.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-        {toast.type === 'success' ? <CheckCircleIcon /> : <XCircleIcon />}
+      <div className={`p-2 rounded-full ${toast.type === 'success' ? 'bg-emerald-100 text-emerald-600' : toast.type === 'warning' ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'}`}>
+        {toast.type === 'success' ? <CheckCircleIcon /> : toast.type === 'warning' ? <AlertModalIcon /> : <XCircleIcon />}
       </div>
       <p className="font-bold text-sm text-slate-800 pr-2">{toast.message}</p>
     </div>
@@ -1830,10 +1846,11 @@ export default function Home() {
   const sortedDates = Object.keys(groupedByDate).sort();
 
   const freeSlotsSummary = sortedDates.map(date => {
-    const dayAppointments = groupedByDate[date].filter((a: any) => !a.is_deleted);
-    const bookedCount = dayAppointments.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
-    const freeCount = dayAppointments.length - bookedCount;
-    return { date, freeCount, total: dayAppointments.length };
+    // Várólista kiszűrése a szabad helyek számolásánál!
+    const dayNormalAppointments = groupedByDate[date].filter((a: any) => !a.is_deleted && a.time_slot !== "VÁRÓLISTA");
+    const bookedCount = dayNormalAppointments.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
+    const freeCount = dayNormalAppointments.length - bookedCount;
+    return { date, freeCount, total: dayNormalAppointments.length };
   }).filter(day => day.total > 0);
 
   return (
@@ -1872,31 +1889,26 @@ export default function Home() {
 
           <div className="flex items-center gap-2 sm:gap-4 w-full md:w-auto justify-end">
             
-            {/* --- ÚJ: PÁCIENSEK GOMB --- */}
             <button onClick={() => { setShowPatients(true); setShowStats(false); setShowLabCalculator(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Páciensek (Alt + P)">
               <UsersIcon size={16} />
               <span className="hidden xl:inline">Páciensek</span>
             </button>
 
-            {/* --- STATISZTIKA GOMB --- */}
             <button onClick={() => { setShowStats(true); setShowLabCalculator(false); setShowPatients(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Statisztikák (Alt + S)">
               <ChartPieIcon size={16} />
               <span className="hidden xl:inline">Statisztika</span>
             </button>
 
-            {/* --- LABOR KALKULÁTOR GOMB --- */}
             <button onClick={() => { setShowLabCalculator(true); setShowStats(false); setShowPatients(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Labor kalkulátor (Alt + L)">
               <CalculatorIcon size={16} />
               <span className="hidden sm:inline">Labor kalkulátor</span>
             </button>
 
-            {/* --- HIBABEJELENTŐ GOMB --- */}
             <button onClick={() => setIsBugModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Hibabejelentés / Ötlet">
               <FeedbackIcon size={16} />
               <span className="hidden lg:inline">Hibabejelentő</span>
             </button>
 
-            {/* --- ÉRTESÍTÉSEK --- */}
             <div className="relative" ref={notifRef}>
               <button onClick={toggleNotif} className="relative p-2 text-slate-500 hover:text-red-600 transition-colors ml-1 cursor-pointer">
                 <BellIcon />
@@ -1936,7 +1948,6 @@ export default function Home() {
               )}
             </div>
 
-            {/* --- ONLINE FELHASZNÁLÓK GOMB ÉS LISTA --- */}
             <div className="relative ml-1" ref={onlineRef}>
               <button onClick={() => setIsOnlineDropdownOpen(!isOnlineDropdownOpen)} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Aktív felhasználók">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.8)]"></div>
@@ -1965,7 +1976,6 @@ export default function Home() {
               )}
             </div>
 
-            {/* --- PROFIL ÉS KIJELENTKEZÉS --- */}
             <div className="flex items-center gap-2 text-slate-800 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/60 shadow-sm z-10 relative ml-1">
               <UserIcon /><span className="font-semibold text-sm hidden md:inline">{getDisplayName()}</span>
             </div>
@@ -2017,7 +2027,6 @@ export default function Home() {
                     </div>
                   </button>
 
-                  {/* A Legördülő Panel */}
                   <div className={`absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] border border-slate-100 overflow-hidden transition-all duration-200 origin-top ${isDeptDropdownOpen ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible pointer-events-none'}`}>
                     <div className="p-3 border-b border-slate-100 bg-slate-50/50">
                       <div className="relative">
@@ -2155,6 +2164,16 @@ export default function Home() {
                   <CalendarIcon size={16} /> <span>Naptár Áttekintés - Kattints a dátumra</span>
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-3 custom-scrollbar scroll-smooth">
+                  
+                  {/* --- ÚJ: UGRÁS A MAI NAPRA GOMB --- */}
+                  <button
+                    onClick={scrollToToday}
+                    className="flex-shrink-0 flex items-center justify-center gap-2 min-w-[130px] p-3 rounded-2xl border bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 transition-all cursor-pointer shadow-sm active:scale-95"
+                  >
+                    <CalendarIcon size={20} />
+                    <span className="font-extrabold text-sm">Ugrás Mára</span>
+                  </button>
+
                   {freeSlotsSummary.map((day) => (
                     <button
                       key={day.date}
@@ -2186,13 +2205,18 @@ export default function Home() {
 
                 const dayAppointments = groupedByDate[date].sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot));
                 const activeSlots = dayAppointments.filter((a: any) => !a.is_deleted);
-                const bookedCount = activeSlots.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
-                const freeCount = activeSlots.length - bookedCount;
+                
+                // Várólista és normál szétválasztás számításokhoz
+                const activeNormalSlots = activeSlots.filter((a: any) => a.time_slot !== "VÁRÓLISTA");
+                const waitingListSlots = activeSlots.filter((a: any) => a.time_slot === "VÁRÓLISTA");
+
+                const bookedCount = activeNormalSlots.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
+                const freeCount = activeNormalSlots.length - bookedCount;
                 
                 // --- MINI DASHBOARD Számítások ---
-                const percent = activeSlots.length > 0 ? Math.round((bookedCount / activeSlots.length) * 100) : 0;
+                const percent = activeNormalSlots.length > 0 ? Math.round((bookedCount / activeNormalSlots.length) * 100) : 0;
                 const deptPrices = allPrices.filter(p => p.department === (dayAppointments[0]?.department || activeTab));
-                const dailyRevenue = getDailyRevenue(activeSlots, deptPrices);
+                const dailyRevenue = getDailyRevenue(activeNormalSlots, deptPrices);
                 const formattedRevenue = dailyRevenue > 0 ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyRevenue) : "0 Ft";
 
                 return (
@@ -2229,9 +2253,16 @@ export default function Home() {
                       <div className="flex items-center flex-wrap gap-2">
                         {debouncedSearchTerm === "" && (
                           <>
-                            <span className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200">Összes: {activeSlots.length}</span>
+                            <span className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200">Összes: {activeNormalSlots.length}</span>
                             <span className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200">Szabad: {freeCount}</span>
                             <span className="bg-red-100 text-red-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-200">Foglalt: {bookedCount}</span>
+                            
+                            {/* ÚJ: VÁRÓLISTA GOMB */}
+                            {!printingDate && (
+                              <button onClick={() => addToWaitingList(date)} className="bg-orange-100 hover:bg-orange-200 text-orange-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-orange-300 transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer ml-1">
+                                <PlusIcon size={14} /> Várólista
+                              </button>
+                            )}
                           </>
                         )}
                         
@@ -2277,13 +2308,15 @@ export default function Home() {
                           {dayAppointments.map((app: any) => {
                             const isDel = app.is_deleted === true;
                             const isBooked = app.patient_name && app.patient_name.trim() !== "";
+                            const isWaitingList = app.time_slot === "VÁRÓLISTA";
                             
                             const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
                             
                             if (printingDate && isDel) return null; 
 
                             // Vizuális Státusz Színek a sor szélére
-                            const statusBorder = printingDate || isDel || !isBooked ? "" :
+                            const statusBorder = printingDate || isDel || (!isBooked && !isWaitingList) ? "" :
+                              isWaitingList ? "border-l-4 border-l-orange-400" :
                               app.status === "Megérkezett" ? "border-l-4 border-l-amber-400" :
                               app.status === "Vizsgálaton" ? "border-l-4 border-l-blue-400" :
                               app.status === "Befejezve" ? "border-l-4 border-l-emerald-500" :
@@ -2292,17 +2325,23 @@ export default function Home() {
 
                             const rowStyle = isDel 
                               ? "bg-slate-100/40 opacity-70 print-hidden" 
-                              : isBooked 
-                                ? `bg-red-50/70 hover:bg-red-100/60 ${statusBorder}`
-                                : "bg-emerald-50/70 hover:bg-emerald-100/60 border-l-4 border-l-transparent";
+                              : isWaitingList 
+                                ? `bg-orange-50/50 hover:bg-orange-100/60 ${statusBorder}`
+                                : isBooked 
+                                  ? `bg-red-50/70 hover:bg-red-100/60 ${statusBorder}`
+                                  : "bg-emerald-50/70 hover:bg-emerald-100/60 border-l-4 border-l-transparent";
 
                             return (
                               <tr key={app.id} className={`transition-colors group relative ${printingDate ? '' : rowStyle}`}>
                                 
                                 <td className="px-4 py-3 align-middle whitespace-nowrap">
                                   <div className="flex flex-col gap-1 w-max">
-                                    <span className={`font-bold text-base ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
-                                    {!printingDate && !isDel && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isBooked ? "bg-red-200/60 text-red-900" : "bg-emerald-200/60 text-emerald-900"}`}>{isBooked ? "Foglalt" : "Szabad"}</span>}
+                                    {isWaitingList ? (
+                                      <span className="font-extrabold text-orange-600 flex items-center gap-1.5"><ClockIcon size={16}/> VÁRÓLISTA</span>
+                                    ) : (
+                                      <span className={`font-bold text-base ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
+                                    )}
+                                    {!printingDate && !isDel && !isWaitingList && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isBooked ? "bg-red-200/60 text-red-900" : "bg-emerald-200/60 text-emerald-900"}`}>{isBooked ? "Foglalt" : "Szabad"}</span>}
                                     {!printingDate && isDel && <span className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max bg-slate-200 text-slate-700">Törölt</span>}
                                   </div>
                                 </td>
@@ -2340,12 +2379,16 @@ export default function Home() {
                                   <>
                                     <td className="px-4 py-3 align-middle whitespace-nowrap"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={debouncedSearchTerm} /></td>
                                     
-                                    <td className="px-4 py-3 align-middle whitespace-nowrap"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></td>
+                                    <td className="px-4 py-3 align-middle whitespace-nowrap"><ModernStatusSelect disabled={isDel || (!isBooked && !isWaitingList)} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></td>
                                   </>
                                 )}
                                 
                                 <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
-                                  {printingDate ? app.examination_type : <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} />}
+                                  {printingDate ? app.examination_type : (
+                                    <div className={`rounded-xl px-1.5 transition-colors border shadow-sm ${app.examination_type ? getExamColor(app.examination_type) : 'border-transparent bg-transparent shadow-none'}`}>
+                                      <EditableCell disabled={isDel} highlight={false} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} />
+                                    </div>
+                                  )}
                                 </td>
                                 <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
                                   {printingDate ? app.notes : <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={debouncedSearchTerm} />}
@@ -2376,9 +2419,11 @@ export default function Home() {
                         {dayAppointments.map((app: any) => {
                           const isDel = app.is_deleted === true;
                           const isBooked = app.patient_name && app.patient_name.trim() !== "";
+                          const isWaitingList = app.time_slot === "VÁRÓLISTA";
                           const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
                           
-                          const statusBorder = isDel || !isBooked ? "" :
+                          const statusBorder = isDel || (!isBooked && !isWaitingList) ? "" :
+                              isWaitingList ? "border-l-4 border-l-orange-400" :
                               app.status === "Megérkezett" ? "border-l-4 border-l-amber-400" :
                               app.status === "Vizsgálaton" ? "border-l-4 border-l-blue-400" :
                               app.status === "Befejezve" ? "border-l-4 border-l-emerald-500" :
@@ -2387,18 +2432,27 @@ export default function Home() {
 
                           const cardStyle = isDel 
                             ? "bg-slate-100/50 border-slate-200/50 opacity-80" 
-                            : isBooked 
-                              ? `bg-red-50/90 border-white shadow-sm ${statusBorder}` 
-                              : "bg-emerald-50/90 border-white shadow-sm border-l-4 border-l-transparent";
+                            : isWaitingList 
+                              ? `bg-orange-50/90 border-white shadow-sm ${statusBorder}`
+                              : isBooked 
+                                ? `bg-red-50/90 border-white shadow-sm ${statusBorder}` 
+                                : "bg-emerald-50/90 border-white shadow-sm border-l-4 border-l-transparent";
 
                           return (
                             <div key={`mob-${app.id}`} className={`rounded-2xl p-5 border transition-all ${cardStyle}`}>
                               <div className="flex justify-between items-start mb-4">
                                 <div className="flex flex-col gap-1">
-                                   <span className={`font-bold text-xl ${isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
-                                   <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isDel ? "bg-slate-200 text-slate-700" : isBooked ? "bg-red-200/60 text-red-900" : "bg-emerald-200/60 text-emerald-900"}`}>
-                                     {isDel ? "Törölt" : isBooked ? "Foglalt" : "Szabad"}
-                                   </span>
+                                   {isWaitingList ? (
+                                      <span className="font-extrabold text-orange-700 flex items-center gap-1"><ClockIcon size={18}/> VÁRÓLISTA</span>
+                                   ) : (
+                                      <span className={`font-bold text-xl ${isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
+                                   )}
+                                   
+                                   {!isWaitingList && (
+                                     <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isDel ? "bg-slate-200 text-slate-700" : isBooked ? "bg-red-200/60 text-red-900" : "bg-emerald-200/60 text-emerald-900"}`}>
+                                       {isDel ? "Törölt" : isBooked ? "Foglalt" : "Szabad"}
+                                     </span>
+                                   )}
                                 </div>
                                 
                                 <div className="flex items-center gap-1">
@@ -2422,7 +2476,7 @@ export default function Home() {
                                           <HistoryIcon />
                                         </button>
                                       )}
-                                      <div className="w-[130px]"><ModernStatusSelect disabled={isDel || !isBooked} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></div>
+                                      <div className="w-[130px]"><ModernStatusSelect disabled={isDel || (!isBooked && !isWaitingList)} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></div>
                                     </div>
                                   </div>
                                   <PatientAutocomplete 
@@ -2445,10 +2499,10 @@ export default function Home() {
                                     <EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={debouncedSearchTerm} />
                                   </div>
                                 </div>
-                                <div className="bg-white/70 p-2.5 rounded-xl border border-white/50 relative z-0">
+                                <div className={`bg-white/70 p-2.5 rounded-xl border relative z-0 ${app.examination_type ? getExamColor(app.examination_type) : 'border-white/50'}`}>
                                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat & Megjegyzés</span>
-                                  <EditableCell disabled={isDel} highlight={isBooked} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} />
-                                  <div className="mt-1 border-t border-black/5 pt-1">
+                                  <EditableCell disabled={isDel} highlight={false} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} />
+                                  <div className="mt-1 border-t border-black/10 pt-1">
                                     <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={debouncedSearchTerm} />
                                   </div>
                                 </div>

@@ -345,6 +345,52 @@ export default function Home() {
     visible: false, message: "", type: 'success'
   });
 
+  // --- Húzásos görgetés (Drag to scroll) Állapotok ---
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isDraggingTabs = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftPos = useRef(0);
+  const hasDragged = useRef(false);
+
+  const handleTabMouseDown = (e: React.MouseEvent) => {
+    isDraggingTabs.current = true;
+    hasDragged.current = false;
+    if (!scrollContainerRef.current) return;
+    startX.current = e.pageX - scrollContainerRef.current.offsetLeft;
+    scrollLeftPos.current = scrollContainerRef.current.scrollLeft;
+    scrollContainerRef.current.style.cursor = 'grabbing';
+    scrollContainerRef.current.style.userSelect = 'none';
+  };
+
+  const handleTabMouseLeaveOrUp = () => {
+    isDraggingTabs.current = false;
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.style.cursor = 'grab';
+      scrollContainerRef.current.style.removeProperty('user-select');
+    }
+  };
+
+  const handleTabMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingTabs.current || !scrollContainerRef.current) return;
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startX.current) * 1.5; // Görgetés sebessége
+    if (Math.abs(walk) > 5) {
+      hasDragged.current = true;
+    }
+    scrollContainerRef.current.scrollLeft = scrollLeftPos.current - walk;
+  };
+
+  const handleTabClick = (c: string, e: React.MouseEvent) => {
+    if (hasDragged.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      hasDragged.current = false;
+      return;
+    }
+    setActiveTab(c);
+  };
+
+
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ visible: true, message, type });
     setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3500);
@@ -439,7 +485,7 @@ export default function Home() {
       formData.append("_captcha", "false");
 
       // ! --- IDE ÍRD BE A SAJÁT E-MAIL CÍMEDET --- !
-      const response = await fetch("https://formsubmit.co/ajax/kovacs.zoltan1998@gmail.com", {
+      const response = await fetch("https://formsubmit.co/ajax/TE_EMAIL_CIMED@gmail.com", {
         method: "POST",
         body: formData
       });
@@ -800,7 +846,7 @@ export default function Home() {
     
     showConfirm(
       "Napi előjegyzés generálása",
-      `Sikeresen kiszámoltam ${slotsToCreate.length} db új időpontot a kiválasztott napra.\n\nLétrehozhatom őket?`,
+      `Sikeresen kiszámoltam ${slotsToCreate.length} db új időpontot a kiválaszt napra.\n\nLétrehozhatom őket?`,
       "Lista Generálása",
       "bg-red-600 hover:bg-red-700 text-white",
       async () => {
@@ -1269,14 +1315,14 @@ export default function Home() {
           <div className="flex items-center gap-2 sm:gap-4 w-full md:w-auto justify-end">
             
             {/* --- HIBABEJELENTŐ GOMB --- */}
-            <button onClick={() => setIsBugModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-full text-xs font-bold transition-all shadow-sm" title="Hibabejelentés / Ötlet">
+            <button onClick={() => setIsBugModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Hibabejelentés / Ötlet">
               <FeedbackIcon size={16} />
               <span className="hidden sm:inline">Hibabejelentő</span>
             </button>
 
             {/* --- ÉRTESÍTÉSEK --- */}
             <div className="relative" ref={notifRef}>
-              <button onClick={toggleNotif} className="relative p-2 text-slate-500 hover:text-red-600 transition-colors ml-1">
+              <button onClick={toggleNotif} className="relative p-2 text-slate-500 hover:text-red-600 transition-colors ml-1 cursor-pointer">
                 <BellIcon />
                 {unreadCount > 0 && <span className="absolute top-0 right-0 translate-x-1 -translate-y-1 bg-red-500 text-white text-[10px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full border-2 border-white shadow-sm">{unreadCount}</span>}
               </button>
@@ -1317,7 +1363,7 @@ export default function Home() {
             <div className="flex items-center gap-2 text-slate-800 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/60 shadow-sm z-10 relative ml-1">
               <UserIcon /><span className="font-semibold text-sm">{getDisplayName()}</span>
             </div>
-            <button onClick={handleLogout} className="text-slate-500 hover:text-red-600 transition-colors p-2 z-10 relative" title="Kijelentkezés"><LogoutIcon /></button>
+            <button onClick={handleLogout} className="text-slate-500 hover:text-red-600 transition-colors p-2 z-10 relative cursor-pointer" title="Kijelentkezés"><LogoutIcon /></button>
           </div>
         </div>
       </div>
@@ -1329,18 +1375,18 @@ export default function Home() {
           <div className="relative z-30 bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-6 mb-6 no-print">
             <div className="flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between">
               
-              <div className="w-full xl:w-1/2">
+              <div className="w-full xl:w-1/2 overflow-hidden">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                   <div className="flex items-center gap-2">
                     <label className="block text-slate-500 font-semibold text-xs uppercase tracking-widest">Szakrendelés kiválasztása</label>
-                    <button onClick={() => setIsDeptModalOpen(true)} className="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-200/50 rounded-lg transition-colors" title="Szakrendelések kezelése (Hozzáadás/Törlés)">
+                    <button onClick={() => setIsDeptModalOpen(true)} className="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-200/50 rounded-lg transition-colors cursor-pointer" title="Szakrendelések kezelése (Hozzáadás/Törlés)">
                       <SettingsIcon size={14} />
                     </button>
                   </div>
                   
                   <div className="flex items-center gap-3">
                     {activeTab && (
-                      <button onClick={openPriceModal} className="text-xs font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm active:scale-95">
+                      <button onClick={openPriceModal} className="text-xs font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer">
                         <TagIcon /> {activeTab} árak
                       </button>
                     )}
@@ -1358,10 +1404,21 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="flex gap-2 overflow-x-auto pb-3 custom-scrollbar scroll-smooth min-h-[46px]">
+                <div 
+                  ref={scrollContainerRef}
+                  onMouseDown={handleTabMouseDown}
+                  onMouseLeave={handleTabMouseLeaveOrUp}
+                  onMouseUp={handleTabMouseLeaveOrUp}
+                  onMouseMove={handleTabMouseMove}
+                  className="flex gap-2 overflow-x-auto pb-3 custom-scrollbar scroll-smooth min-h-[46px] cursor-grab active:cursor-grabbing"
+                >
                   {filteredCategories.length > 0 ? (
                     filteredCategories.map(c => (
-                      <button key={c} onClick={() => setActiveTab(c)} className={`whitespace-nowrap px-4 py-2 rounded-full font-semibold text-sm transition-all border ${activeTab === c ? 'bg-red-600 border-red-600 text-white shadow-md' : 'bg-white/80 border-white text-slate-600 hover:bg-white hover:border-slate-200 shadow-sm'}`}>
+                      <button 
+                        key={c} 
+                        onClick={(e) => handleTabClick(c, e)} 
+                        className={`whitespace-nowrap px-4 py-2 rounded-full font-semibold text-sm transition-all border select-none ${activeTab === c ? 'bg-red-600 border-red-600 text-white shadow-md' : 'bg-white/80 border-white text-slate-600 hover:bg-white hover:border-slate-200 shadow-sm'}`}
+                      >
                         {c}
                       </button>
                     ))
@@ -1394,8 +1451,8 @@ export default function Home() {
                         <div className="flex justify-between items-center mb-1.5">
                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Dátum</label>
                            <div className="flex gap-1">
-                             <button onClick={() => setSelectedDate(getTodayDateStr())} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded transition-colors border border-slate-200">Ma</button>
-                             <button onClick={() => setSelectedDate(getTomorrowDateStr())} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded transition-colors border border-slate-200">Holnap</button>
+                             <button onClick={() => setSelectedDate(getTodayDateStr())} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded transition-colors border border-slate-200 cursor-pointer">Ma</button>
+                             <button onClick={() => setSelectedDate(getTomorrowDateStr())} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded transition-colors border border-slate-200 cursor-pointer">Holnap</button>
                            </div>
                         </div>
                         <ModernDatePicker selectedDate={selectedDate} onChange={setSelectedDate} />
@@ -1417,7 +1474,7 @@ export default function Home() {
 
                     <div className="flex flex-wrap items-end gap-3">
                       <div className="w-[calc(50%-0.375rem)] sm:w-28">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet Kezd</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sz��net Kezd</label>
                         <input type="time" value={genBreakStart} onChange={(e) => setGenBreakStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" />
                       </div>
                       <div className="w-[calc(50%-0.375rem)] sm:w-28">
@@ -1425,7 +1482,7 @@ export default function Home() {
                         <input type="time" value={genBreakEnd} onChange={(e) => setGenBreakEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" />
                       </div>
                       
-                      <button onClick={generateDailySlots} className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-500 text-white px-8 py-2.5 rounded-xl hover:from-red-700 hover:to-red-600 font-bold shadow-md shadow-red-500/30 transition-all sm:ml-auto active:scale-95 text-sm h-[42px] mt-2 sm:mt-0">
+                      <button onClick={generateDailySlots} className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-500 text-white px-8 py-2.5 rounded-xl hover:from-red-700 hover:to-red-600 font-bold shadow-md shadow-red-500/30 transition-all sm:ml-auto active:scale-95 text-sm h-[42px] mt-2 sm:mt-0 cursor-pointer">
                         Lista Generálása
                       </button>
                     </div>
@@ -1453,8 +1510,8 @@ export default function Home() {
                 <button
                   key={day.date}
                   onClick={() => document.getElementById(`date-${day.date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                  className={`flex-shrink-0 min-w-[130px] p-3 rounded-2xl border transition-all text-left group backdrop-blur-md
-                    ${day.freeCount > 0 ? 'bg-white/90 border-white shadow-sm hover:shadow-md hover:border-emerald-200 cursor-pointer' : 'bg-slate-100/80 border-white/50 opacity-80 cursor-pointer hover:bg-white/90'}`}
+                  className={`flex-shrink-0 min-w-[130px] p-3 rounded-2xl border transition-all text-left group backdrop-blur-md cursor-pointer
+                    ${day.freeCount > 0 ? 'bg-white/90 border-white shadow-sm hover:shadow-md hover:border-emerald-200' : 'bg-slate-100/80 border-white/50 opacity-80 hover:bg-white/90'}`}
                 >
                   <div className="text-slate-800 font-extrabold text-sm mb-1">{formatShortDate(day.date)}</div>
                   <div className={`text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-lg w-max transition-colors
@@ -1527,18 +1584,18 @@ export default function Home() {
                     {!printingDate && (
                       <>
                         <div className="w-px h-6 bg-slate-300 mx-1 hidden md:block"></div>
-                        <button onClick={() => clearEmptySlots(date)} className="bg-white hover:bg-amber-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-amber-300 hover:text-amber-700">
+                        <button onClick={() => clearEmptySlots(date)} className="bg-white hover:bg-amber-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-amber-300 hover:text-amber-700 cursor-pointer">
                           <EraserIcon /> <span className="hidden sm:inline">Üres sorok takarítása</span><span className="sm:hidden">Takarít</span>
                         </button>
                         
-                        <button onClick={() => exportToCSV(date)} className="bg-white hover:bg-blue-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-blue-300 hover:text-blue-700">
+                        <button onClick={() => exportToCSV(date)} className="bg-white hover:bg-blue-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-blue-300 hover:text-blue-700 cursor-pointer">
                           <DownloadIcon /> <span className="hidden sm:inline">Excel Export</span><span className="sm:hidden">Excel</span>
                         </button>
                         
-                        <button onClick={() => handlePrintDay(date)} className="bg-slate-800 text-white px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-black transition-all flex items-center gap-1.5 shadow-sm border border-slate-800">
+                        <button onClick={() => handlePrintDay(date)} className="bg-slate-800 text-white px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-black transition-all flex items-center gap-1.5 shadow-sm border border-slate-800 cursor-pointer">
                           <PrintIcon /> <span className="hidden sm:inline">Nyomtatás</span>
                         </button>
-                        <button onClick={() => deleteEntireDay(date)} className="bg-red-50 text-red-600 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition-all flex items-center gap-1.5 shadow-sm border border-red-200 hover:border-red-600">
+                        <button onClick={() => deleteEntireDay(date)} className="bg-red-50 text-red-600 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition-all flex items-center gap-1.5 shadow-sm border border-red-200 hover:border-red-600 cursor-pointer">
                           <TrashIcon /> <span className="hidden sm:inline">Nap törlése</span>
                         </button>
                       </>
@@ -1603,7 +1660,7 @@ export default function Home() {
                                   {canShowHistory && (
                                     <button 
                                       onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} 
-                                      className="absolute right-0 top-1/2 -translate-y-1/2 p-2 bg-white text-slate-500 hover:text-red-600 shadow-sm rounded-lg border border-slate-200 opacity-0 group-hover:opacity-100 transition-all z-10" 
+                                      className="absolute right-0 top-1/2 -translate-y-1/2 p-2 bg-white text-slate-500 hover:text-red-600 shadow-sm rounded-lg border border-slate-200 opacity-0 group-hover:opacity-100 transition-all z-10 cursor-pointer" 
                                       title="Előzmények / Karton"
                                     >
                                       <HistoryIcon />
@@ -1636,12 +1693,12 @@ export default function Home() {
                               <td className="px-4 py-3 align-middle text-center no-print whitespace-nowrap">
                                 <div className="flex items-center justify-center gap-1">
                                   {isDel ? (
-                                    <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 transition-all flex items-center justify-center gap-1.5"><RestoreIcon /> Visszaállít</button>
+                                    <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer"><RestoreIcon /> Visszaállít</button>
                                   ) : (
-                                    <button onClick={() => confirmDeleteApp(app.id)} className="text-black/30 hover:text-red-600 hover:bg-red-50 shadow-sm p-2 rounded-lg transition-all" title="Törlés"><TrashIcon /></button>
+                                    <button onClick={() => confirmDeleteApp(app.id)} className="text-black/30 hover:text-red-600 hover:bg-red-50 shadow-sm p-2 rounded-lg transition-all cursor-pointer" title="Törlés"><TrashIcon /></button>
                                   )}
                                   
-                                  <button onClick={() => openAppInfoModal(app)} className="text-blue-400 hover:text-blue-600 hover:bg-blue-50 shadow-sm p-2 rounded-lg transition-all" title="Módosítási infók">
+                                  <button onClick={() => openAppInfoModal(app)} className="text-blue-400 hover:text-blue-600 hover:bg-blue-50 shadow-sm p-2 rounded-lg transition-all cursor-pointer" title="Módosítási infók">
                                     <InfoIcon />
                                   </button>
                                 </div>
@@ -1683,12 +1740,12 @@ export default function Home() {
                             </div>
                             
                             <div className="flex items-center gap-1">
-                              <button onClick={() => openAppInfoModal(app)} className="text-blue-400 hover:text-blue-600 hover:bg-white/80 shadow-sm p-2 rounded-lg" title="Infó"><InfoIcon /></button>
+                              <button onClick={() => openAppInfoModal(app)} className="text-blue-400 hover:text-blue-600 hover:bg-white/80 shadow-sm p-2 rounded-lg cursor-pointer" title="Infó"><InfoIcon /></button>
                               
                               {isDel ? (
-                                <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 flex items-center gap-1.5"><RestoreIcon /> Vissza</button>
+                                <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 flex items-center gap-1.5 cursor-pointer"><RestoreIcon /> Vissza</button>
                               ) : (
-                                <button onClick={() => confirmDeleteApp(app.id)} className="text-black/40 hover:text-red-600 hover:bg-white/80 shadow-sm p-2 rounded-lg"><TrashIcon /></button>
+                                <button onClick={() => confirmDeleteApp(app.id)} className="text-black/40 hover:text-red-600 hover:bg-white/80 shadow-sm p-2 rounded-lg cursor-pointer"><TrashIcon /></button>
                               )}
                             </div>
                           </div>
@@ -1699,7 +1756,7 @@ export default function Home() {
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Páciens neve</span>
                                 <div className="flex items-center gap-2">
                                   {canShowHistory && (
-                                    <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-1.5 bg-white text-slate-600 shadow-sm rounded-lg border border-slate-200">
+                                    <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-1.5 bg-white text-slate-600 shadow-sm rounded-lg border border-slate-200 cursor-pointer">
                                       <HistoryIcon />
                                     </button>
                                   )}
@@ -1739,7 +1796,7 @@ export default function Home() {
         {!printingDate && searchTerm === "" && (
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-end gap-3 bg-white/90 backdrop-blur-xl p-4 rounded-3xl shadow-sm border border-white/60 w-full sm:w-max sm:ml-auto no-print">
             <input type="text" placeholder="pl. 17:00 - 17:15" value={newTimeSlot} onChange={(e) => setNewTimeSlot(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addSingleAppointment()} className="w-full sm:w-40 bg-white/80 border border-white p-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500 text-sm font-semibold text-slate-900 transition-all text-center sm:text-left shadow-sm" />
-            <button onClick={addSingleAppointment} className="w-full sm:w-auto bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-black font-semibold shadow-md transition-all active:scale-95 text-sm flex items-center justify-center gap-1.5"><PlusIcon /> Új időpont</button>
+            <button onClick={addSingleAppointment} className="w-full sm:w-auto bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-black font-semibold shadow-md transition-all active:scale-95 text-sm flex items-center justify-center gap-1.5 cursor-pointer"><PlusIcon /> Új időpont</button>
           </div>
         )}
       </div>
@@ -1755,7 +1812,7 @@ export default function Home() {
       {!printingDate && showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 left-6 md:left-auto md:right-6 z-50 bg-slate-900/90 backdrop-blur-md text-white p-3.5 rounded-full shadow-2xl hover:bg-black transition-all hover:scale-110 active:scale-95 animate-in fade-in slide-in-from-bottom-6 border border-slate-700"
+          className="fixed bottom-6 left-6 md:left-auto md:right-6 z-50 bg-slate-900/90 backdrop-blur-md text-white p-3.5 rounded-full shadow-2xl hover:bg-black transition-all hover:scale-110 active:scale-95 animate-in fade-in slide-in-from-bottom-6 border border-slate-700 cursor-pointer"
           title="Ugrás az oldal tetejére"
         >
           <ArrowUpIcon />

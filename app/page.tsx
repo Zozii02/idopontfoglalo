@@ -45,6 +45,15 @@ const CalendarPlusIcon = ({ size = 20 }: { size?: number }) => (
   </svg>
 );
 
+const UsersIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+    <circle cx="9" cy="7" r="4"></circle>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+  </svg>
+);
+
 import { BACKGROUND_IMAGE_URL, LAB_DATABASE } from "../lib/constants";
 
 import { 
@@ -68,8 +77,17 @@ export default function Home() {
   const [categories, setCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("");
   
-  // --- LABOR KALKULÁTOR ÁLLAPOTOK ---
+  // --- NÉZETEK (VIEWS) ---
   const [showLabCalculator, setShowLabCalculator] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const [showPatients, setShowPatients] = useState(false); // ÚJ: Páciens nézet
+
+  // --- PÁCIENS NÉZET ÁLLAPOTAI ---
+  const [patientsList, setPatientsList] = useState<any[]>([]);
+  const [patientsSearchTerm, setPatientsSearchTerm] = useState("");
+  const [isLoadingPatients, setIsLoadingPatients] = useState(false);
+
+  // --- LABOR KALKULÁTOR ÁLLAPOTOK ---
   const [selectedLabTests, setSelectedLabTests] = useState<string[]>([]);
   const [labPatientName, setLabPatientName] = useState("");
   const [labPatientTaj, setLabPatientTaj] = useState("");
@@ -78,7 +96,6 @@ export default function Home() {
   const [includeBloodDrawFee, setIncludeBloodDrawFee] = useState(true);
 
   // --- STATISZTIKA ÁLLAPOTOK ---
-  const [showStats, setShowStats] = useState(false);
   const [statsPeriod, setStatsPeriod] = useState<'today' | 'week' | 'month' | 'all'>('month');
 
   // --- ÚJ LEGÖRDÜLŐ MENÜ ÁLLAPOT ---
@@ -244,7 +261,7 @@ export default function Home() {
   };
 
   const handleNotificationClick = (msg: string) => {
-    const parts = msg.split("módosította az árlistát: ");
+    const parts = msg.split("m��dosította az árlistát: ");
     if (parts.length === 2) {
       const dept = parts[1].trim();
       if (categories.includes(dept)) setActiveTab(dept);
@@ -399,15 +416,19 @@ export default function Home() {
         e.preventDefault(); searchInputRef.current?.focus(); 
       }
       if (e.altKey && e.key.toLowerCase() === 'l') { 
-        e.preventDefault(); setShowLabCalculator(true); setShowStats(false); 
+        e.preventDefault(); setShowLabCalculator(true); setShowStats(false); setShowPatients(false);
       }
       if (e.altKey && e.key.toLowerCase() === 's') { 
-        e.preventDefault(); setShowStats(true); setShowLabCalculator(false); 
+        e.preventDefault(); setShowStats(true); setShowLabCalculator(false); setShowPatients(false);
+      }
+      if (e.altKey && e.key.toLowerCase() === 'p') { 
+        e.preventDefault(); setShowPatients(true); setShowStats(false); setShowLabCalculator(false);
       }
       if (e.altKey && e.key.toLowerCase() === 'n') { 
         e.preventDefault(); 
         setShowStats(false); 
         setShowLabCalculator(false);
+        setShowPatients(false);
         setTimeout(() => {
           newTimeSlotRef.current?.focus();
           document.getElementById('new-appointment-bar')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -484,7 +505,6 @@ export default function Home() {
     }
   };
 
-  // Csak az elmúlt 2 hónap és jövőbeli 1 év lekérése
   const fetchAppointments = async () => {
     const today = new Date();
     const pastDate = new Date();
@@ -505,6 +525,19 @@ export default function Home() {
 
     if (!error && data) setAppointments(data);
   };
+
+  const fetchPatientsList = async () => {
+    setIsLoadingPatients(true);
+    const { data, error } = await supabase.from('patients').select('*').order('name', { ascending: true });
+    if (!error && data) setPatientsList(data);
+    setIsLoadingPatients(false);
+  };
+
+  useEffect(() => {
+    if (showPatients) {
+      fetchPatientsList();
+    }
+  }, [showPatients]);
 
   const loadInitialData = async () => {
     setIsInitialLoading(true);
@@ -760,18 +793,29 @@ export default function Home() {
     document.body.removeChild(link);
   };
 
-  const openPatientHistory = (name: string, taj: string) => {
-    if (!name || !taj) return showAlert("Hiányzó adat", "Az előzmények megtekintéséhez a beteg nevének és TAJ számának is kitöltve kell lennie!");
+  // ÚJ: A karton mostantól a TELJES adatbázisban keres, évekre visszamenőleg!
+  const openPatientHistory = async (name: string, taj: string) => {
+    if (!name) return showAlert("Hiányzó adat", "A karton megnyitásához a beteg nevének kitöltve kell lennie!");
     
-    let matches = appointments.filter((a: any) => !a.is_deleted && a.taj_szam === taj && a.patient_name === name);
+    setHistoryModal({ isOpen: true, patientName: name, taj: taj || "", data: [] }); // Nyissuk meg üresen tölteni
+    
+    let query = supabase.from("appointments").select("*").eq("patient_name", name).eq("is_deleted", false);
+    
+    const { data } = await query;
+    let matches = data || [];
+    
+    if (taj && taj.trim() !== "") {
+       matches = matches.filter(a => a.taj_szam && a.taj_szam.replace(/\s+/g, '') === taj.replace(/\s+/g, ''));
+    }
+
     matches = matches.sort((a: any, b: any) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime());
     
-    setHistoryModal({ isOpen: true, patientName: name, taj: taj, data: matches });
+    setHistoryModal({ isOpen: true, patientName: name, taj: taj || "", data: matches });
   };
 
   const generateDailySlots = async () => {
     if (!selectedDate) return showAlert("Hiányzó adat", "Kérlek, válassz ki egy dátumot a naptárból!");
-    if (!genStart || !genEnd || !genDuration) return showAlert("Hi��nyzó adat", "Minden generátor mezőt ki kell tölteni a művelethez!");
+    if (!genStart || !genEnd || !genDuration) return showAlert("Hiányzó adat", "Minden generátor mezőt ki kell tölteni a művelethez!");
     
     const durationMins = parseInt(genDuration);
     if (isNaN(durationMins) || durationMins <= 0) return showAlert("Hibás érték", "A vizsgálat hossza (perc) nullánál nagyobb kell, hogy legyen!");
@@ -1037,7 +1081,10 @@ export default function Home() {
 
         <div className="overflow-y-auto p-6 custom-scrollbar h-full">
           {historyModal.data.length === 0 ? (
-             <p className="text-center text-slate-500 font-medium py-8">Nem található korábbi bejegyzés ehhez a TAJ számhoz.</p>
+             <div className="flex flex-col items-center justify-center py-10 opacity-50">
+               <RefreshIcon />
+               <p className="text-center text-slate-500 font-medium mt-4">Betöltés folyamatban, vagy nincs előzmény...</p>
+             </div>
           ) : (
             <div className="space-y-4">
               {historyModal.data.map((app, idx) => (
@@ -1373,6 +1420,113 @@ export default function Home() {
                   </div>
                 )}
              </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // --- HA A PÁCIENS NÉZET VAN NYITVA ---
+  if (showPatients) {
+    const filteredPatientsList = patientsList.filter(p => {
+      if (!patientsSearchTerm) return true;
+      const term = patientsSearchTerm.toLowerCase().replace(/\s+/g, '');
+      const nameMatch = (p.name || "").toLowerCase().includes(term);
+      const tajMatch = (p.taj_szam || "").replace(/\s+/g, '').includes(term);
+      const phoneMatch = (p.phone_number || "").replace(/\s+/g, '').includes(term);
+      return nameMatch || tajMatch || phoneMatch;
+    });
+
+    return (
+      <div className="min-h-screen bg-slate-50 font-sans relative pb-10">
+        {patientHistoryModalUI}
+        {customModalUI}
+
+        <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm h-[73px]">
+          <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+               <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain" />
+               <div>
+                 <h1 className="text-xl font-bold tracking-tight text-slate-900">Páciensek</h1>
+                 <p className="text-purple-600 font-medium text-[11px] tracking-widest uppercase">Kartonok és Törzsadatok</p>
+               </div>
+            </div>
+            <button onClick={() => setShowPatients(false)} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold shadow-sm hover:bg-black transition-all active:scale-95 flex items-center gap-2">
+              <ChevronLeftIcon /> Vissza az Előjegyzéshez
+            </button>
+          </div>
+        </div>
+
+        <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8">
+          
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+             <div className="flex items-center gap-3">
+               <div className="p-3 bg-purple-50 text-purple-600 rounded-xl"><UsersIcon size={24} /></div>
+               <div>
+                 <h2 className="text-lg font-extrabold text-slate-900">Betegtörzs</h2>
+                 <p className="text-sm font-medium text-slate-500">Összesen: <b className="text-slate-800">{patientsList.length}</b> regisztrált páciens</p>
+               </div>
+             </div>
+
+             <div className="relative w-full md:w-96 group">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-purple-500 transition-colors"><SearchIcon size={18} /></div>
+                <input 
+                  type="text" 
+                  placeholder="Keresés név, TAJ vagy telefon..." 
+                  value={patientsSearchTerm}
+                  onChange={(e) => setPatientsSearchTerm(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 py-3 pl-10 pr-4 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-100 focus:border-purple-400 font-semibold text-slate-800 transition-all outline-none shadow-sm"
+                />
+             </div>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+            {isLoadingPatients ? (
+               <div className="flex flex-col justify-center items-center py-20 opacity-50 animate-pulse">
+                 <RefreshIcon />
+                 <p className="mt-4 font-bold text-slate-500">Betegtörzs betöltése...</p>
+               </div>
+            ) : filteredPatientsList.length === 0 ? (
+               <div className="text-center py-20 text-slate-500">
+                 <UsersIcon size={48} />
+                 <p className="mt-4 font-bold text-lg text-slate-700">Nem található a keresésnek megfelelő páciens</p>
+               </div>
+            ) : (
+               <div className="overflow-x-auto custom-scrollbar">
+                 <table className="min-w-full text-left border-collapse">
+                   <thead className="bg-slate-50 border-b border-slate-200">
+                     <tr>
+                       <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Név</th>
+                       <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">TAJ Szám</th>
+                       <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Telefon</th>
+                       <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Utolsó Látogatás</th>
+                       <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap text-right">Művelet</th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y divide-slate-100">
+                     {filteredPatientsList.map(patient => (
+                       <tr key={patient.id} className="hover:bg-purple-50/30 transition-colors group">
+                         <td className="px-6 py-4 font-extrabold text-slate-900">{patient.name}</td>
+                         <td className="px-6 py-4 font-mono text-sm text-slate-600">{formatTAJ(patient.taj_szam) || "-"}</td>
+                         <td className="px-6 py-4 text-sm text-slate-600 font-medium">{formatPhone(patient.phone_number) || "-"}</td>
+                         <td className="px-6 py-4 text-sm text-slate-500">
+                           {patient.last_visit ? formatShortDate(patient.last_visit.split('T')[0]) : "Ismeretlen"}
+                         </td>
+                         <td className="px-6 py-4 text-right">
+                           <button 
+                             onClick={() => openPatientHistory(patient.name, patient.taj_szam)}
+                             className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-purple-50 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+                           >
+                             <HistoryIcon /> Karton megnyitása
+                           </button>
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               </div>
+            )}
           </div>
 
         </div>
@@ -1718,14 +1872,20 @@ export default function Home() {
 
           <div className="flex items-center gap-2 sm:gap-4 w-full md:w-auto justify-end">
             
+            {/* --- ÚJ: PÁCIENSEK GOMB --- */}
+            <button onClick={() => { setShowPatients(true); setShowStats(false); setShowLabCalculator(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Páciensek (Alt + P)">
+              <UsersIcon size={16} />
+              <span className="hidden xl:inline">Páciensek</span>
+            </button>
+
             {/* --- STATISZTIKA GOMB --- */}
-            <button onClick={() => { setShowStats(true); setShowLabCalculator(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Statisztikák (Alt + S)">
+            <button onClick={() => { setShowStats(true); setShowLabCalculator(false); setShowPatients(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Statisztikák (Alt + S)">
               <ChartPieIcon size={16} />
               <span className="hidden xl:inline">Statisztika</span>
             </button>
 
             {/* --- LABOR KALKULÁTOR GOMB --- */}
-            <button onClick={() => { setShowLabCalculator(true); setShowStats(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Labor kalkulátor (Alt + L)">
+            <button onClick={() => { setShowLabCalculator(true); setShowStats(false); setShowPatients(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Labor kalkulátor (Alt + L)">
               <CalculatorIcon size={16} />
               <span className="hidden sm:inline">Labor kalkulátor</span>
             </button>

@@ -1503,7 +1503,7 @@ export function PatientAutocomplete({
       {value ? <HighlightText text={value} highlight={searchTerm} /> : <span className="text-slate-400 italic text-sm font-normal opacity-70">Üres (kattints)</span>}
     </div>
   );
-}
+
 
   // --- NORMÁL ELŐJEGYZÉS NÉZET ---
   const filteredCategories = categories.filter(c => c.toLowerCase().includes(departmentSearch.toLowerCase()));

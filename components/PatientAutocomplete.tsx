@@ -37,7 +37,6 @@ export function PatientAutocomplete({
   const [currentValue, setCurrentValue] = useState(value || "");
   const [results, setResults] = useState<any[]>([]);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  // Egy flag, ami jelzi, ha épp egy listaelemre kattintunk
   const isSelecting = useRef(false); 
 
   // Bezárás, ha mellékattintanak
@@ -61,24 +60,20 @@ export function PatientAutocomplete({
     }
     const timer = setTimeout(async () => {
       const data = await searchPatients(currentValue);
-      // Csak akkor mutatjuk a listát, ha van találat, ÉS az nem pont az, ami be van írva
-      if (data && data.length > 0 && data[0].name.toLowerCase() !== currentValue.toLowerCase()) {
-        setResults(data);
-      } else {
-        setResults([]);
-      }
+      // JAVÍTÁS: Most már MINDIG megjelenítjük a találatokat, 
+      // ha van a beírt betűknek megfelelő beteg az adatbázisban!
+      setResults(data || []);
     }, 300); 
     return () => clearTimeout(timer);
   }, [currentValue, isEditing]);
 
   const handleBlur = () => {
-    if (isSelecting.current) return; // Ha épp listából választunk, ne fusson le a blur!
+    if (isSelecting.current) return; 
     
     setIsEditing(false); 
     setResults([]);
     
     const finalVal = currentValue.trim();
-    // Név formázása (Nagybetűvel kezdődjön minden szó)
     const formattedVal = finalVal ? finalVal.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : "";
     
     if (formattedVal !== value) {
@@ -88,12 +83,11 @@ export function PatientAutocomplete({
   };
 
   const handleSelect = (patient: any) => {
-    isSelecting.current = true; // Jelezzük, hogy most kattintottunk
+    isSelecting.current = true;
     setCurrentValue(patient.name);
     setIsEditing(false);
     setResults([]);
     
-    // Átadjuk a kiválasztott beteg adatait a főoldalnak
     onSelectPatient(patient);
     
     setTimeout(() => { isSelecting.current = false; }, 200);
@@ -108,7 +102,7 @@ export function PatientAutocomplete({
           autoFocus 
           value={currentValue} 
           onChange={(e) => setCurrentValue(e.target.value)} 
-          onBlur={handleBlur} // Most már használhatjuk a beépített onBlur-t
+          onBlur={handleBlur} 
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -125,9 +119,8 @@ export function PatientAutocomplete({
             {results.map(p => (
               <li 
                 key={p.id} 
-                // A titok: onMouseDown hamarabb fut le, mint az input onBlur eseménye!
                 onMouseDown={(e) => {
-                  e.preventDefault(); // Megakadályozza, hogy az input elveszítse a fókuszt
+                  e.preventDefault(); 
                   handleSelect(p);
                 }}
                 className="px-3 py-2 border-b border-slate-50 hover:bg-emerald-50 cursor-pointer transition-colors"

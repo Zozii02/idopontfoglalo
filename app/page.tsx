@@ -544,7 +544,6 @@ export default function Home() {
     setIsInitialLoading(false);
   };
 
-  // --- ITT AZ UGRÁLÁST MEGOLDÓ JAVÍTÁS (Külön kimentett változók az Effect dependency-hez) ---
   const userId = user?.id;
   const userEmail = user?.email;
   const userName = user?.user_metadata?.display_name;
@@ -818,7 +817,6 @@ export default function Home() {
     setHistoryModal({ isOpen: true, patientName: name, taj: taj || "", data: matches });
   };
 
-  // ÚJ: Várólista funkció
   const addToWaitingList = async (date: string) => {
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
@@ -1310,7 +1308,7 @@ export default function Home() {
       <div className="min-h-screen bg-slate-50 font-sans relative pb-10">
         
         {/* FEJLÉC */}
-        <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm h-[73px]">
+        <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm">
           <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex justify-between items-center">
             <div className="flex items-center gap-4">
                <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain" />
@@ -1464,7 +1462,7 @@ export default function Home() {
         {patientHistoryModalUI}
         {customModalUI}
 
-        <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm h-[73px]">
+        <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm">
           <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex justify-between items-center">
             <div className="flex items-center gap-4">
                <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain" />
@@ -1568,7 +1566,7 @@ export default function Home() {
         
         {/* FEJLÉC (csak nem nyomtatáskor) */}
         {!printingLabQuote && (
-          <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm no-print h-[73px]">
+          <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm no-print">
             <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex justify-between items-center">
               <div className="flex items-center gap-4">
                  <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain" />
@@ -1585,7 +1583,7 @@ export default function Home() {
         )}
 
         {/* LABOR TARTALOM */}
-        <div className={`max-w-[1600px] mx-auto ${printingLabQuote ? 'p-0 pt-0 max-w-none' : 'px-4 md:px-8 py-6 h-[calc(100vh-73px)] flex flex-col'}`}>
+        <div className={`max-w-[1600px] mx-auto ${printingLabQuote ? 'p-0 pt-0 max-w-none' : 'px-4 md:px-8 py-6 min-h-[calc(100vh-80px)] flex flex-col'}`}>
           
           {/* NYOMTATÁSI NÉZET - KIZÁRÓLAG NYOMTATÁSKOR JELENIK MEG */}
           {printingLabQuote && (
@@ -1870,8 +1868,8 @@ export default function Home() {
       {!printingDate && <div className="absolute inset-0 bg-slate-100/70 backdrop-blur-2xl z-0 pointer-events-none no-print"></div>}
 
       {/* --- FEJLÉC ÉS KERESŐ --- */}
-      <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-white/50 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] relative no-print h-[73px]">
-        <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-white/50 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] relative no-print">
+        <div className="max-w-[1600px] mx-auto px-2 sm:px-4 md:px-8 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-4 w-full md:w-auto">
              <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain select-none pointer-events-none drop-shadow-sm" />
              <div className="hidden sm:block">
@@ -1892,7 +1890,7 @@ export default function Home() {
             />
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4 w-full md:w-auto justify-end">
+          <div className="flex items-center gap-2 sm:gap-4 w-full md:w-auto justify-center md:justify-end flex-wrap mt-2 md:mt-0">
             
             <button onClick={() => { setShowPatients(true); setShowStats(false); setShowLabCalculator(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Páciensek (Alt + P)">
               <UsersIcon size={16} />

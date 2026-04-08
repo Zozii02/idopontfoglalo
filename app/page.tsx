@@ -2292,7 +2292,7 @@ export default function Home() {
                     </div>
 
                     <div className={`overflow-x-auto custom-scrollbar ${printingDate ? 'overflow-visible' : ''}`}>
-                      <table className="min-w-full text-left border-collapse print-table">
+                      <table className="min-w-full text-left border-collapse print-table hidden lg:table print:table">
                         <thead className="sticky top-0 z-20 shadow-sm bg-white">
                           <tr className="border-b border-slate-200/60 print-border">
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>

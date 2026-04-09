@@ -123,6 +123,10 @@ export default function Home() {
   const [genDuration, setGenDuration] = useState("30");
   const [genBreakStart, setGenBreakStart] = useState("12:00");
   const [genBreakEnd, setGenBreakEnd] = useState("13:00");
+  
+  // --- ÚJ: Online sáv állapotok ---
+  const [genOnlineStart, setGenOnlineStart] = useState("");
+  const [genOnlineEnd, setGenOnlineEnd] = useState("");
 
   const [printingDate, setPrintingDate] = useState<string | null>(null);
   const [printingLabQuote, setPrintingLabQuote] = useState(false); 
@@ -776,7 +780,7 @@ export default function Home() {
 
     const headers = ["Időpont", "Páciens neve", "TAJ szám", "Telefon", "Státusz", "Vizsgálat", "Megjegyzés"];
     const rows = dayApps.map((app: any) => [
-      app.time_slot,
+      app.time_slot.replace(" (Online)", ""), // Címke eltávolítása az exportból
       app.patient_name || "",
       app.taj_szam || "",
       app.phone_number || "",
@@ -843,13 +847,26 @@ export default function Home() {
     const end = timeToMins(genEnd);
     const bStart = genBreakStart ? timeToMins(genBreakStart) : null;
     const bEnd = genBreakEnd ? timeToMins(genBreakEnd) : null;
+    
+    // ÚJ: Online sáv 
+    const oStart = genOnlineStart ? timeToMins(genOnlineStart) : null;
+    const oEnd = genOnlineEnd ? timeToMins(genOnlineEnd) : null;
+
     const slotsToCreate = [];
 
     while (current + durationMins <= end) {
       if (bStart !== null && bEnd !== null && current >= bStart && current < bEnd) { current = bEnd; continue; }
       const next = current + durationMins;
       if (bStart !== null && bEnd !== null && current < bStart && next > bStart) { current = bEnd; continue; }
-      slotsToCreate.push(`${minsToTime(current)} - ${minsToTime(next)}`);
+      
+      let slotStr = `${minsToTime(current)} - ${minsToTime(next)}`;
+      
+      // Ha az időpont az online sávba esik, megjelöljük a háttérben
+      if (oStart !== null && oEnd !== null && current >= oStart && current < oEnd) {
+         slotStr += " (Online)";
+      }
+
+      slotsToCreate.push(slotStr);
       current = next;
     }
 
@@ -1111,7 +1128,7 @@ export default function Home() {
                    <div>
                      <div className="flex items-center gap-2 mb-1">
                         <span className="font-bold text-slate-900">{formatShortDate(app.appointment_date)}</span>
-                        <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-extrabold">{app.time_slot}</span>
+                        <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-extrabold">{app.time_slot.replace(" (Online)", "")}</span>
                         <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider border border-blue-100">{app.department}</span>
                      </div>
                      <div className="text-sm font-medium text-slate-600 mt-2">
@@ -1149,7 +1166,7 @@ export default function Home() {
              <div className="bg-blue-100 text-blue-600 p-2.5 rounded-xl"><InfoIcon /></div>
              <div>
                <h3 className="text-xl font-extrabold text-slate-900">Napló</h3>
-               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{appInfoModal.data?.time_slot} {appInfoModal.data?.patient_name && `• ${appInfoModal.data.patient_name}`}</p>
+               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{appInfoModal.data?.time_slot.replace(" (Online)", "")} {appInfoModal.data?.patient_name && `• ${appInfoModal.data.patient_name}`}</p>
              </div>
            </div>
            <button onClick={closeAppInfoModal} className="p-2 bg-white hover:bg-slate-200 text-slate-600 rounded-xl transition-colors font-bold shadow-sm border border-slate-200"><TrashIcon size={14}/></button>
@@ -2072,7 +2089,7 @@ export default function Home() {
                 </label>
               </div>
 
-              <div className="w-px h-32 bg-slate-200/60 hidden xl:block mx-4"></div>
+              <div className="w-px h-[180px] bg-slate-200/60 hidden xl:block mx-4"></div>
 
               <div className="w-full xl:w-auto flex-1 relative z-0">
                  <div className="flex items-center gap-2.5 mb-4 text-slate-800 font-extrabold text-lg">
@@ -2107,7 +2124,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-end gap-3">
+                    <div className="flex flex-wrap items-end gap-3 mt-1">
                       <div className="w-[calc(50%-0.375rem)] sm:w-28">
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet kezdete</label>
                         <input type="time" value={genBreakStart} onChange={(e) => setGenBreakStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" />
@@ -2115,6 +2132,16 @@ export default function Home() {
                       <div className="w-[calc(50%-0.375rem)] sm:w-28">
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet vége</label>
                         <input type="time" value={genBreakEnd} onChange={(e) => setGenBreakEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" />
+                      </div>
+                      
+                      {/* ÚJ: ONLINE SÁV BEMENETEK */}
+                      <div className="w-[calc(50%-0.375rem)] sm:w-28">
+                        <label className="block text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1.5">Online kezdete</label>
+                        <input type="time" value={genOnlineStart} onChange={(e) => setGenOnlineStart(e.target.value)} className="w-full bg-blue-50/50 border border-blue-200 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none font-semibold text-blue-900 transition-all shadow-sm" />
+                      </div>
+                      <div className="w-[calc(50%-0.375rem)] sm:w-28">
+                        <label className="block text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1.5">Online vége</label>
+                        <input type="time" value={genOnlineEnd} onChange={(e) => setGenOnlineEnd(e.target.value)} className="w-full bg-blue-50/50 border border-blue-200 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none font-semibold text-blue-900 transition-all shadow-sm" />
                       </div>
                       
                       <button onClick={generateDailySlots} className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-500 text-white px-8 py-2.5 rounded-xl hover:from-red-700 hover:to-red-600 font-bold shadow-md shadow-red-500/30 transition-all sm:ml-auto active:scale-95 text-sm h-[42px] mt-2 sm:mt-0 cursor-pointer">
@@ -2312,6 +2339,8 @@ export default function Home() {
                             const isDel = app.is_deleted === true;
                             const isBooked = app.patient_name && app.patient_name.trim() !== "";
                             const isWaitingList = app.time_slot === "VÁRÓLISTA";
+                            const isOnlineSlot = app.time_slot.includes("(Online)"); // ÚJ
+                            const displayTime = app.time_slot.replace(" (Online)", ""); // ÚJ
                             
                             const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
                             
@@ -2342,7 +2371,12 @@ export default function Home() {
                                     {isWaitingList ? (
                                       <span className="font-extrabold text-orange-600 flex items-center gap-1.5"><ClockIcon size={16}/> VÁRÓLISTA</span>
                                     ) : (
-                                      <span className={`font-bold text-base ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className={`font-bold text-base ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{displayTime}</span>
+                                        {isOnlineSlot && !printingDate && !isDel && (
+                                          <span className="bg-blue-100 text-blue-700 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded border border-blue-200 shadow-sm" title="Online előjegyzéses sáv">Online</span>
+                                        )}
+                                      </div>
                                     )}
                                     {!printingDate && !isDel && !isWaitingList && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isBooked ? "bg-red-200/60 text-red-900" : "bg-emerald-200/60 text-emerald-900"}`}>{isBooked ? "Foglalt" : "Szabad"}</span>}
                                     {!printingDate && isDel && <span className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max bg-slate-200 text-slate-700">Törölt</span>}
@@ -2423,6 +2457,9 @@ export default function Home() {
                           const isDel = app.is_deleted === true;
                           const isBooked = app.patient_name && app.patient_name.trim() !== "";
                           const isWaitingList = app.time_slot === "VÁRÓLISTA";
+                          const isOnlineSlot = app.time_slot.includes("(Online)"); // ÚJ
+                          const displayTime = app.time_slot.replace(" (Online)", ""); // ÚJ
+
                           const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
                           
                           const statusBorder = isDel || (!isBooked && !isWaitingList) ? "" :
@@ -2448,7 +2485,12 @@ export default function Home() {
                                    {isWaitingList ? (
                                       <span className="font-extrabold text-orange-700 flex items-center gap-1"><ClockIcon size={18}/> VÁRÓLISTA</span>
                                    ) : (
-                                      <span className={`font-bold text-xl ${isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{app.time_slot}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className={`font-bold text-xl ${isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{displayTime}</span>
+                                        {isOnlineSlot && !isDel && (
+                                          <span className="bg-blue-100 text-blue-700 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border border-blue-200 shadow-sm">Online</span>
+                                        )}
+                                      </div>
                                    )}
                                    
                                    {!isWaitingList && (

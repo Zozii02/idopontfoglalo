@@ -2317,21 +2317,21 @@ export default function Home() {
 
                     <div className={`overflow-x-auto custom-scrollbar ${printingDate ? 'overflow-visible' : ''}`}>
                       <table className="min-w-full text-left border-collapse print-table hidden lg:table print:table">
-                        <thead className="sticky top-0 z-20 shadow-sm bg-white">
+                                                <thead className="sticky top-0 z-20 shadow-sm bg-white">
                           <tr className="border-b border-slate-200/60 print-border">
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>
-                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[200px]">Páciens neve</th>
+                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[220px]">Páciens neve</th>
                             
-                            {/* ÚJ: Születési idő fejléc */}
-                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Szül. idő</th>
+                            {/* FIX SZÉLESSÉGEK, HOGY NE UGRÁLJON A TÁBLÁZAT KATTINTÁSKOR */}
+                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[130px]">Szül. idő</th>
                             
-                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">TAJ szám</th>
+                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">TAJ szám</th>
                             
-                            {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Telefon</th>}
-                            {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Státusz</th>}
+                            {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">Telefon</th>}
+                            {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">Státusz</th>}
                             
-                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto">Vizsgálat</th>
-                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto">Megjegyzés</th>
+                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto min-w-[150px]">Vizsgálat</th>
+                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto min-w-[150px]">Megjegyzés</th>
                             {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap w-min">Művelet</th>}
                           </tr>
                         </thead>
@@ -2634,6 +2634,8 @@ export default function Home() {
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                /* Megakadályozza, hogy az input mezők szétfeszítsék a táblázatot */
+        td input { min-width: 0 !important; width: 100%; }
         
         @media print {
           @page { 

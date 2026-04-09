@@ -190,7 +190,7 @@ export default function Home() {
   const handleSaveProfileName = async () => {
     if (!profileNameInput.trim()) return alert("Kérlek, add meg a neved!");
     const { data, error } = await supabase.auth.updateUser({ data: { display_name: profileNameInput } });
-    if (error) alert("Hiba a mentés során!");
+    if (error) alert("Hiba a profilnév mentése során! (" + error.message + ")");
     else { setUser(data.user); setNeedsProfileName(false); }
   };
 
@@ -202,7 +202,8 @@ export default function Home() {
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
     setAppointments(appointments.map((app: any) => app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app));
-    await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
+    const { error: updateError } = await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
+    if (updateError) { fetchAppointments(); alert(`Hiba a(z) "${field}" mező mentése során! (${updateError.message})`); }
   };
 
   const deleteAppointment = async (id: number) => {
@@ -249,18 +250,20 @@ export default function Home() {
       last_modified_by: modifierName, last_modified_at: now, is_deleted: false
     }));
 
-    await supabase.from("appointments").insert(newAppointments);
+    const { error: insertError } = await supabase.from("appointments").insert(newAppointments);
+    if (insertError) { alert("Hiba az időpontok létrehozása során! (" + insertError.message + ")"); return; }
   };
 
   const addSingleAppointment = async () => {
     if (!user || !newTimeSlot.trim() || !selectedDate) return alert("Kérlek, adj meg dátumot és időpontot is!");
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
-    await supabase.from("appointments").insert([{
+    const { error: insertError } = await supabase.from("appointments").insert([{
       department: activeTab, appointment_date: selectedDate, time_slot: newTimeSlot,
       patient_name: "", taj_szam: "", phone_number: "", examination_type: "", notes: "", status: "Előjegyzett",
       last_modified_by: modifierName, last_modified_at: now, is_deleted: false
     }]);
+    if (insertError) { alert("Hiba az időpont mentése során! (" + insertError.message + ")"); return; }
     setNewTimeSlot("");
   };
 

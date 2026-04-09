@@ -124,7 +124,7 @@ export default function Home() {
   const [genBreakStart, setGenBreakStart] = useState("12:00");
   const [genBreakEnd, setGenBreakEnd] = useState("13:00");
   
-  // --- ÚJ: Online sáv állapotok ---
+  // --- Online sáv állapotok ---
   const [genOnlineStart, setGenOnlineStart] = useState("");
   const [genOnlineEnd, setGenOnlineEnd] = useState("");
 
@@ -188,6 +188,7 @@ export default function Home() {
       patient_name: patient.name, 
       taj_szam: patient.taj_szam || app.taj_szam, 
       phone_number: patient.phone_number || app.phone_number,
+      birth_date: patient.birth_date || app.birth_date, // ÚJ: Születési idő átemelése
       last_modified_by: modifierName, 
       last_modified_at: now 
     } : app));
@@ -196,6 +197,7 @@ export default function Home() {
       patient_name: patient.name, 
       taj_szam: patient.taj_szam, 
       phone_number: patient.phone_number,
+      birth_date: patient.birth_date, // ÚJ
       last_modified_by: modifierName, 
       last_modified_at: now 
     }).eq("id", appId);
@@ -226,7 +228,7 @@ export default function Home() {
   };
 
   const handlePrintLabQuote = () => {
-    if (selectedLabTests.length === 0) return showAlert("Üres ajánlat", "Kérlek, válassz ki legalább egy vizsgálatot a nyomtatáshoz!");
+    if (selectedLabTests.length === 0) return showAlert("Üres ajánlat", "K��rlek, válassz ki legalább egy vizsgálatot a nyomtatáshoz!");
     setPrintingLabQuote(true);
     setTimeout(() => { window.print(); }, 300);
   };
@@ -625,6 +627,7 @@ export default function Home() {
       
       const fieldNames: Record<string, string> = {
         patient_name: "Páciens neve", taj_szam: "TAJ szám", phone_number: "Telefon", 
+        birth_date: "Születési idő", // ÚJ
         status: "Státusz", examination_type: "Vizsgálat", notes: "Megjegyzés"
       };
       const fieldLabel = fieldNames[field] || field;
@@ -638,10 +641,11 @@ export default function Home() {
       await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
       await logAction(id, "Módosítás", details);
 
-      if (["patient_name", "taj_szam", "phone_number"].includes(field)) {
+      if (["patient_name", "taj_szam", "phone_number", "birth_date"].includes(field)) {
         const currentName = field === "patient_name" ? newValue : oldApp.patient_name;
         const currentTaj = field === "taj_szam" ? newValue : oldApp.taj_szam;
         const currentPhone = field === "phone_number" ? newValue : oldApp.phone_number;
+        const currentBirthDate = field === "birth_date" ? newValue : oldApp.birth_date; // ÚJ
         
         if (currentName && currentName.trim().length >= 3) {
           const { data: existingPatients } = await supabase.from('patients').select('id').eq('name', currentName.trim());
@@ -650,6 +654,7 @@ export default function Home() {
              await supabase.from('patients').update({
                 taj_szam: currentTaj || null,
                 phone_number: currentPhone || null,
+                birth_date: currentBirthDate || null, // ÚJ
                 last_visit: now
              }).eq('id', existingPatients[0].id);
           } else {
@@ -657,6 +662,7 @@ export default function Home() {
                 name: currentName.trim(),
                 taj_szam: currentTaj || null,
                 phone_number: currentPhone || null,
+                birth_date: currentBirthDate || null, // ÚJ
                 last_visit: now
              }]);
           }
@@ -765,23 +771,15 @@ export default function Home() {
     );
   };
 
-  const restoreAppointment = async (id: number) => {
-    const modifierName = getDisplayName();
-    const now = new Date().toISOString();
-    setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: false, last_modified_by: modifierName, last_modified_at: now } : app));
-    await supabase.from("appointments").update({ is_deleted: false, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
-    await logAction(id, "Visszaállítás", "Törölt időpont visszaállítva");
-    showToast("Időpont sikeresen visszaállítva!");
-  };
-
   const exportToCSV = (date: string) => {
     const dayApps = groupedByDate[date]?.filter((a: any) => !a.is_deleted).sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot)) || [];
     if (dayApps.length === 0) return showAlert("Üres nap", "Nincs letölthető adat ezen a napon.");
 
-    const headers = ["Időpont", "Páciens neve", "TAJ szám", "Telefon", "Státusz", "Vizsgálat", "Megjegyzés"];
+    const headers = ["Időpont", "Páciens neve", "Születési idő", "TAJ szám", "Telefon", "Státusz", "Vizsgálat", "Megjegyzés"]; // ÚJ Header
     const rows = dayApps.map((app: any) => [
-      app.time_slot.replace(" (Online)", ""), // Címke eltávolítása az exportból
+      app.time_slot.replace(" (Online)", ""), 
       app.patient_name || "",
+      app.birth_date || "", // ÚJ Oszlop
       app.taj_szam || "",
       app.phone_number || "",
       app.status || "",
@@ -826,7 +824,7 @@ export default function Home() {
     const now = new Date().toISOString();
     const { data } = await supabase.from("appointments").insert([{
       department: activeTab, appointment_date: date, time_slot: "VÁRÓLISTA",
-      patient_name: "", taj_szam: "", phone_number: "", examination_type: "", notes: "", status: "Várólista",
+      patient_name: "", taj_szam: "", phone_number: "", birth_date: "", examination_type: "", notes: "", status: "Várólista",
       last_modified_by: modifierName, last_modified_at: now, is_deleted: false
     }]).select();
     
@@ -848,7 +846,7 @@ export default function Home() {
     const bStart = genBreakStart ? timeToMins(genBreakStart) : null;
     const bEnd = genBreakEnd ? timeToMins(genBreakEnd) : null;
     
-    // ÚJ: Online sáv 
+    // Online sáv 
     const oStart = genOnlineStart ? timeToMins(genOnlineStart) : null;
     const oEnd = genOnlineEnd ? timeToMins(genOnlineEnd) : null;
 
@@ -861,7 +859,6 @@ export default function Home() {
       
       let slotStr = `${minsToTime(current)} - ${minsToTime(next)}`;
       
-      // Ha az időpont az online sávba esik, megjelöljük a háttérben
       if (oStart !== null && oEnd !== null && current >= oStart && current < oEnd) {
          slotStr += " (Online)";
       }
@@ -882,7 +879,7 @@ export default function Home() {
         const now = new Date().toISOString();
         const newAppointments = slotsToCreate.map((slot: string) => ({
           department: activeTab, appointment_date: selectedDate, time_slot: slot,
-          patient_name: "", taj_szam: "", phone_number: "", examination_type: "", notes: "", status: "Előjegyzett",
+          patient_name: "", taj_szam: "", phone_number: "", birth_date: "", examination_type: "", notes: "", status: "Előjegyzett",
           last_modified_by: modifierName, last_modified_at: now, is_deleted: false
         }));
 
@@ -905,7 +902,7 @@ export default function Home() {
     const now = new Date().toISOString();
     const { data } = await supabase.from("appointments").insert([{
       department: activeTab, appointment_date: selectedDate, time_slot: newTimeSlot,
-      patient_name: "", taj_szam: "", phone_number: "", examination_type: "", notes: "", status: "Előjegyzett",
+      patient_name: "", taj_szam: "", phone_number: "", birth_date: "", examination_type: "", notes: "", status: "Előjegyzett",
       last_modified_by: modifierName, last_modified_at: now, is_deleted: false
     }]).select();
     
@@ -1471,7 +1468,8 @@ export default function Home() {
       const nameMatch = (p.name || "").toLowerCase().includes(term);
       const tajMatch = (p.taj_szam || "").replace(/\s+/g, '').includes(term);
       const phoneMatch = (p.phone_number || "").replace(/\s+/g, '').includes(term);
-      return nameMatch || tajMatch || phoneMatch;
+      const birthMatch = (p.birth_date || "").includes(term);
+      return nameMatch || tajMatch || phoneMatch || birthMatch;
     });
 
     return (
@@ -1509,7 +1507,7 @@ export default function Home() {
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-purple-500 transition-colors"><SearchIcon size={18} /></div>
                 <input 
                   type="text" 
-                  placeholder="Keresés név, TAJ vagy telefon..." 
+                  placeholder="Keresés név, TAJ, telefon vagy szül. idő..." 
                   value={patientsSearchTerm}
                   onChange={(e) => setPatientsSearchTerm(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 py-3 pl-10 pr-4 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-purple-100 focus:border-purple-400 font-semibold text-slate-800 transition-all outline-none shadow-sm"
@@ -1534,6 +1532,7 @@ export default function Home() {
                    <thead className="bg-slate-50 border-b border-slate-200">
                      <tr>
                        <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Név</th>
+                       <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Születési idő</th>
                        <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">TAJ Szám</th>
                        <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Telefon</th>
                        <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Utolsó Látogatás</th>
@@ -1544,6 +1543,7 @@ export default function Home() {
                      {filteredPatientsList.map(patient => (
                        <tr key={patient.id} className="hover:bg-purple-50/30 transition-colors group">
                          <td className="px-6 py-4 font-extrabold text-slate-900">{patient.name}</td>
+                         <td className="px-6 py-4 text-sm text-slate-600 font-medium">{patient.birth_date || "-"}</td>
                          <td className="px-6 py-4 font-mono text-sm text-slate-600">{formatTAJ(patient.taj_szam) || "-"}</td>
                          <td className="px-6 py-4 text-sm text-slate-600 font-medium">{formatPhone(patient.phone_number) || "-"}</td>
                          <td className="px-6 py-4 text-sm text-slate-500">
@@ -2134,7 +2134,6 @@ export default function Home() {
                         <input type="time" value={genBreakEnd} onChange={(e) => setGenBreakEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm" />
                       </div>
                       
-                      {/* ÚJ: ONLINE SÁV BEMENETEK */}
                       <div className="w-[calc(50%-0.375rem)] sm:w-28">
                         <label className="block text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1.5">Online kezdete</label>
                         <input type="time" value={genOnlineStart} onChange={(e) => setGenOnlineStart(e.target.value)} className="w-full bg-blue-50/50 border border-blue-200 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none font-semibold text-blue-900 transition-all shadow-sm" />
@@ -2195,7 +2194,6 @@ export default function Home() {
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-3 custom-scrollbar scroll-smooth">
                   
-                  {/* --- ÚJ: UGRÁS A MAI NAPRA GOMB --- */}
                   <button
                     onClick={scrollToToday}
                     className="flex-shrink-0 flex items-center justify-center gap-2 min-w-[130px] p-3 rounded-2xl border bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 transition-all cursor-pointer shadow-sm active:scale-95"
@@ -2227,7 +2225,7 @@ export default function Home() {
               <div className="bg-white/80 backdrop-blur-xl p-12 md:p-20 text-center rounded-3xl shadow-sm border border-white/60 flex flex-col items-center no-print relative z-0">
                 <div className="text-slate-300 mb-4"><CalendarIcon size={64} /></div>
                 <h3 className="text-xl font-bold text-slate-800 mb-2">{debouncedSearchTerm ? "Nincs találat" : "Még nincsenek időpontok"}</h3>
-                <p className="text-slate-600 text-sm font-medium">{debouncedSearchTerm ? "Próbálkozz más névvel vagy TAJ számmal." : "Válassz dátumot a generátorban, és hozd létre a napot!"}</p>
+                <p className="text-slate-600 text-sm font-medium">{debouncedSearchTerm ? "Próbálkozz más névvel, TAJ számmal, telefonnal vagy születési idővel." : "Válassz dátumot a generátorban, és hozd létre a napot!"}</p>
               </div>
             ) : (
               sortedDates.map((date) => {
@@ -2287,7 +2285,6 @@ export default function Home() {
                             <span className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200">Szabad: {freeCount}</span>
                             <span className="bg-red-100 text-red-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-200">Foglalt: {bookedCount}</span>
                             
-                            {/* ÚJ: VÁRÓLISTA GOMB */}
                             {!printingDate && (
                               <button onClick={() => addToWaitingList(date)} className="bg-orange-100 hover:bg-orange-200 text-orange-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-orange-300 transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer ml-1">
                                 <PlusIcon size={14} /> Várólista
@@ -2324,6 +2321,10 @@ export default function Home() {
                           <tr className="border-b border-slate-200/60 print-border">
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[200px]">Páciens neve</th>
+                            
+                            {/* ÚJ: Születési idő fejléc */}
+                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Szül. idő</th>
+                            
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">TAJ szám</th>
                             
                             {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Telefon</th>}
@@ -2339,8 +2340,8 @@ export default function Home() {
                             const isDel = app.is_deleted === true;
                             const isBooked = app.patient_name && app.patient_name.trim() !== "";
                             const isWaitingList = app.time_slot === "VÁRÓLISTA";
-                            const isOnlineSlot = app.time_slot.includes("(Online)"); // ÚJ
-                            const displayTime = app.time_slot.replace(" (Online)", ""); // ÚJ
+                            const isOnlineSlot = app.time_slot.includes("(Online)");
+                            const displayTime = app.time_slot.replace(" (Online)", "");
                             
                             const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
                             
@@ -2408,6 +2409,11 @@ export default function Home() {
                                   )}
                                 </td>
                                 
+                                {/* ÚJ: Születési Idő cella */}
+                                <td className={`px-4 py-3 align-middle whitespace-nowrap ${printingDate ? 'text-black font-mono text-sm border-l border-gray-300' : ''}`}>
+                                  {printingDate ? app.birth_date : <EditableCell disabled={isDel} highlight={isBooked} value={app.birth_date} onSave={(val) => updateAppointment(app.id, "birth_date", val)} searchTerm={debouncedSearchTerm} />}
+                                </td>
+
                                 <td className={`px-4 py-3 align-middle whitespace-nowrap ${printingDate ? 'text-black font-mono text-sm border-l border-gray-300' : ''}`}>
                                   {printingDate ? formatTAJ(app.taj_szam) : <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} searchTerm={debouncedSearchTerm} />}
                                 </td>
@@ -2457,8 +2463,8 @@ export default function Home() {
                           const isDel = app.is_deleted === true;
                           const isBooked = app.patient_name && app.patient_name.trim() !== "";
                           const isWaitingList = app.time_slot === "VÁRÓLISTA";
-                          const isOnlineSlot = app.time_slot.includes("(Online)"); // ÚJ
-                          const displayTime = app.time_slot.replace(" (Online)", ""); // ÚJ
+                          const isOnlineSlot = app.time_slot.includes("(Online)");
+                          const displayTime = app.time_slot.replace(" (Online)", "");
 
                           const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
                           
@@ -2534,7 +2540,13 @@ export default function Home() {
                                     searchTerm={debouncedSearchTerm} 
                                   />
                                 </div>
-                                <div className="grid grid-cols-2 gap-3 relative z-0">
+                                
+                                {/* ÚJ: Három oszlopos grid a TAJ, Telefon és Születési időnek */}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 relative z-0">
+                                  <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Szül. idő</span>
+                                    <EditableCell disabled={isDel} highlight={isBooked} value={app.birth_date} onSave={(val) => updateAppointment(app.id, "birth_date", val)} searchTerm={debouncedSearchTerm} />
+                                  </div>
                                   <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">TAJ szám</span>
                                     <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} searchTerm={debouncedSearchTerm} />
@@ -2544,6 +2556,7 @@ export default function Home() {
                                     <EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={debouncedSearchTerm} />
                                   </div>
                                 </div>
+                                
                                 <div className={`bg-white/70 p-2.5 rounded-xl border relative z-0 ${app.examination_type ? getExamColor(app.examination_type) : 'border-white/50'}`}>
                                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat & Megjegyzés</span>
                                   <EditableCell disabled={isDel} highlight={false} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} />

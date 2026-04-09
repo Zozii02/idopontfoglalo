@@ -188,7 +188,7 @@ export default function Home() {
       patient_name: patient.name, 
       taj_szam: patient.taj_szam || app.taj_szam, 
       phone_number: patient.phone_number || app.phone_number,
-      birth_date: patient.birth_date || app.birth_date, // ÚJ: Születési idő átemelése
+      birth_date: patient.birth_date || app.birth_date,
       last_modified_by: modifierName, 
       last_modified_at: now 
     } : app));
@@ -197,7 +197,7 @@ export default function Home() {
       patient_name: patient.name, 
       taj_szam: patient.taj_szam, 
       phone_number: patient.phone_number,
-      birth_date: patient.birth_date, // ÚJ
+      birth_date: patient.birth_date,
       last_modified_by: modifierName, 
       last_modified_at: now 
     }).eq("id", appId);
@@ -228,7 +228,7 @@ export default function Home() {
   };
 
   const handlePrintLabQuote = () => {
-    if (selectedLabTests.length === 0) return showAlert("Üres ajánlat", "K��rlek, válassz ki legalább egy vizsgálatot a nyomtatáshoz!");
+    if (selectedLabTests.length === 0) return showAlert("Üres ajánlat", "Kérlek, válassz ki legalább egy vizsgálatot a nyomtatáshoz!");
     setPrintingLabQuote(true);
     setTimeout(() => { window.print(); }, 300);
   };
@@ -627,7 +627,7 @@ export default function Home() {
       
       const fieldNames: Record<string, string> = {
         patient_name: "Páciens neve", taj_szam: "TAJ szám", phone_number: "Telefon", 
-        birth_date: "Születési idő", // ÚJ
+        birth_date: "Születési idő",
         status: "Státusz", examination_type: "Vizsgálat", notes: "Megjegyzés"
       };
       const fieldLabel = fieldNames[field] || field;
@@ -645,7 +645,7 @@ export default function Home() {
         const currentName = field === "patient_name" ? newValue : oldApp.patient_name;
         const currentTaj = field === "taj_szam" ? newValue : oldApp.taj_szam;
         const currentPhone = field === "phone_number" ? newValue : oldApp.phone_number;
-        const currentBirthDate = field === "birth_date" ? newValue : oldApp.birth_date; // ÚJ
+        const currentBirthDate = field === "birth_date" ? newValue : oldApp.birth_date;
         
         if (currentName && currentName.trim().length >= 3) {
           const { data: existingPatients } = await supabase.from('patients').select('id').eq('name', currentName.trim());
@@ -654,7 +654,7 @@ export default function Home() {
              await supabase.from('patients').update({
                 taj_szam: currentTaj || null,
                 phone_number: currentPhone || null,
-                birth_date: currentBirthDate || null, // ÚJ
+                birth_date: currentBirthDate || null,
                 last_visit: now
              }).eq('id', existingPatients[0].id);
           } else {
@@ -662,7 +662,7 @@ export default function Home() {
                 name: currentName.trim(),
                 taj_szam: currentTaj || null,
                 phone_number: currentPhone || null,
-                birth_date: currentBirthDate || null, // ÚJ
+                birth_date: currentBirthDate || null,
                 last_visit: now
              }]);
           }
@@ -708,7 +708,7 @@ export default function Home() {
   const confirmDeleteApp = (id: number) => {
     showConfirm(
       "Időpont törlése",
-      "Biztosan törlöd ezt az időpontot?\n\nKésőbb a 'Törölt sorok mutatása' gombbal visszaállítható.",
+      "Biztosan törlöd ezt az időpontot?\n\nKésőbb a 'T��rölt sorok mutatása' gombbal visszaállítható.",
       "Igen, törlöm",
       "bg-red-600 hover:bg-red-700 text-white",
       () => executeDeleteApp(id)
@@ -1849,7 +1849,8 @@ export default function Home() {
       const nameMatch = app.patient_name && app.patient_name.toLowerCase().includes(term);
       const tajMatch = app.taj_szam && app.taj_szam.replace(/\s+/g, '').includes(termNoSpace);
       const phoneMatch = app.phone_number && app.phone_number.replace(/\s+/g, '').includes(termNoSpace);
-      return nameMatch || tajMatch || phoneMatch;
+      const birthMatch = app.birth_date && app.birth_date.includes(term);
+      return nameMatch || tajMatch || phoneMatch || birthMatch;
     });
   } else {
     filteredAppointments = filteredAppointments.filter((app: any) => app.department === activeTab);
@@ -1866,7 +1867,6 @@ export default function Home() {
   const sortedDates = Object.keys(groupedByDate).sort();
 
   const freeSlotsSummary = sortedDates.map(date => {
-    // Várólista kiszűrése a szabad helyek számolásánál!
     const dayNormalAppointments = groupedByDate[date].filter((a: any) => !a.is_deleted && a.time_slot !== "VÁRÓLISTA");
     const bookedCount = dayNormalAppointments.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
     const freeCount = dayNormalAppointments.length - bookedCount;
@@ -1900,7 +1900,7 @@ export default function Home() {
             <input 
               ref={searchInputRef}
               type="text" 
-              placeholder="Keresés név, TAJ vagy telefon... (Ctrl+K)" 
+              placeholder="Keresés név, TAJ, telefon vagy szül. idő... (Ctrl+K)" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-white/80 border border-white/60 py-2 pl-10 pr-4 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 font-semibold text-slate-800 shadow-sm transition-all"
@@ -2612,6 +2612,21 @@ export default function Home() {
       )}
       
       <style dangerouslySetInnerHTML={{__html: `
+        /* MEGOLDÁS AZ UGRÁLÁSRA / ZOOMOLÁSRA: Mindig tartsa ott a görgetősáv helyét */
+        html { 
+          overflow-y: scroll; 
+        }
+
+        /* Megakadályozza a laptop touchpad-es dupla kattintásos véletlen nagyítását */
+        input, textarea, button, select {
+          touch-action: manipulation;
+        }
+
+        /* Mobilos zoomolás letiltása inputoknál (iOS fix) */
+        @media screen and (max-width: 768px) {
+          input, select, textarea { font-size: 16px !important; }
+        }
+
         .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.4); border-radius: 10px; margin: 0 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 0.8); border-radius: 10px; }

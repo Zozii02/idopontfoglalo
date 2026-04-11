@@ -37,6 +37,10 @@ const ClockIcon = ({ size = 20 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
 );
 
+const DatabaseIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+);
+
 import { BACKGROUND_IMAGE_URL, LAB_DATABASE } from "../lib/constants";
 
 import { 
@@ -49,7 +53,6 @@ import { ModernStatusSelect } from "../components/ModernStatusSelect";
 import { ModernDatePicker } from "../components/ModernDatePicker";
 import { PatientAutocomplete } from "../components/PatientAutocomplete";
 
-
 // --- AUTO SZÍNEZŐ SEGÉDFÜGGVÉNY A VIZSGÁLATOKHOZ ---
 const getExamColor = (exam: string) => {
   if (!exam) return "border-transparent";
@@ -59,7 +62,7 @@ const getExamColor = (exam: string) => {
   if (lower.includes("vérvétel") || lower.includes("labor")) return "bg-red-50 text-red-900 border-red-200";
   if (lower.includes("konzultáció") || lower.includes("vizsgálat")) return "bg-purple-50 text-purple-900 border-purple-200";
   if (lower.includes("röntgen") || lower.includes("rtg")) return "bg-amber-50 text-amber-900 border-amber-200";
-  return "bg-slate-50 text-slate-900 border-slate-200"; // Alapértelmezett kitöltött szín
+  return "bg-slate-50 text-slate-900 border-slate-200"; 
 };
 
 // --- Főoldal ---
@@ -84,11 +87,18 @@ export default function Home() {
 
   // --- LABOR KALKULÁTOR ÁLLAPOTOK ---
   const [selectedLabTests, setSelectedLabTests] = useState<string[]>([]);
-  const [labPatientName, setLabPatientName] = useState("");
-  const [labPatientTaj, setLabPatientTaj] = useState("");
-  const [labPatientAddress, setLabPatientAddress] = useState("");
   const [labSearchTerm, setLabSearchTerm] = useState("");
   const [includeBloodDrawFee, setIncludeBloodDrawFee] = useState(true);
+  
+  // Labor páciens adatok
+  const [labPatientName, setLabPatientName] = useState("");
+  const [labMaidenName, setLabMaidenName] = useState("");
+  const [labBirthDate, setLabBirthDate] = useState("");
+  const [labBirthPlace, setLabBirthPlace] = useState("");
+  const [labPatientTaj, setLabPatientTaj] = useState("");
+  const [labPhone, setLabPhone] = useState("");
+  const [labEmail, setLabEmail] = useState("");
+  const [labPatientAddress, setLabPatientAddress] = useState("");
 
   // --- STATISZTIKA ÁLLAPOTOK ---
   const [statsPeriod, setStatsPeriod] = useState<'today' | 'week' | 'month' | 'all'>('month');
@@ -124,7 +134,6 @@ export default function Home() {
   const [genBreakStart, setGenBreakStart] = useState("12:00");
   const [genBreakEnd, setGenBreakEnd] = useState("13:00");
   
-  // --- Online sáv állapotok ---
   const [genOnlineStart, setGenOnlineStart] = useState("");
   const [genOnlineEnd, setGenOnlineEnd] = useState("");
 
@@ -231,6 +240,38 @@ export default function Home() {
     if (selectedLabTests.length === 0) return showAlert("Üres ajánlat", "Kérlek, válassz ki legalább egy vizsgálatot a nyomtatáshoz!");
     setPrintingLabQuote(true);
     setTimeout(() => { window.print(); }, 300);
+  };
+
+  // ÚJ FUNKCIÓ: Labor ajánlat mentése adatbázisba
+  const handleSaveLabCalculation = async () => {
+    if (selectedLabTests.length === 0) return showAlert("Hiba", "Nincs kiválasztott vizsgálat, amit el lehetne menteni!");
+    if (!labPatientName.trim()) return showAlert("Hiányzó adat", "Kérlek, legalább a páciens nevét add meg a mentéshez!");
+
+    // CSAK A TISZTA LABORÁR, kezelési díj nélkül
+    const items = getSelectedLabItemsData();
+    const testsTotal = items.reduce((sum, item) => sum + item.price, 0);
+    const testsList = items.map(i => i.name).join(", ");
+
+    const { error } = await supabase.from('lab_calculations').insert([{
+      patient_name: labPatientName,
+      maiden_name: labMaidenName,
+      taj_szam: labPatientTaj,
+      birth_date: labBirthDate,
+      birth_place: labBirthPlace,
+      address: labPatientAddress,
+      phone_number: labPhone,
+      email: labEmail,
+      tests_list: testsList,
+      total_price: testsTotal,
+      created_by: getDisplayName()
+    }]);
+
+    if (error) {
+      console.error(error);
+      showAlert("Hiba", "Nem sikerült elmenteni a kalkulációt az adatbázisba.");
+    } else {
+      showToast("Kalkuláció sikeresen elmentve az adatbázisba!");
+    }
   };
 
   const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'success') => {
@@ -381,7 +422,6 @@ export default function Home() {
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // Visszaugrás a mai napra
   const scrollToToday = () => {
     const todayId = `date-${getTodayDateStr()}`;
     const el = document.getElementById(todayId);
@@ -708,7 +748,7 @@ export default function Home() {
   const confirmDeleteApp = (id: number) => {
     showConfirm(
       "Időpont törlése",
-      "Biztosan törlöd ezt az időpontot?\n\nKésőbb a 'T��rölt sorok mutatása' gombbal visszaállítható.",
+      "Biztosan törlöd ezt az időpontot?\n\nKésőbb a 'Törölt sorok mutatása' gombbal visszaállítható.",
       "Igen, törlöm",
       "bg-red-600 hover:bg-red-700 text-white",
       () => executeDeleteApp(id)
@@ -1620,11 +1660,17 @@ export default function Home() {
               </div>
 
               <div className="mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200 print-bg-light">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 mb-3">
                   <div>
                     <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-0.5">Páciens neve</h2>
                     <p className="text-base font-bold text-slate-900">{labPatientName || "Nincs megadva"}</p>
                   </div>
+                  <div>
+                    <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-0.5">Születési idő</h2>
+                    <p className="text-sm font-bold text-slate-900">{labBirthDate || "-"}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-0.5">TAJ Szám</h2>
                     <p className="text-sm font-bold text-slate-900">{labPatientTaj || "-"}</p>
@@ -1744,47 +1790,58 @@ export default function Home() {
 
               {/* JOBB OSZLOP: Kalkuláció és Nyomtatás */}
               <div className="w-full lg:w-1/3 bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col h-full min-h-0">
-                <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 shrink-0"><DocumentIcon /> Ajánlat összegzése</h2>
+                <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 shrink-0"><DocumentIcon /> Ajánlat & Páciens adatai</h2>
                 
-                <div className="mb-2 space-y-2 shrink-0">
-                  <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Páciens neve (Opcionális)</label>
-                    <input 
-                      type="text" 
-                      placeholder="Kovács János" 
-                      value={labPatientName}
-                      onChange={(e) => setLabPatientName(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm"
-                    />
+                <div className="mb-2 space-y-3 shrink-0 overflow-y-auto custom-scrollbar pr-1 max-h-[300px]">
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Név</label>
+                      <input type="text" placeholder="Kovács János" value={labPatientName} onChange={(e) => setLabPatientName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Leánykori név</label>
+                      <input type="text" placeholder="Uaz." value={labMaidenName} onChange={(e) => setLabMaidenName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm" />
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Születési idő</label>
+                      <input type="text" placeholder="1980.01.01" value={labBirthDate} onChange={(e) => setLabBirthDate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Születési hely</label>
+                      <input type="text" placeholder="Budapest" value={labBirthPlace} onChange={(e) => setLabBirthPlace(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">TAJ Szám</label>
-                      <input 
-                        type="text" 
-                        placeholder="123 456 789" 
-                        value={labPatientTaj}
-                        onChange={(e) => setLabPatientTaj(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm"
-                      />
+                      <input type="text" placeholder="123 456 789" value={labPatientTaj} onChange={(e) => setLabPatientTaj(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm" />
                     </div>
-                    <div className="col-span-2">
-                      <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Lakcím</label>
-                      <input 
-                        type="text" 
-                        placeholder="1234 Budapest, Példa utca 1." 
-                        value={labPatientAddress}
-                        onChange={(e) => setLabPatientAddress(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm"
-                      />
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Telefon</label>
+                      <input type="text" placeholder="06 30 123 4567" value={labPhone} onChange={(e) => setLabPhone(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm" />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">E-mail cím</label>
+                    <input type="email" placeholder="minta@email.hu" value={labEmail} onChange={(e) => setLabEmail(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm" />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Teljes Lakcím</label>
+                    <input type="text" placeholder="1234 Budapest, Példa utca 1." value={labPatientAddress} onChange={(e) => setLabPatientAddress(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm" />
                   </div>
                 </div>
 
-                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-3 mb-4 mt-2 flex flex-col min-h-0 flex-1">
+                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-3 mb-4 mt-2 flex flex-col min-h-[120px] flex-1">
                   <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 border-b border-slate-200 pb-1.5 shrink-0">Kiválasztott tételek ({selectedItems.length})</h3>
                   
-                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-1.5 min-h-0">
+                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-1.5 min-h-[40px]">
                     {selectedItems.length === 0 ? (
                       <p className="text-xs text-slate-400 font-medium italic text-center py-2">Nincs kiválasztott vizsgálat.</p>
                     ) : (
@@ -1813,19 +1870,29 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="shrink-0">
-                  <div className="flex justify-between items-end mb-4">
+                <div className="shrink-0 space-y-3">
+                  <div className="flex justify-between items-end mb-2">
                     <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Végösszeg</span>
                     <span className="text-2xl font-extrabold text-emerald-600">{formattedTotal}</span>
                   </div>
 
-                  <button 
-                    onClick={handlePrintLabQuote} 
-                    disabled={selectedItems.length === 0}
-                    className="w-full py-3.5 rounded-xl font-bold shadow-md transition-all active:scale-95 flex justify-center items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  >
-                    <PrintIcon /> Árajánlat Nyomtatása (PDF)
-                  </button>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={handleSaveLabCalculation} 
+                      disabled={selectedItems.length === 0}
+                      className="w-1/2 py-3 rounded-xl font-bold shadow-md transition-all active:scale-95 flex justify-center items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                      title="Kezelési díj nélkül menti az adatbázisba"
+                    >
+                      <DatabaseIcon /> Mentés (Adatbázis)
+                    </button>
+                    <button 
+                      onClick={handlePrintLabQuote} 
+                      disabled={selectedItems.length === 0}
+                      className="w-1/2 py-3 rounded-xl font-bold shadow-md transition-all active:scale-95 flex justify-center items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                    >
+                      <PrintIcon /> Nyomtatás (PDF)
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -2317,7 +2384,7 @@ export default function Home() {
 
                     <div className={`overflow-x-auto custom-scrollbar ${printingDate ? 'overflow-visible' : ''}`}>
                       <table className="min-w-full text-left border-collapse print-table hidden lg:table print:table">
-                                                <thead className="sticky top-0 z-20 shadow-sm bg-white">
+                        <thead className="sticky top-0 z-20 shadow-sm bg-white">
                           <tr className="border-b border-slate-200/60 print-border">
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[220px]">Páciens neve</th>
@@ -2378,7 +2445,7 @@ export default function Home() {
                                           <span className="bg-blue-100 text-blue-700 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded border border-blue-200 shadow-sm" title="Online előjegyzéses sáv">Online</span>
                                         )}
                                       </div>
-                                    )}
+                                   )}
                                     {!printingDate && !isDel && !isWaitingList && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isBooked ? "bg-red-200/60 text-red-900" : "bg-emerald-200/60 text-emerald-900"}`}>{isBooked ? "Foglalt" : "Szabad"}</span>}
                                     {!printingDate && isDel && <span className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max bg-slate-200 text-slate-700">Törölt</span>}
                                   </div>
@@ -2409,7 +2476,6 @@ export default function Home() {
                                   )}
                                 </td>
                                 
-                                {/* ÚJ: Születési Idő cella */}
                                 <td className={`px-4 py-3 align-middle whitespace-nowrap ${printingDate ? 'text-black font-mono text-sm border-l border-gray-300' : ''}`}>
                                   {printingDate ? app.birth_date : <EditableCell disabled={isDel} highlight={isBooked} value={app.birth_date} onSave={(val) => updateAppointment(app.id, "birth_date", val)} searchTerm={debouncedSearchTerm} />}
                                 </td>
@@ -2617,6 +2683,9 @@ export default function Home() {
           overflow-y: scroll; 
         }
 
+        /* Megakadályozza, hogy az input mezők szétfeszítsék a táblázatot */
+        td input { min-width: 0 !important; width: 100%; }
+
         /* Megakadályozza a laptop touchpad-es dupla kattintásos véletlen nagyítását */
         input, textarea, button, select {
           touch-action: manipulation;
@@ -2634,8 +2703,6 @@ export default function Home() {
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-                /* Megakadályozza, hogy az input mezők szétfeszítsék a táblázatot */
-        td input { min-width: 0 !important; width: 100%; }
         
         @media print {
           @page { 

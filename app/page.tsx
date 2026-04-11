@@ -2006,8 +2006,75 @@ export default function Home() {
                ) : (
                  <div className="space-y-8">
                    {sortedSavedDates.map(dateKey => {
-                      const displayDate = formatShortDate(dateKey); // Szép formátum
-                      const labsForDay = groupedSavedLabs[dateKey];
+   const displayDate = formatShortDate(dateKey); // Szép formátum
+   const labsForDay = groupedSavedLabs[dateKey];
+   
+   // NAPI ÖSSZEG KISZÁMÍTÁSA
+   const dailyTotal = labsForDay.reduce((sum: number, calc: any) => sum + (calc.total_price || 0), 0);
+   const formattedDailyTotal = new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyTotal);
+   
+   return (
+     <div key={dateKey} className="bg-white/50 p-6 rounded-3xl border border-slate-200/60 shadow-sm backdrop-blur-md">
+       <h3 className="font-extrabold text-slate-800 text-lg mb-4 flex items-center flex-wrap gap-2 border-b border-slate-200 pb-2 w-full sm:w-max pr-6">
+         <CalendarIcon /> {displayDate}
+         <span className="bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-widest">{labsForDay.length} db</span>
+         <span className="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-widest ml-1 sm:ml-2">Összesen: {formattedDailyTotal}</span>
+       </h3>
+       
+       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+         {labsForDay.map((calc: any) => (
+           <div key={calc.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all flex flex-col h-full">
+             <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h4 className="font-extrabold text-slate-900 text-lg leading-tight">{calc.patient_name}</h4>
+                  {calc.maiden_name && <p className="text-xs text-slate-400 font-medium mt-0.5">Leánykori: {calc.maiden_name}</p>}
+                </div>
+                <span className="text-sm font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 whitespace-nowrap shrink-0 ml-2">
+                  {calc.total_price.toLocaleString('hu-HU')} Ft
+                </span>
+             </div>
+             
+             <div className="grid grid-cols-2 gap-x-2 gap-y-3 text-[11px] text-slate-600 font-medium mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                {calc.taj_szam && <div><span className="block text-[9px] uppercase font-bold text-slate-400 tracking-widest">TAJ</span><span className="font-bold text-slate-800">{formatTAJ(calc.taj_szam)}</span></div>}
+                {calc.birth_date && <div><span className="block text-[9px] uppercase font-bold text-slate-400 tracking-widest">Szül. idő</span><span className="font-bold text-slate-800">{calc.birth_date}</span></div>}
+                {calc.phone_number && <div><span className="block text-[9px] uppercase font-bold text-slate-400 tracking-widest">Telefon</span><span className="font-bold text-slate-800">{formatPhone(calc.phone_number)}</span></div>}
+                {calc.email && <div><span className="block text-[9px] uppercase font-bold text-slate-400 tracking-widest">E-mail</span><span className="font-bold text-slate-800 truncate block w-full" title={calc.email}>{calc.email}</span></div>}
+             </div>
+
+             <div className="mb-4 flex-1">
+                <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1">Kért vizsgálatok</span>
+                <p className="text-xs font-semibold text-slate-700 leading-relaxed bg-white border border-slate-100 p-2.5 rounded-xl line-clamp-3" title={calc.tests_list}>
+                  {calc.tests_list}
+                </p>
+             </div>
+             
+             <div className="flex justify-between items-center mt-auto pt-4 border-t border-slate-100">
+                <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest bg-slate-100 px-2 py-1 rounded-md">
+                  {new Date(calc.created_at).toLocaleTimeString('hu-HU', {hour: '2-digit', minute:'2-digit'})} • {calc.created_by.split('@')[0]}
+                </span>
+                <div className="flex gap-1.5">
+                   <button 
+                     onClick={() => handlePrintSavedLab(calc)} 
+                     className="text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 p-2 rounded-lg transition-colors border border-transparent hover:border-emerald-200" 
+                     title="Újra-nyomtatás"
+                   >
+                     <PrintIcon />
+                   </button>
+                   <button 
+                     onClick={() => deleteSavedCalculation(calc.id)} 
+                     className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors border border-transparent hover:border-red-200" 
+                     title="Kalkuláció törlése"
+                   >
+                     <TrashIcon />
+                   </button>
+                </div>
+             </div>
+           </div>
+         ))}
+       </div>
+     </div>
+   )
+})}
                       
                       return (
                         <div key={dateKey} className="bg-white/50 p-6 rounded-3xl border border-slate-200/60 shadow-sm backdrop-blur-md">

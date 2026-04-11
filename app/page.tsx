@@ -86,6 +86,7 @@ export default function Home() {
   const [isLoadingPatients, setIsLoadingPatients] = useState(false);
 
   // --- LABOR KALKULÁTOR ÁLLAPOTOK ---
+  const [activeLabTab, setActiveLabTab] = useState<'new' | 'saved'>('new');
   const [selectedLabTests, setSelectedLabTests] = useState<string[]>([]);
   const [labSearchTerm, setLabSearchTerm] = useState("");
   const [includeBloodDrawFee, setIncludeBloodDrawFee] = useState(true);
@@ -99,6 +100,11 @@ export default function Home() {
   const [labPhone, setLabPhone] = useState("");
   const [labEmail, setLabEmail] = useState("");
   const [labPatientAddress, setLabPatientAddress] = useState("");
+
+  // Mentett labor kalkulációk állapota
+  const [savedCalculations, setSavedCalculations] = useState<any[]>([]);
+  const [isLoadingSavedLabs, setIsLoadingSavedLabs] = useState(false);
+  const [printingSavedLab, setPrintingSavedLab] = useState<any>(null); // Tárolja, ha egy régi mentést nyomtatunk
 
   // --- STATISZTIKA ÁLLAPOTOK ---
   const [statsPeriod, setStatsPeriod] = useState<'today' | 'week' | 'month' | 'all'>('month');
@@ -271,7 +277,52 @@ export default function Home() {
       showAlert("Hiba", "Nem sikerült elmenteni a kalkulációt az adatbázisba.");
     } else {
       showToast("Kalkuláció sikeresen elmentve az adatbázisba!");
+      
+      // Mezők ürítése
+      setLabPatientName(""); setLabMaidenName(""); setLabPatientTaj(""); setLabBirthDate("");
+      setLabBirthPlace(""); setLabPatientAddress(""); setLabPhone(""); setLabEmail("");
+      setSelectedLabTests([]);
+      
+      // Átnavigálás a mentett ajánlatok fülre
+      setActiveLabTab('saved');
+      fetchSavedCalculations();
     }
+  };
+
+  // ÚJ FUNKCIÓ: Mentett ajánlatok betöltése
+  const fetchSavedCalculations = async () => {
+    setIsLoadingSavedLabs(true);
+    const { data, error } = await supabase
+      .from('lab_calculations')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (!error && data) {
+      setSavedCalculations(data);
+    }
+    setIsLoadingSavedLabs(false);
+  };
+
+  // ÚJ FUNKCIÓ: Mentett ajánlat törlése
+  const deleteSavedCalculation = async (id: number) => {
+    showConfirm(
+      "Mentett ajánlat törlése",
+      "Biztosan törlöd ezt az elmentett labor kalkulációt a rendszerből?",
+      "Igen, törlés",
+      "bg-red-600 hover:bg-red-700 text-white",
+      async () => {
+        await supabase.from('lab_calculations').delete().eq('id', id);
+        setSavedCalculations(prev => prev.filter(c => c.id !== id));
+        showToast("Kalkuláció véglegesen törölve!");
+      }
+    );
+  };
+
+  // ÚJ FUNKCIÓ: Mentett ajánlat újra-nyomtatása
+  const handlePrintSavedLab = (calc: any) => {
+    setPrintingSavedLab(calc);
+    setPrintingLabQuote(true);
+    setTimeout(() => { window.print(); }, 300);
   };
 
   const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'success') => {
@@ -485,7 +536,11 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const handleAfterPrint = () => { setPrintingDate(null); setPrintingLabQuote(false); };
+    const handleAfterPrint = () => { 
+      setPrintingDate(null); 
+      setPrintingLabQuote(false); 
+      setPrintingSavedLab(null); // Nyomtatás után ürítjük a mentett labor állapotot is
+    };
     window.addEventListener('afterprint', handleAfterPrint);
     return () => window.removeEventListener('afterprint', handleAfterPrint);
   }, []);
@@ -1615,32 +1670,57 @@ export default function Home() {
     const selectedItems = getSelectedLabItemsData();
     const totalPrice = calculateLabTotal();
     const formattedTotal = new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(totalPrice);
+    
+    // Mentett kalkulációk dátum szerinti csoportosítása
+    const groupedSavedLabs = savedCalculations.reduce((acc: any, curr: any) => {
+      const dateKey = curr.created_at ? curr.created_at.split('T')[0] : "Ismeretlen";
+      if (!acc[dateKey]) acc[dateKey] = [];
+      acc[dateKey].push(curr);
+      return acc;
+    }, {});
+    const sortedSavedDates = Object.keys(groupedSavedLabs).sort((a, b) => b.localeCompare(a));
 
     return (
-      <div className={`min-h-screen font-sans relative ${printingLabQuote ? 'bg-white print-mode' : 'bg-slate-50 overflow-hidden'}`}>
+      <div className={`min-h-screen font-sans relative ${printingLabQuote ? 'bg-white print-mode' : 'bg-slate-50 overflow-hidden flex flex-col'}`}>
         {customModalUI}
         {toastUI}
         
         {/* FEJLÉC (csak nem nyomtatáskor) */}
         {!printingLabQuote && (
           <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm no-print">
-            <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex justify-between items-center">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-3 flex justify-between items-center">
               <div className="flex items-center gap-4">
                  <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain" />
                  <div>
-                   <h1 className="text-xl font-bold tracking-tight text-slate-900">Labor kalkulátor</h1>
-                   <p className="text-emerald-600 font-medium text-[11px] tracking-widest uppercase">Ajánlatkészítő</p>
+                   <h1 className="text-xl font-bold tracking-tight text-slate-900">Laboratórium</h1>
+                   <p className="text-emerald-600 font-medium text-[11px] tracking-widest uppercase">Kalkulátor és Ajánlatok</p>
                  </div>
               </div>
               <button onClick={() => setShowLabCalculator(false)} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold shadow-sm hover:bg-black transition-all active:scale-95 flex items-center gap-2">
                 <ChevronLeftIcon /> Vissza az Előjegyzéshez
               </button>
             </div>
+            
+            {/* ÚJ: FÜLEK (TABS) */}
+            <div className="max-w-[1600px] mx-auto px-4 md:px-8 mt-4 flex gap-6 border-b border-slate-200 shrink-0">
+               <button 
+                 onClick={() => setActiveLabTab('new')} 
+                 className={`py-3 px-2 font-bold text-sm border-b-2 transition-all cursor-pointer ${activeLabTab === 'new' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+               >
+                 <span className="flex items-center gap-2"><CalculatorIcon size={18}/> Új Ajánlat Készítése</span>
+               </button>
+               <button 
+                 onClick={() => { setActiveLabTab('saved'); fetchSavedCalculations(); }} 
+                 className={`py-3 px-2 font-bold text-sm border-b-2 transition-all cursor-pointer ${activeLabTab === 'saved' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+               >
+                 <span className="flex items-center gap-2"><DatabaseIcon size={18}/> Mentett Ajánlatok ({savedCalculations.length})</span>
+               </button>
+            </div>
           </div>
         )}
 
         {/* LABOR TARTALOM */}
-        <div className={`max-w-[1600px] mx-auto ${printingLabQuote ? 'p-0 pt-0 max-w-none' : 'px-4 md:px-8 py-6 min-h-[calc(100vh-80px)] flex flex-col'}`}>
+        <div className={`max-w-[1600px] w-full mx-auto ${printingLabQuote ? 'p-0 pt-0 max-w-none' : 'px-4 md:px-8 py-6 min-h-[calc(100vh-140px)] flex flex-col'}`}>
           
           {/* NYOMTATÁSI NÉZET - KIZÁRÓLAG NYOMTATÁSKOR JELENIK MEG */}
           {printingLabQuote && (
@@ -1663,50 +1743,58 @@ export default function Home() {
                 <div className="grid grid-cols-2 gap-4 mb-3">
                   <div>
                     <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-0.5">Páciens neve</h2>
-                    <p className="text-base font-bold text-slate-900">{labPatientName || "Nincs megadva"}</p>
+                    <p className="text-base font-bold text-slate-900">{printingSavedLab ? printingSavedLab.patient_name : (labPatientName || "Nincs megadva")}</p>
                   </div>
                   <div>
                     <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-0.5">Születési idő</h2>
-                    <p className="text-sm font-bold text-slate-900">{labBirthDate || "-"}</p>
+                    <p className="text-sm font-bold text-slate-900">{printingSavedLab ? (printingSavedLab.birth_date || "-") : (labBirthDate || "-")}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-0.5">TAJ Szám</h2>
-                    <p className="text-sm font-bold text-slate-900">{labPatientTaj || "-"}</p>
+                    <p className="text-sm font-bold text-slate-900">{printingSavedLab ? (printingSavedLab.taj_szam || "-") : (labPatientTaj || "-")}</p>
                   </div>
                   <div className="col-span-2">
                     <h2 className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-0.5">Lakcím</h2>
-                    <p className="text-sm font-bold text-slate-900">{labPatientAddress || "-"}</p>
+                    <p className="text-sm font-bold text-slate-900">{printingSavedLab ? (printingSavedLab.address || "-") : (labPatientAddress || "-")}</p>
                   </div>
                 </div>
               </div>
 
               <div className="mb-4">
-                <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-1 mb-2">Kiválasztott vizsgálatok ({selectedItems.length} db)</h3>
+                <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-1 mb-2">Kiválasztott vizsgálatok</h3>
                 <table className="w-full text-left border-collapse text-[10px]">
                   <thead>
                     <tr className="border-b border-slate-300">
                       <th className="py-1 px-1 font-bold text-slate-600">Vizsgálat megnevezése</th>
-                      <th className="py-1 px-1 font-bold text-slate-600">Kategória</th>
-                      <th className="py-1 px-1 font-bold text-slate-600 text-right">Eredmény várható</th>
                       <th className="py-1 px-1 font-bold text-slate-600 text-right">Díj (HUF)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {selectedItems.map(item => (
-                      <tr key={item.id}>
-                        <td className="py-1 px-1 font-bold text-slate-900">{item.name}</td>
-                        <td className="py-1 px-1 text-slate-500">{LAB_DATABASE.find(c => c.items.some(i => i.id === item.id))?.category}</td>
-                        <td className="py-1 px-1 text-slate-600 text-right">{item.time}</td>
-                        <td className="py-1 px-1 font-bold text-slate-900 text-right">{item.price === 0 ? "-" : `${item.price.toLocaleString('hu-HU')} Ft`}</td>
-                      </tr>
-                    ))}
-                    {includeBloodDrawFee && (
+                    
+                    {/* Ha egy régi mentést nyomtatunk újra */}
+                    {printingSavedLab ? (
+                      printingSavedLab.tests_list.split(', ').map((testName: string, i: number) => (
+                        <tr key={i}>
+                          <td className="py-1 px-1 font-bold text-slate-900">{testName}</td>
+                          <td className="py-1 px-1 font-bold text-slate-900 text-right">-</td>
+                        </tr>
+                      ))
+                    ) : (
+                      /* Ha egy aktív, új kalkulációt nyomtatunk */
+                      selectedItems.map(item => (
+                        <tr key={item.id}>
+                          <td className="py-1 px-1 font-bold text-slate-900">{item.name}</td>
+                          <td className="py-1 px-1 font-bold text-slate-900 text-right">{item.price === 0 ? "-" : `${item.price.toLocaleString('hu-HU')} Ft`}</td>
+                        </tr>
+                      ))
+                    )}
+                    
+                    {/* Kezelési díj sor, csak akkor ha Új kalkulációt nyomtatunk és be van pipálva */}
+                    {!printingSavedLab && includeBloodDrawFee && (
                       <tr className="bg-slate-50 print-bg-light border-t-2 border-slate-200">
                         <td className="py-1 px-1 font-bold text-slate-900">Vérvételi / Kezelési díj</td>
-                        <td className="py-1 px-1 text-slate-500">Egyéb</td>
-                        <td className="py-1 px-1 text-slate-600 text-right">-</td>
                         <td className="py-1 px-1 font-bold text-slate-900 text-right">6 000 Ft</td>
                       </tr>
                     )}
@@ -1717,20 +1805,22 @@ export default function Home() {
               <div className="flex justify-end border-t border-emerald-600 pt-3">
                 <div className="text-right">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">Fizetendő végösszeg</p>
-                  <p className="text-2xl font-extrabold text-emerald-700">{formattedTotal}</p>
+                  <p className="text-2xl font-extrabold text-emerald-700">
+                     {printingSavedLab ? `${printingSavedLab.total_price.toLocaleString('hu-HU')} Ft` : formattedTotal}
+                  </p>
                 </div>
               </div>
               
               <div className="mt-8 flex justify-between items-end text-[10px] text-slate-500 border-t border-slate-200 pt-4">
-                 <span>Kiállította: <b className="text-slate-700">{getDisplayName()}</b></span>
+                 <span>Kiállította: <b className="text-slate-700">{printingSavedLab ? printingSavedLab.created_by : getDisplayName()}</b></span>
                  <span className="text-right">A fenti árak tájékoztató jellegűek. Az ajánlat a kiállítás napjától számított 30 napig érvényes.</span>
               </div>
             </div>
           )}
 
           {/* INTERAKTÍV FELÜLET (NEM NYOMTATÁSKOR) */}
-          {!printingLabQuote && (
-            <div className="flex flex-col lg:flex-row gap-6 items-start flex-1 min-h-0 w-full">
+          {!printingLabQuote && activeLabTab === 'new' && (
+            <div className="flex flex-col lg:flex-row gap-6 items-start flex-1 min-h-0 w-full animate-in fade-in duration-300">
               
               {/* BAL OSZLOP: Vizsgálatok listája */}
               <div className="w-full lg:w-2/3 bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col min-h-0 h-full">
@@ -1896,6 +1986,92 @@ export default function Home() {
                 </div>
               </div>
 
+            </div>
+          )}
+
+          {/* ÚJ NÉZET: MENTETT AJÁNLATOK */}
+          {!printingLabQuote && activeLabTab === 'saved' && (
+            <div className="flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
+               {isLoadingSavedLabs ? (
+                 <div className="flex flex-col items-center justify-center py-20 opacity-50">
+                    <RefreshIcon />
+                    <p className="mt-4 font-bold text-slate-500">Mentett adatok betöltése...</p>
+                 </div>
+               ) : sortedSavedDates.length === 0 ? (
+                 <div className="bg-white p-12 text-center rounded-3xl shadow-sm border border-slate-200">
+                    <DatabaseIcon size={48} />
+                    <h3 className="text-xl font-bold text-slate-800 mb-2 mt-4">Nincsenek mentett kalkulációk</h3>
+                    <p className="text-slate-500 font-medium text-sm">Készíts egy új ajánlatot, és mentsd el, hogy itt megjelenjen!</p>
+                 </div>
+               ) : (
+                 <div className="space-y-8">
+                   {sortedSavedDates.map(dateKey => {
+                      const displayDate = formatShortDate(dateKey); // Szép formátum
+                      const labsForDay = groupedSavedLabs[dateKey];
+                      
+                      return (
+                        <div key={dateKey} className="bg-white/50 p-6 rounded-3xl border border-slate-200/60 shadow-sm backdrop-blur-md">
+                          <h3 className="font-extrabold text-slate-800 text-lg mb-4 flex items-center gap-2 border-b border-slate-200 pb-2 w-max pr-6">
+                            <CalendarIcon /> {displayDate}
+                            <span className="bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-widest">{labsForDay.length} db</span>
+                          </h3>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                            {labsForDay.map((calc: any) => (
+                              <div key={calc.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all flex flex-col h-full">
+                                <div className="flex justify-between items-start mb-4">
+                                   <div>
+                                     <h4 className="font-extrabold text-slate-900 text-lg leading-tight">{calc.patient_name}</h4>
+                                     {calc.maiden_name && <p className="text-xs text-slate-400 font-medium mt-0.5">Leánykori: {calc.maiden_name}</p>}
+                                   </div>
+                                   <span className="text-sm font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 whitespace-nowrap shrink-0 ml-2">
+                                     {calc.total_price.toLocaleString('hu-HU')} Ft
+                                   </span>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-x-2 gap-y-3 text-[11px] text-slate-600 font-medium mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                   {calc.taj_szam && <div><span className="block text-[9px] uppercase font-bold text-slate-400 tracking-widest">TAJ</span><span className="font-bold text-slate-800">{formatTAJ(calc.taj_szam)}</span></div>}
+                                   {calc.birth_date && <div><span className="block text-[9px] uppercase font-bold text-slate-400 tracking-widest">Szül. idő</span><span className="font-bold text-slate-800">{calc.birth_date}</span></div>}
+                                   {calc.phone_number && <div><span className="block text-[9px] uppercase font-bold text-slate-400 tracking-widest">Telefon</span><span className="font-bold text-slate-800">{formatPhone(calc.phone_number)}</span></div>}
+                                   {calc.email && <div><span className="block text-[9px] uppercase font-bold text-slate-400 tracking-widest">E-mail</span><span className="font-bold text-slate-800 truncate block w-full" title={calc.email}>{calc.email}</span></div>}
+                                </div>
+
+                                <div className="mb-4 flex-1">
+                                   <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1">Kért vizsgálatok</span>
+                                   <p className="text-xs font-semibold text-slate-700 leading-relaxed bg-white border border-slate-100 p-2.5 rounded-xl line-clamp-3" title={calc.tests_list}>
+                                     {calc.tests_list}
+                                   </p>
+                                </div>
+                                
+                                <div className="flex justify-between items-center mt-auto pt-4 border-t border-slate-100">
+                                   <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest bg-slate-100 px-2 py-1 rounded-md">
+                                     {new Date(calc.created_at).toLocaleTimeString('hu-HU', {hour: '2-digit', minute:'2-digit'})} • {calc.created_by.split('@')[0]}
+                                   </span>
+                                   <div className="flex gap-1.5">
+                                      <button 
+                                        onClick={() => handlePrintSavedLab(calc)} 
+                                        className="text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 p-2 rounded-lg transition-colors border border-transparent hover:border-emerald-200" 
+                                        title="Újra-nyomtatás"
+                                      >
+                                        <PrintIcon />
+                                      </button>
+                                      <button 
+                                        onClick={() => deleteSavedCalculation(calc.id)} 
+                                        className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors border border-transparent hover:border-red-200" 
+                                        title="Kalkuláció törlése"
+                                      >
+                                        <TrashIcon />
+                                      </button>
+                                   </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                   })}
+                 </div>
+               )}
             </div>
           )}
         </div>

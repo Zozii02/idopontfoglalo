@@ -2295,7 +2295,7 @@ export default function Home() {
                     onClick={() => setIsArchiveView(true)}
                     className={`flex-1 sm:px-6 py-2.5 rounded-xl text-sm font-extrabold transition-all duration-300 ${isArchiveView ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
                   >
-                    Archívum (Múltbeli)
+                    Archívum
                   </button>
                 </div>
 

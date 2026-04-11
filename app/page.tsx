@@ -53,6 +53,29 @@ import { ModernStatusSelect } from "../components/ModernStatusSelect";
 import { ModernDatePicker } from "../components/ModernDatePicker";
 import { PatientAutocomplete } from "../components/PatientAutocomplete";
 
+// --- ÚJ KOMPONENS: Vizsgálat legördülő menü (Árlista alapján) ---
+const ExaminationDropdown = ({ value, onChange, disabled, department, allPrices }: any) => {
+  const options = allPrices.filter((p: any) => p.department === department).map((p: any) => p.name);
+  
+  return (
+    <select
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      className={`w-full bg-transparent border-none text-sm font-semibold p-1 outline-none transition-colors rounded-md focus:bg-white focus:ring-2 focus:ring-blue-100 truncate ${disabled ? 'opacity-70 cursor-not-allowed' : 'hover:bg-black/5 text-slate-800 cursor-pointer'}`}
+      title={value || "Válassz vizsgálatot"}
+    >
+      <option value="">- Válassz -</option>
+      {value && !options.includes(value) && (
+        <option value={value}>{value} (Egyedi)</option>
+      )}
+      {options.map((opt: string, i: number) => (
+        <option key={i} value={opt}>{opt}</option>
+      ))}
+    </select>
+  );
+};
+
 // --- AUTO SZÍNEZŐ SEGÉDFÜGGVÉNY A VIZSGÁLATOKHOZ ---
 const getExamColor = (exam: string) => {
   if (!exam) return "border-transparent";
@@ -2722,13 +2745,21 @@ export default function Home() {
                                   </>
                                 )}
                                 
+                                {/* ÚJ: Itt az EditableCell le lett cserélve az ExaminationDropdown komponensre */}
                                 <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
                                   {printingDate ? app.examination_type : (
-                                    <div className={`rounded-xl px-1.5 transition-colors border shadow-sm ${app.examination_type ? getExamColor(app.examination_type) : 'border-transparent bg-transparent shadow-none'}`}>
-                                      <EditableCell disabled={isDel} highlight={false} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} />
+                                    <div className={`rounded-xl px-1.5 py-0.5 transition-colors border shadow-sm ${app.examination_type ? getExamColor(app.examination_type) : 'border-transparent bg-transparent shadow-none'}`}>
+                                      <ExaminationDropdown 
+                                        value={app.examination_type} 
+                                        onChange={(val: string) => updateAppointment(app.id, "examination_type", val)} 
+                                        disabled={isDel} 
+                                        department={app.department} 
+                                        allPrices={allPrices} 
+                                      />
                                     </div>
                                   )}
                                 </td>
+                                
                                 <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
                                   {printingDate ? app.notes : <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={debouncedSearchTerm} />}
                                 </td>
@@ -2852,9 +2883,16 @@ export default function Home() {
                                   </div>
                                 </div>
                                 
+                                {/* ÚJ: Itt is az ExaminationDropdown van már */}
                                 <div className={`bg-white/70 p-2.5 rounded-xl border relative z-0 ${app.examination_type ? getExamColor(app.examination_type) : 'border-white/50'}`}>
                                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat & Megjegyzés</span>
-                                  <EditableCell disabled={isDel} highlight={false} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} />
+                                  <ExaminationDropdown 
+                                    value={app.examination_type} 
+                                    onChange={(val: string) => updateAppointment(app.id, "examination_type", val)} 
+                                    disabled={isDel} 
+                                    department={app.department} 
+                                    allPrices={allPrices} 
+                                  />
                                   <div className="mt-1 border-t border-black/10 pt-1">
                                     <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={debouncedSearchTerm} />
                                   </div>

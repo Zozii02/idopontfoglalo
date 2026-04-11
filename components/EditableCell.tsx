@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 
 // HighlightText segédkomponens
 const HighlightText = ({ text, highlight }: { text: string, highlight: string }) => {
@@ -16,9 +16,22 @@ const HighlightText = ({ text, highlight }: { text: string, highlight: string })
   );
 };
 
-export function EditableCell({ value, onSave, disabled = false, highlight = false, formatter, searchTerm = "" }: { value: string; onSave: (val: string) => void; disabled?: boolean; highlight?: boolean; formatter?: (v: string) => string; searchTerm?: string }) {
+interface EditableCellProps {
+  value: string;
+  onSave: (val: string) => void;
+  disabled?: boolean;
+  highlight?: boolean;
+  formatter?: (v: string) => string;
+  searchTerm?: string;
+  suggestions?: string[]; // <--- Új paraméter az ajánlásokhoz
+}
+
+export function EditableCell({ value, onSave, disabled = false, highlight = false, formatter, searchTerm = "", suggestions }: EditableCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentValue, setCurrentValue] = useState(value || "");
+  
+  // Egyedi azonosító generálása a datalist-hez, hogy minden mező külön listát kapjon
+  const datalistId = useId();
 
   const handleBlur = () => { 
     setIsEditing(false); 
@@ -31,14 +44,25 @@ export function EditableCell({ value, onSave, disabled = false, highlight = fals
 
   if (isEditing) {
     return (
-      <input 
-        autoFocus 
-        value={currentValue} 
-        onChange={(e) => setCurrentValue(e.target.value)} 
-        onBlur={handleBlur} 
-        onKeyDown={(e) => e.key === "Enter" && handleBlur()}
-        className="w-full min-w-0 bg-white border border-red-400 p-2 rounded-lg focus:outline-none focus:ring-4 focus:ring-red-100 text-slate-900 font-semibold shadow-sm transition-all"
-      />
+      <div className="relative w-full">
+        <input 
+          autoFocus 
+          value={currentValue} 
+          onChange={(e) => setCurrentValue(e.target.value)} 
+          onBlur={handleBlur} 
+          onKeyDown={(e) => e.key === "Enter" && handleBlur()}
+          list={suggestions && suggestions.length > 0 ? datalistId : undefined} // <--- Összekötés a listával
+          className="w-full min-w-0 bg-white border border-red-400 p-2 rounded-lg focus:outline-none focus:ring-4 focus:ring-red-100 text-slate-900 font-semibold shadow-sm transition-all"
+        />
+        {/* <--- Legördülő lista renderelése az árlista elemeiből ---> */}
+        {suggestions && suggestions.length > 0 && (
+          <datalist id={datalistId}>
+            {suggestions.map((sug, idx) => (
+              <option key={idx} value={sug} />
+            ))}
+          </datalist>
+        )}
+      </div>
     );
   }
 

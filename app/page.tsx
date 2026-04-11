@@ -79,9 +79,6 @@ export default function Home() {
   const [showLabCalculator, setShowLabCalculator] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showPatients, setShowPatients] = useState(false);
-  
-  // ÚJ: Archívum nézet állapota
-  const [isArchiveView, setIsArchiveView] = useState(false);
 
   // --- PÁCIENS NÉZET ÁLLAPOTAI ---
   const [patientsList, setPatientsList] = useState<any[]>([]);
@@ -251,10 +248,12 @@ export default function Home() {
     setTimeout(() => { window.print(); }, 300);
   };
 
+  // ÚJ FUNKCIÓ: Labor ajánlat mentése adatbázisba
   const handleSaveLabCalculation = async () => {
     if (selectedLabTests.length === 0) return showAlert("Hiba", "Nincs kiválasztott vizsgálat, amit el lehetne menteni!");
     if (!labPatientName.trim()) return showAlert("Hiányzó adat", "Kérlek, legalább a páciens nevét add meg a mentéshez!");
 
+    // CSAK A TISZTA LABORÁR, kezelési díj nélkül
     const items = getSelectedLabItemsData();
     const testsTotal = items.reduce((sum, item) => sum + item.price, 0);
     const testsList = items.map(i => i.name).join(", ");
@@ -278,14 +277,19 @@ export default function Home() {
       showAlert("Hiba", "Nem sikerült elmenteni a kalkulációt az adatbázisba.");
     } else {
       showToast("Kalkuláció sikeresen elmentve az adatbázisba!");
+      
+      // Mezők ürítése
       setLabPatientName(""); setLabMaidenName(""); setLabPatientTaj(""); setLabBirthDate("");
       setLabBirthPlace(""); setLabPatientAddress(""); setLabPhone(""); setLabEmail("");
       setSelectedLabTests([]);
+      
+      // Átnavigálás a mentett ajánlatok fülre
       setActiveLabTab('saved');
       fetchSavedCalculations();
     }
   };
 
+  // ÚJ FUNKCIÓ: Mentett ajánlatok betöltése
   const fetchSavedCalculations = async () => {
     setIsLoadingSavedLabs(true);
     const { data, error } = await supabase
@@ -299,6 +303,7 @@ export default function Home() {
     setIsLoadingSavedLabs(false);
   };
 
+  // ÚJ FUNKCIÓ: Mentett ajánlat törlése
   const deleteSavedCalculation = async (id: number) => {
     showConfirm(
       "Mentett ajánlat törlése",
@@ -313,6 +318,7 @@ export default function Home() {
     );
   };
 
+  // ÚJ FUNKCIÓ: Mentett ajánlat újra-nyomtatása
   const handlePrintSavedLab = (calc: any) => {
     setPrintingSavedLab(calc);
     setPrintingLabQuote(true);
@@ -386,7 +392,7 @@ export default function Home() {
   const handleDeleteDepartment = (name: string) => {
     showConfirm(
       "Szakrendelés törlése",
-      `Biztosan törlöd a(z) ${name} szakrendelést a listából?\n\n(A már rögzített időpontok és páciensek megmaradnak az adatbázisban, csak ez a fül tűnik el.)`,
+      `Biztosan törl��d a(z) ${name} szakrendelést a listából?\n\n(A már rögzített időpontok és páciensek megmaradnak az adatbázisban, csak ez a fül tűnik el.)`,
       "Igen, törlés",
       "bg-red-600 hover:bg-red-700 text-white",
       async () => {
@@ -533,7 +539,7 @@ export default function Home() {
     const handleAfterPrint = () => { 
       setPrintingDate(null); 
       setPrintingLabQuote(false); 
-      setPrintingSavedLab(null);
+      setPrintingSavedLab(null); // Nyomtatás után ürítjük a mentett labor állapotot is
     };
     window.addEventListener('afterprint', handleAfterPrint);
     return () => window.removeEventListener('afterprint', handleAfterPrint);
@@ -597,7 +603,7 @@ export default function Home() {
   const fetchAppointments = async () => {
     const today = new Date();
     const pastDate = new Date();
-    pastDate.setFullYear(today.getFullYear() - 2); // MÓDOSÍTVA: 2 évnyi adat lekérése az archívumhoz
+    pastDate.setMonth(today.getMonth() - 2);
     const futureDate = new Date();
     futureDate.setFullYear(today.getFullYear() + 1);
 
@@ -824,6 +830,16 @@ export default function Home() {
     }
   };
 
+  const restoreAppointment = async (id: number) => {
+    const modifierName = getDisplayName();
+    const now = new Date().toISOString();
+    
+    setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: false, last_modified_by: modifierName, last_modified_at: now } : app));
+    await supabase.from("appointments").update({ is_deleted: false, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
+    await logAction(id, "Visszaállítás", "Törölt időpont visszaállítva");
+    showToast("Időpont sikeresen visszaállítva!");
+  };
+
   const handlePrintDay = (date: string) => {
     setPrintingDate(date);
     setTimeout(() => { window.print(); }, 300);
@@ -1000,15 +1016,6 @@ export default function Home() {
     }
     setNewTimeSlot("");
     showToast("Új időpont sikeresen hozzáadva!");
-  };
-
-  const restoreAppointment = async (id: number) => {
-    const modifierName = getDisplayName();
-    const now = new Date().toISOString();
-    setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: false, last_modified_by: modifierName, last_modified_at: now } : app));
-    await supabase.from("appointments").update({ is_deleted: false, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
-    await logAction(id, "Visszaállítás", "Törölt időpont visszaállítva");
-    showToast("Időpont sikeresen visszaállítva!");
   };
 
   // --- UI COMPONENTEK ---
@@ -2090,13 +2097,9 @@ export default function Home() {
   // --- NORMÁL ELŐJEGYZÉS NÉZET ---
   const filteredCategories = categories.filter(c => c.toLowerCase().includes(departmentSearch.toLowerCase()));
 
-  // Kiszűrjük az aktuális dátumot string formában a szűréshez
-  const todayStr = new Date().toISOString().split('T')[0];
-
   let filteredAppointments = appointments;
   
   if (debouncedSearchTerm.trim() !== "") {
-    // Keresésnél nem vesszük figyelembe az Archívum/Aktuális kapcsolót
     const term = debouncedSearchTerm.toLowerCase();
     const termNoSpace = term.replace(/\s+/g, ''); 
     
@@ -2108,17 +2111,7 @@ export default function Home() {
       return nameMatch || tajMatch || phoneMatch || birthMatch;
     });
   } else {
-    // Ha NINCS keresés, akkor szűrünk a szakrendelésre és a dátumra (Archívum vs Aktuális)
     filteredAppointments = filteredAppointments.filter((app: any) => app.department === activeTab);
-
-    filteredAppointments = filteredAppointments.filter((app: any) => {
-      const appDate = app.appointment_date || "";
-      if (isArchiveView) {
-        return appDate < todayStr; // Csak tegnapi és régebbi
-      } else {
-        return appDate >= todayStr; // Mai és jövőbeli
-      }
-    });
   }
 
   if (!showDeleted) filteredAppointments = filteredAppointments.filter((app: any) => app.is_deleted !== true);
@@ -2129,12 +2122,7 @@ export default function Home() {
     acc[d].push(app);
     return acc;
   }, {});
-
-  // Dátumok rendezése: Archívumban csökkenő, Aktuálisban növekvő
-  const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
-    if (isArchiveView) return b.localeCompare(a);
-    return a.localeCompare(b);
-  });
+  const sortedDates = Object.keys(groupedByDate).sort();
 
   const freeSlotsSummary = sortedDates.map(date => {
     const dayNormalAppointments = groupedByDate[date].filter((a: any) => !a.is_deleted && a.time_slot !== "VÁRÓLISTA");
@@ -2283,22 +2271,7 @@ export default function Home() {
               
               <div className="w-full xl:w-[45%] flex flex-col gap-4">
                 
-                {/* ÚJ: Aktuális / Archívum Váltó */}
-                <div className="flex bg-slate-100/80 p-1.5 rounded-2xl w-full sm:w-max shadow-inner border border-slate-200/60 mb-2">
-                  <button
-                    onClick={() => setIsArchiveView(false)}
-                    className={`flex-1 sm:px-6 py-2.5 rounded-xl text-sm font-extrabold transition-all duration-300 ${!isArchiveView ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
-                  >
-                    Aktuális időpontok
-                  </button>
-                  <button
-                    onClick={() => setIsArchiveView(true)}
-                    className={`flex-1 sm:px-6 py-2.5 rounded-xl text-sm font-extrabold transition-all duration-300 ${isArchiveView ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
-                  >
-                    Archívum
-                  </button>
-                </div>
-
+                {/* ÚJ: ELEGÁNS LEGÖRDÜLŐ SZAKRENDELÉS VÁLASZTÓ */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-slate-800">
                     <div className="bg-red-100 text-red-600 p-2 rounded-xl shadow-sm"><ActivityIcon size={18} /></div>
@@ -2376,7 +2349,7 @@ export default function Home() {
 
               <div className="w-px h-[180px] bg-slate-200/60 hidden xl:block mx-4"></div>
 
-              <div className={`w-full xl:w-auto flex-1 relative z-0 transition-opacity duration-300 ${isArchiveView ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
+              <div className="w-full xl:w-auto flex-1 relative z-0">
                  <div className="flex items-center gap-2.5 mb-4 text-slate-800 font-extrabold text-lg">
                     <div className="bg-red-100 text-red-600 p-1.5 rounded-lg shadow-sm"><CalendarPlusIcon size={18} /></div>
                     <span>Napi előjegyzési lista létrehozása</span>
@@ -2479,15 +2452,13 @@ export default function Home() {
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-3 custom-scrollbar scroll-smooth">
                   
-                  {!isArchiveView && (
-                    <button
-                      onClick={scrollToToday}
-                      className="flex-shrink-0 flex items-center justify-center gap-2 min-w-[130px] p-3 rounded-2xl border bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 transition-all cursor-pointer shadow-sm active:scale-95"
-                    >
-                      <CalendarIcon size={20} />
-                      <span className="font-extrabold text-sm">Ugrás Mára</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={scrollToToday}
+                    className="flex-shrink-0 flex items-center justify-center gap-2 min-w-[130px] p-3 rounded-2xl border bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 transition-all cursor-pointer shadow-sm active:scale-95"
+                  >
+                    <CalendarIcon size={20} />
+                    <span className="font-extrabold text-sm">Ugrás Mára</span>
+                  </button>
 
                   {freeSlotsSummary.map((day) => (
                     <button
@@ -2511,12 +2482,8 @@ export default function Home() {
             {sortedDates.length === 0 ? (
               <div className="bg-white/80 backdrop-blur-xl p-12 md:p-20 text-center rounded-3xl shadow-sm border border-white/60 flex flex-col items-center no-print relative z-0">
                 <div className="text-slate-300 mb-4"><CalendarIcon size={64} /></div>
-                <h3 className="text-xl font-bold text-slate-800 mb-2">
-                  {debouncedSearchTerm ? "Nincs találat" : isArchiveView ? "Az archívum üres" : "Még nincsenek aktuális időpontok"}
-                </h3>
-                <p className="text-slate-600 text-sm font-medium">
-                  {debouncedSearchTerm ? "Próbálkozz más névvel, TAJ számmal, telefonnal vagy születési idővel." : isArchiveView ? "Ide fognak bekerülni a tegnapi és régebbi, lejárt napok adatai." : "Válassz dátumot a generátorban, és hozd létre a napot!"}
-                </p>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">{debouncedSearchTerm ? "Nincs találat" : "Még nincsenek időpontok"}</h3>
+                <p className="text-slate-600 text-sm font-medium">{debouncedSearchTerm ? "Próbálkozz más névvel, TAJ számmal, telefonnal vagy születési idővel." : "Válassz dátumot a generátorban, és hozd létre a napot!"}</p>
               </div>
             ) : (
               sortedDates.map((date) => {
@@ -2537,6 +2504,9 @@ export default function Home() {
                 const deptPrices = allPrices.filter(p => p.department === (dayAppointments[0]?.department || activeTab));
                 const dailyRevenue = getDailyRevenue(activeNormalSlots, deptPrices);
                 const formattedRevenue = dailyRevenue > 0 ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyRevenue) : "0 Ft";
+                
+                // ÚJ: Árlista neveinek kigyűjtése az aktuális szakrendeléshez
+                const currentDeptExamNames = deptPrices.map(p => p.name);
 
                 return (
                   <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] scroll-mt-[100px] print-container relative z-0 ${printingDate ? 'bg-white border-0 shadow-none' : 'overflow-hidden bg-white/90 backdrop-blur-xl border border-white/60'}`}>
@@ -2576,7 +2546,7 @@ export default function Home() {
                             <span className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200">Szabad: {freeCount}</span>
                             <span className="bg-red-100 text-red-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-200">Foglalt: {bookedCount}</span>
                             
-                            {!printingDate && !isArchiveView && (
+                            {!printingDate && (
                               <button onClick={() => addToWaitingList(date)} className="bg-orange-100 hover:bg-orange-200 text-orange-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-orange-300 transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer ml-1">
                                 <PlusIcon size={14} /> Várólista
                               </button>
@@ -2587,12 +2557,9 @@ export default function Home() {
                         {!printingDate && debouncedSearchTerm === "" && (
                           <>
                             <div className="w-px h-6 bg-slate-300 mx-1 hidden md:block"></div>
-                            
-                            {!isArchiveView && (
-                              <button onClick={() => clearEmptySlots(date)} className="bg-white hover:bg-amber-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-amber-300 hover:text-amber-700 cursor-pointer">
-                                <EraserIcon /> <span className="hidden sm:inline">Üres sorok takarítása</span><span className="sm:hidden">Takarít</span>
-                              </button>
-                            )}
+                            <button onClick={() => clearEmptySlots(date)} className="bg-white hover:bg-amber-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-amber-300 hover:text-amber-700 cursor-pointer">
+                              <EraserIcon /> <span className="hidden sm:inline">Üres sorok takarítása</span><span className="sm:hidden">Takarít</span>
+                            </button>
                             
                             <button onClick={() => exportToCSV(date)} className="bg-white hover:bg-blue-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 hover:border-blue-300 hover:text-blue-700 cursor-pointer">
                               <DownloadIcon /> <span className="hidden sm:inline">Excel Export</span><span className="sm:hidden">Excel</span>
@@ -2601,12 +2568,9 @@ export default function Home() {
                             <button onClick={() => handlePrintDay(date)} className="bg-slate-800 text-white px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-black transition-all flex items-center gap-1.5 shadow-sm border border-slate-800 cursor-pointer">
                               <PrintIcon /> <span className="hidden sm:inline">Nyomtatás</span>
                             </button>
-                            
-                            {!isArchiveView && (
-                              <button onClick={() => deleteEntireDay(date)} className="bg-red-50 text-red-600 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition-all flex items-center gap-1.5 shadow-sm border border-red-200 hover:border-red-600 cursor-pointer">
-                                <TrashIcon /> <span className="hidden sm:inline">Nap törlése</span>
-                              </button>
-                            )}
+                            <button onClick={() => deleteEntireDay(date)} className="bg-red-50 text-red-600 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition-all flex items-center gap-1.5 shadow-sm border border-red-200 hover:border-red-600 cursor-pointer">
+                              <TrashIcon /> <span className="hidden sm:inline">Nap törlése</span>
+                            </button>
                           </>
                         )}
                       </div>
@@ -2725,7 +2689,8 @@ export default function Home() {
                                 <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
                                   {printingDate ? app.examination_type : (
                                     <div className={`rounded-xl px-1.5 transition-colors border shadow-sm ${app.examination_type ? getExamColor(app.examination_type) : 'border-transparent bg-transparent shadow-none'}`}>
-                                      <EditableCell disabled={isDel} highlight={false} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} />
+                                      {/* ÚJ OPKCIÓ: ÁTADJUK AZ AJÁNLÁSOKAT A VIZSGÁLAT MEZŐNEK */}
+                                      <EditableCell disabled={isDel} highlight={false} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} suggestions={currentDeptExamNames} />
                                     </div>
                                   )}
                                 </td>
@@ -2837,6 +2802,7 @@ export default function Home() {
                                   />
                                 </div>
                                 
+                                {/* ÚJ: Három oszlopos grid a TAJ, Telefon és Születési időnek */}
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 relative z-0">
                                   <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Szül. idő</span>
@@ -2854,7 +2820,8 @@ export default function Home() {
                                 
                                 <div className={`bg-white/70 p-2.5 rounded-xl border relative z-0 ${app.examination_type ? getExamColor(app.examination_type) : 'border-white/50'}`}>
                                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat & Megjegyzés</span>
-                                  <EditableCell disabled={isDel} highlight={false} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} />
+                                  {/* ÚJ OPKCIÓ MOBILON IS: ÁTADJUK AZ AJÁNLÁSOKAT A VIZSGÁLAT MEZŐNEK */}
+                                  <EditableCell disabled={isDel} highlight={false} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} suggestions={currentDeptExamNames} />
                                   <div className="mt-1 border-t border-black/10 pt-1">
                                     <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={debouncedSearchTerm} />
                                   </div>
@@ -2872,7 +2839,7 @@ export default function Home() {
           </>
         )}
 
-        {!printingDate && debouncedSearchTerm === "" && !isInitialLoading && !isArchiveView && (
+        {!printingDate && debouncedSearchTerm === "" && !isInitialLoading && (
           <div id="new-appointment-bar" className="mt-6 flex flex-col sm:flex-row items-center justify-end gap-3 bg-white/90 backdrop-blur-xl p-4 rounded-3xl shadow-sm border border-white/60 w-full sm:w-max sm:ml-auto no-print scroll-mt-24">
             <input 
               ref={newTimeSlotRef}

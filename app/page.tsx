@@ -104,7 +104,7 @@ export default function Home() {
   // Mentett labor kalkulációk állapota
   const [savedCalculations, setSavedCalculations] = useState<any[]>([]);
   const [isLoadingSavedLabs, setIsLoadingSavedLabs] = useState(false);
-  const [printingSavedLab, setPrintingSavedLab] = useState<any>(null); // Tárolja, ha egy régi mentést nyomtatunk
+  const [printingSavedLab, setPrintingSavedLab] = useState<any>(null);
 
   // --- STATISZTIKA ÁLLAPOTOK ---
   const [statsPeriod, setStatsPeriod] = useState<'today' | 'week' | 'month' | 'all'>('month');
@@ -248,12 +248,10 @@ export default function Home() {
     setTimeout(() => { window.print(); }, 300);
   };
 
-  // ÚJ FUNKCIÓ: Labor ajánlat mentése adatbázisba
   const handleSaveLabCalculation = async () => {
     if (selectedLabTests.length === 0) return showAlert("Hiba", "Nincs kiválasztott vizsgálat, amit el lehetne menteni!");
     if (!labPatientName.trim()) return showAlert("Hiányzó adat", "Kérlek, legalább a páciens nevét add meg a mentéshez!");
 
-    // CSAK A TISZTA LABORÁR, kezelési díj nélkül
     const items = getSelectedLabItemsData();
     const testsTotal = items.reduce((sum, item) => sum + item.price, 0);
     const testsList = items.map(i => i.name).join(", ");
@@ -277,19 +275,14 @@ export default function Home() {
       showAlert("Hiba", "Nem sikerült elmenteni a kalkulációt az adatbázisba.");
     } else {
       showToast("Kalkuláció sikeresen elmentve az adatbázisba!");
-      
-      // Mezők ürítése
       setLabPatientName(""); setLabMaidenName(""); setLabPatientTaj(""); setLabBirthDate("");
       setLabBirthPlace(""); setLabPatientAddress(""); setLabPhone(""); setLabEmail("");
       setSelectedLabTests([]);
-      
-      // Átnavigálás a mentett ajánlatok fülre
       setActiveLabTab('saved');
       fetchSavedCalculations();
     }
   };
 
-  // ÚJ FUNKCIÓ: Mentett ajánlatok betöltése
   const fetchSavedCalculations = async () => {
     setIsLoadingSavedLabs(true);
     const { data, error } = await supabase
@@ -303,7 +296,6 @@ export default function Home() {
     setIsLoadingSavedLabs(false);
   };
 
-  // ÚJ FUNKCIÓ: Mentett ajánlat törlése
   const deleteSavedCalculation = async (id: number) => {
     showConfirm(
       "Mentett ajánlat törlése",
@@ -318,7 +310,6 @@ export default function Home() {
     );
   };
 
-  // ÚJ FUNKCIÓ: Mentett ajánlat újra-nyomtatása
   const handlePrintSavedLab = (calc: any) => {
     setPrintingSavedLab(calc);
     setPrintingLabQuote(true);
@@ -392,7 +383,7 @@ export default function Home() {
   const handleDeleteDepartment = (name: string) => {
     showConfirm(
       "Szakrendelés törlése",
-      `Biztosan törl��d a(z) ${name} szakrendelést a listából?\n\n(A már rögzített időpontok és páciensek megmaradnak az adatbázisban, csak ez a fül tűnik el.)`,
+      `Biztosan törlöd a(z) ${name} szakrendelést a listából?\n\n(A már rögzített időpontok és páciensek megmaradnak az adatbázisban, csak ez a fül tűnik el.)`,
       "Igen, törlés",
       "bg-red-600 hover:bg-red-700 text-white",
       async () => {
@@ -539,7 +530,7 @@ export default function Home() {
     const handleAfterPrint = () => { 
       setPrintingDate(null); 
       setPrintingLabQuote(false); 
-      setPrintingSavedLab(null); // Nyomtatás után ürítjük a mentett labor állapotot is
+      setPrintingSavedLab(null); 
     };
     window.addEventListener('afterprint', handleAfterPrint);
     return () => window.removeEventListener('afterprint', handleAfterPrint);
@@ -803,7 +794,7 @@ export default function Home() {
   const confirmDeleteApp = (id: number) => {
     showConfirm(
       "Időpont törlése",
-      "Biztosan törlöd ezt az időpontot?\n\nKésőbb a 'Törölt sorok mutatása' gombbal visszaállítható.",
+      "Biztosan törlöd ezt az időpontot?\n\nKésőbb az 'Archívum' gombbal visszaállítható.",
       "Igen, törlöm",
       "bg-red-600 hover:bg-red-700 text-white",
       () => executeDeleteApp(id)
@@ -821,7 +812,6 @@ export default function Home() {
     await supabase.from("appointments").update({ is_deleted: true, deleted_by: modifierName, deleted_at: now }).eq("id", id);
     await logAction(id, "Törlés", "Időpont törölve a listából");
     
-    // Várólista ellenőrzés
     const waitingCount = appointments.filter(a => a.appointment_date === date && a.time_slot === "VÁRÓLISTA" && !a.is_deleted).length;
     if (waitingCount > 0 && appToDelete?.time_slot !== "VÁRÓLISTA" && isBooked) {
        showToast(`Időpont törölve! Figyelem: ${waitingCount} beteg van a várólistán!`, 'warning');
@@ -830,13 +820,22 @@ export default function Home() {
     }
   };
 
+  // --- VISSZAÁLLÍTÁS FUNKCIÓ (PÓTOLVA) ---
   const restoreAppointment = async (id: number) => {
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
     
-    setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: false, last_modified_by: modifierName, last_modified_at: now } : app));
-    await supabase.from("appointments").update({ is_deleted: false, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
-    await logAction(id, "Visszaállítás", "Törölt időpont visszaállítva");
+    setAppointments(appointments.map((app: any) => 
+      app.id === id ? { ...app, is_deleted: false, last_modified_by: modifierName, last_modified_at: now } : app
+    ));
+
+    await supabase.from("appointments").update({ 
+      is_deleted: false, 
+      last_modified_by: modifierName, 
+      last_modified_at: now 
+    }).eq("id", id);
+
+    await logAction(id, "Visszaállítás", "Időpont visszaállítva az archívumból");
     showToast("Időpont sikeresen visszaállítva!");
   };
 
@@ -880,11 +879,11 @@ export default function Home() {
     const dayApps = groupedByDate[date]?.filter((a: any) => !a.is_deleted).sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot)) || [];
     if (dayApps.length === 0) return showAlert("Üres nap", "Nincs letölthető adat ezen a napon.");
 
-    const headers = ["Időpont", "Páciens neve", "Születési idő", "TAJ szám", "Telefon", "Státusz", "Vizsgálat", "Megjegyzés"]; // ÚJ Header
+    const headers = ["Időpont", "Páciens neve", "Születési idő", "TAJ szám", "Telefon", "Státusz", "Vizsgálat", "Megjegyzés"];
     const rows = dayApps.map((app: any) => [
       app.time_slot.replace(" (Online)", ""), 
       app.patient_name || "",
-      app.birth_date || "", // ÚJ Oszlop
+      app.birth_date || "",
       app.taj_szam || "",
       app.phone_number || "",
       app.status || "",
@@ -951,7 +950,6 @@ export default function Home() {
     const bStart = genBreakStart ? timeToMins(genBreakStart) : null;
     const bEnd = genBreakEnd ? timeToMins(genBreakEnd) : null;
     
-    // Online sáv 
     const oStart = genOnlineStart ? timeToMins(genOnlineStart) : null;
     const oEnd = genOnlineEnd ? timeToMins(genOnlineEnd) : null;
 
@@ -1354,7 +1352,6 @@ export default function Home() {
     );
   }
 
-  // --- HA VAN FELHASZNÁLÓ, DE NINCS MÉG NEVE MEGADVA ---
   if (needsProfileName) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
@@ -1371,7 +1368,6 @@ export default function Home() {
     );
   }
 
-  // --- HA A STATISZTIKA NÉZET VAN NYITVA ---
   if (showStats) {
     let validApps = appointments.filter(a => !a.is_deleted && a.patient_name && a.patient_name.trim() !== "");
     
@@ -1426,7 +1422,6 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-slate-50 font-sans relative pb-10">
         
-        {/* FEJLÉC */}
         <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm">
           <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex justify-between items-center">
             <div className="flex items-center gap-4">
@@ -1461,7 +1456,6 @@ export default function Home() {
             ))}
           </div>
 
-          {/* KPI Kártyák */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
              <div className="bg-white p-6 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] border border-slate-200">
                <div className="flex items-center gap-3 mb-4">
@@ -1565,7 +1559,6 @@ export default function Home() {
     );
   }
 
-  // --- HA A PÁCIENS NÉZET VAN NYITVA ---
   if (showPatients) {
     const filteredPatientsList = patientsList.filter(p => {
       if (!patientsSearchTerm) return true;
@@ -1675,13 +1668,11 @@ export default function Home() {
     );
   }
 
-  // --- HA A LABOR KALKULÁTOR VAN NYITVA (NYOMTATÁSI NÉZET IS ITT) ---
   if (showLabCalculator) {
     const selectedItems = getSelectedLabItemsData();
     const totalPrice = calculateLabTotal();
     const formattedTotal = new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(totalPrice);
     
-    // Mentett kalkulációk dátum szerinti csoportosítása
     const groupedSavedLabs = savedCalculations.reduce((acc: any, curr: any) => {
       const dateKey = curr.created_at ? curr.created_at.split('T')[0] : "Ismeretlen";
       if (!acc[dateKey]) acc[dateKey] = [];
@@ -1695,7 +1686,6 @@ export default function Home() {
         {customModalUI}
         {toastUI}
         
-        {/* FEJLÉC (csak nem nyomtatáskor) */}
         {!printingLabQuote && (
           <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm no-print">
             <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-3 flex justify-between items-center">
@@ -1711,7 +1701,6 @@ export default function Home() {
               </button>
             </div>
             
-            {/* ÚJ: FÜLEK (TABS) */}
             <div className="max-w-[1600px] mx-auto px-4 md:px-8 mt-4 flex gap-6 border-b border-slate-200 shrink-0">
                <button 
                  onClick={() => setActiveLabTab('new')} 
@@ -1729,10 +1718,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* LABOR TARTALOM */}
         <div className={`max-w-[1600px] w-full mx-auto ${printingLabQuote ? 'p-0 pt-0 max-w-none' : 'px-4 md:px-8 py-6 min-h-[calc(100vh-140px)] flex flex-col'}`}>
           
-          {/* NYOMTATÁSI NÉZET - KIZÁRÓLAG NYOMTATÁSKOR JELENIK MEG */}
           {printingLabQuote && (
             <div className="bg-white text-black max-w-4xl mx-auto printable-quote">
               <div className="flex justify-between items-start border-b-2 border-emerald-600 pb-3 mb-4">
@@ -1783,7 +1770,6 @@ export default function Home() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     
-                    {/* Ha egy régi mentést nyomtatunk újra */}
                     {printingSavedLab ? (
                       printingSavedLab.tests_list.split(', ').map((testName: string, i: number) => (
                         <tr key={i}>
@@ -1792,7 +1778,6 @@ export default function Home() {
                         </tr>
                       ))
                     ) : (
-                      /* Ha egy aktív, új kalkulációt nyomtatunk */
                       selectedItems.map(item => (
                         <tr key={item.id}>
                           <td className="py-1 px-1 font-bold text-slate-900">{item.name}</td>
@@ -1801,7 +1786,6 @@ export default function Home() {
                       ))
                     )}
                     
-                    {/* Kezelési díj sor, csak akkor ha Új kalkulációt nyomtatunk és be van pipálva */}
                     {!printingSavedLab && includeBloodDrawFee && (
                       <tr className="bg-slate-50 print-bg-light border-t-2 border-slate-200">
                         <td className="py-1 px-1 font-bold text-slate-900">Vérvételi / Kezelési díj</td>
@@ -1828,11 +1812,9 @@ export default function Home() {
             </div>
           )}
 
-          {/* INTERAKTÍV FELÜLET (NEM NYOMTATÁSKOR) */}
           {!printingLabQuote && activeLabTab === 'new' && (
             <div className="flex flex-col lg:flex-row gap-6 items-start flex-1 min-h-0 w-full animate-in fade-in duration-300">
               
-              {/* BAL OSZLOP: Vizsgálatok listája */}
               <div className="w-full lg:w-2/3 bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col min-h-0 h-full">
                 <div className="flex justify-between items-center mb-4 shrink-0">
                   <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><ListPlusIcon /> Vizsgálatok kiválasztása</h2>
@@ -1888,7 +1870,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* JOBB OSZLOP: Kalkuláció és Nyomtatás */}
               <div className="w-full lg:w-1/3 bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col h-full min-h-0">
                 <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 shrink-0"><DocumentIcon /> Ajánlat & Páciens adatai</h2>
                 
@@ -1999,7 +1980,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* ÚJ NÉZET: MENTETT AJÁNLATOK */}
           {!printingLabQuote && activeLabTab === 'saved' && (
             <div className="flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
                {isLoadingSavedLabs ? (
@@ -2016,10 +1996,9 @@ export default function Home() {
                ) : (
                  <div className="space-y-8">
                    {sortedSavedDates.map(dateKey => {
-                      const displayDate = formatShortDate(dateKey); // Szép formátum
+                      const displayDate = formatShortDate(dateKey); 
                       const labsForDay = groupedSavedLabs[dateKey];
                       
-                      // NAPI ÖSSZEG KISZÁMÍTÁSA
                       const dailyTotal = labsForDay.reduce((sum: number, calc: any) => sum + (calc.total_price || 0), 0);
                       const formattedDailyTotal = new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyTotal);
                       
@@ -2182,6 +2161,16 @@ export default function Home() {
               <span className="hidden sm:inline">Labor kalkulátor</span>
             </button>
 
+            {/* ÚJ ARCHÍVUM GOMB */}
+            <button 
+              onClick={() => setShowDeleted(!showDeleted)} 
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer border ${showDeleted ? 'bg-slate-800 text-white border-slate-900' : 'bg-slate-50 hover:bg-slate-200 text-slate-700 border-slate-200'}`} 
+              title="Archívum (Törölt időpontok mutatása/elrejtése)"
+            >
+              <HistoryIcon size={16} />
+              <span className="hidden sm:inline">{showDeleted ? "Archívum elrejtése" : "Archívum"}</span>
+            </button>
+
             <button onClick={() => setIsBugModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer" title="Hibabejelentés / Ötlet">
               <FeedbackIcon size={16} />
               <span className="hidden lg:inline">Hibabejelentő</span>
@@ -2271,7 +2260,6 @@ export default function Home() {
               
               <div className="w-full xl:w-[45%] flex flex-col gap-4">
                 
-                {/* ÚJ: ELEGÁNS LEGÖRDÜLŐ SZAKRENDELÉS VÁLASZTÓ */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-slate-800">
                     <div className="bg-red-100 text-red-600 p-2 rounded-xl shadow-sm"><ActivityIcon size={18} /></div>
@@ -2336,15 +2324,6 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-
-                <label className="flex items-center gap-3 cursor-pointer group w-max mt-1">
-                  <div className="relative">
-                    <input type="checkbox" className="sr-only" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
-                    <div className={`block w-10 h-6 rounded-full transition-colors duration-300 border ${showDeleted ? "bg-slate-800 border-slate-800" : "bg-slate-200 border-slate-300 group-hover:bg-slate-300"}`}></div>
-                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${showDeleted ? "translate-x-4" : "translate-x-0"}`}></div>
-                  </div>
-                  <span className={`font-semibold text-sm transition-colors duration-300 ${showDeleted ? "text-slate-800" : "text-slate-500 group-hover:text-slate-700"}`}>Törölt sorok mutatása</span>
-                </label>
               </div>
 
               <div className="w-px h-[180px] bg-slate-200/60 hidden xl:block mx-4"></div>
@@ -2419,7 +2398,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* --- SKELETON LOADER (Betöltési animáció) --- */}
         {!printingDate && isInitialLoading ? (
           <div className="space-y-8 animate-pulse no-print relative z-10">
             {[1, 2].map((dayBlock) => (
@@ -2444,7 +2422,6 @@ export default function Home() {
           </div>
         ) : (
           <>
-            {/* Naptár áttekintés (Csak ha már betöltött) */}
             {!printingDate && debouncedSearchTerm === "" && freeSlotsSummary.length > 0 && (
               <div className="mb-8 no-print">
                 <div className="flex items-center gap-2 mb-3 text-slate-700 font-bold uppercase tracking-widest text-xs ml-1">
@@ -2478,7 +2455,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Adatok megjelenítése */}
             {sortedDates.length === 0 ? (
               <div className="bg-white/80 backdrop-blur-xl p-12 md:p-20 text-center rounded-3xl shadow-sm border border-white/60 flex flex-col items-center no-print relative z-0">
                 <div className="text-slate-300 mb-4"><CalendarIcon size={64} /></div>
@@ -2492,21 +2468,16 @@ export default function Home() {
                 const dayAppointments = groupedByDate[date].sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot));
                 const activeSlots = dayAppointments.filter((a: any) => !a.is_deleted);
                 
-                // Várólista és normál szétválasztás számításokhoz
                 const activeNormalSlots = activeSlots.filter((a: any) => a.time_slot !== "VÁRÓLISTA");
                 const waitingListSlots = activeSlots.filter((a: any) => a.time_slot === "VÁRÓLISTA");
 
                 const bookedCount = activeNormalSlots.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
                 const freeCount = activeNormalSlots.length - bookedCount;
                 
-                // --- MINI DASHBOARD Számítások ---
                 const percent = activeNormalSlots.length > 0 ? Math.round((bookedCount / activeNormalSlots.length) * 100) : 0;
                 const deptPrices = allPrices.filter(p => p.department === (dayAppointments[0]?.department || activeTab));
                 const dailyRevenue = getDailyRevenue(activeNormalSlots, deptPrices);
                 const formattedRevenue = dailyRevenue > 0 ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyRevenue) : "0 Ft";
-                
-                // ÚJ: Árlista neveinek kigyűjtése az aktuális szakrendeléshez
-                const currentDeptExamNames = deptPrices.map(p => p.name);
 
                 return (
                   <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] scroll-mt-[100px] print-container relative z-0 ${printingDate ? 'bg-white border-0 shadow-none' : 'overflow-hidden bg-white/90 backdrop-blur-xl border border-white/60'}`}>
@@ -2582,15 +2553,10 @@ export default function Home() {
                           <tr className="border-b border-slate-200/60 print-border">
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[220px]">Páciens neve</th>
-                            
-                            {/* FIX SZÉLESSÉGEK, HOGY NE UGRÁLJON A TÁBLÁZAT KATTINTÁSKOR */}
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[130px]">Szül. idő</th>
-                            
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">TAJ szám</th>
-                            
                             {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">Telefon</th>}
                             {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">Státusz</th>}
-                            
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto min-w-[150px]">Vizsgálat</th>
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto min-w-[150px]">Megjegyzés</th>
                             {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap w-min">Művelet</th>}
@@ -2608,7 +2574,6 @@ export default function Home() {
                             
                             if (printingDate && isDel) return null; 
 
-                            // Vizuális Státusz Színek a sor szélére
                             const statusBorder = printingDate || isDel || (!isBooked && !isWaitingList) ? "" :
                               isWaitingList ? "border-l-4 border-l-orange-400" :
                               app.status === "Megérkezett" ? "border-l-4 border-l-amber-400" :
@@ -2689,8 +2654,7 @@ export default function Home() {
                                 <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
                                   {printingDate ? app.examination_type : (
                                     <div className={`rounded-xl px-1.5 transition-colors border shadow-sm ${app.examination_type ? getExamColor(app.examination_type) : 'border-transparent bg-transparent shadow-none'}`}>
-                                      {/* ÚJ OPKCIÓ: ÁTADJUK AZ AJÁNLÁSOKAT A VIZSGÁLAT MEZŐNEK */}
-                                      <EditableCell disabled={isDel} highlight={false} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} suggestions={currentDeptExamNames} />
+                                      <EditableCell disabled={isDel} highlight={false} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} />
                                     </div>
                                   )}
                                 </td>
@@ -2802,7 +2766,6 @@ export default function Home() {
                                   />
                                 </div>
                                 
-                                {/* ÚJ: Három oszlopos grid a TAJ, Telefon és Születési időnek */}
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 relative z-0">
                                   <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Szül. idő</span>
@@ -2820,8 +2783,7 @@ export default function Home() {
                                 
                                 <div className={`bg-white/70 p-2.5 rounded-xl border relative z-0 ${app.examination_type ? getExamColor(app.examination_type) : 'border-white/50'}`}>
                                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat & Megjegyzés</span>
-                                  {/* ÚJ OPKCIÓ MOBILON IS: ÁTADJUK AZ AJÁNLÁSOKAT A VIZSGÁLAT MEZŐNEK */}
-                                  <EditableCell disabled={isDel} highlight={false} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} suggestions={currentDeptExamNames} />
+                                  <EditableCell disabled={isDel} highlight={false} value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} searchTerm={debouncedSearchTerm} />
                                   <div className="mt-1 border-t border-black/10 pt-1">
                                     <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={debouncedSearchTerm} />
                                   </div>
@@ -2855,14 +2817,12 @@ export default function Home() {
         )}
       </div>
 
-      {/* --- LÁBLÉC (COPYRIGHT) --- */}
       {!printingDate && (
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6 text-right text-slate-600/70 text-xs font-bold no-print relative z-10">
           &copy; 2026 Created by Zozi
         </div>
       )}
 
-      {/* --- SCROLL TO TOP GOMB --- */}
       {!printingDate && showScrollTop && (
         <button
           onClick={scrollToTop}
@@ -2874,20 +2834,16 @@ export default function Home() {
       )}
       
       <style dangerouslySetInnerHTML={{__html: `
-        /* MEGOLDÁS AZ UGRÁLÁSRA / ZOOMOLÁSRA: Mindig tartsa ott a görgetősáv helyét */
         html { 
           overflow-y: scroll; 
         }
 
-        /* Megakadályozza, hogy az input mezők szétfeszítsék a táblázatot */
         td input { min-width: 0 !important; width: 100%; }
 
-        /* Megakadályozza a laptop touchpad-es dupla kattintásos véletlen nagyítását */
         input, textarea, button, select {
           touch-action: manipulation;
         }
 
-        /* Mobilos zoomolás letiltása inputoknál (iOS fix) */
         @media screen and (max-width: 768px) {
           input, select, textarea { font-size: 16px !important; }
         }
@@ -2910,19 +2866,16 @@ export default function Home() {
           
           .print-mode { background: white !important; min-height: auto !important; padding: 0 !important; display: block !important; position: static !important; overflow: visible !important; }
           
-          /* Labor ajánlat sűrítése */
           .printable-quote { padding: 0 !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
           .printable-quote h1 { font-size: 18px !important; margin-bottom: 2px !important; }
           .printable-quote h2, .printable-quote h3 { font-size: 12px !important; margin-bottom: 2px !important; }
           .printable-quote p { font-size: 10px !important; margin-bottom: 1px !important; line-height: 1.2 !important; }
           .printable-quote .text-2xl { font-size: 16px !important; }
           
-          /* Táblázatok sűrítése */
           .print-table, .printable-quote table { width: 100% !important; border-collapse: collapse !important; margin-top: 5px !important; table-layout: fixed; }
           .print-table th, .printable-quote th { border-bottom: 1px solid #999 !important; padding: 3px 2px !important; font-size: 9px !important; background: transparent !important; color: black !important; }
           .print-table td, .printable-quote td { border-bottom: 1px dotted #ccc !important; padding: 3px 2px !important; font-size: 10px !important; line-height: 1.1 !important; word-break: break-word; }
           
-          /* Előjegyzés specifikus print */
           .print-container { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; page-break-after: auto; }
           .print-header { padding: 0 0 5px 0 !important; margin-bottom: 5px !important; border-bottom: 1.5px solid black !important; display: flex !important; justify-content: space-between !important; }
           .print-header h2 { font-size: 14px !important; margin: 0 !important; }

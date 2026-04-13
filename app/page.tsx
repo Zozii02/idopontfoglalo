@@ -41,6 +41,10 @@ const DatabaseIcon = ({ size = 20 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
 );
 
+const MapPinIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+);
+
 import { BACKGROUND_IMAGE_URL, LAB_DATABASE } from "../lib/constants";
 
 import { 
@@ -65,17 +69,10 @@ const getExamColor = (exam: string) => {
   return "bg-slate-50 text-slate-900 border-slate-200"; 
 };
 
-// --- DÁTUMNORMALIZÁLÓ SEGÉDFÜGGVÉNY A SZŰRÉSHEZ ---
-const normalizeDate = (d: string) => {
-  if (!d) return "";
-  let cleaned = d.replace(/\s+/g, '').replace(/\./g, '-');
-  if (cleaned.endsWith('-')) cleaned = cleaned.slice(0, -1);
-  return cleaned;
-};
-
 // --- Főoldal ---
 export default function Home() {
   const searchInputRef = useRef<HTMLInputElement>(null); 
+  const newTimeSlotRef = useRef<HTMLInputElement>(null); 
 
   const [isInitialLoading, setIsInitialLoading] = useState(true); 
 
@@ -114,7 +111,7 @@ export default function Home() {
   // Mentett labor kalkulációk állapota
   const [savedCalculations, setSavedCalculations] = useState<any[]>([]);
   const [isLoadingSavedLabs, setIsLoadingSavedLabs] = useState(false);
-  const [printingSavedLab, setPrintingSavedLab] = useState<any>(null);
+  const [printingSavedLab, setPrintingSavedLab] = useState<any>(null); // Tárolja, ha egy régi mentést nyomtatunk
 
   // --- STATISZTIKA ÁLLAPOTOK ---
   const [statsPeriod, setStatsPeriod] = useState<'today' | 'week' | 'month' | 'all'>('month');
@@ -142,8 +139,7 @@ export default function Home() {
   const [profileNameInput, setProfileNameInput] = useState("");
   
   const [selectedDate, setSelectedDate] = useState(""); 
-  // ÚJ: Minden napnak saját state-je van az új időpont beírásához
-  const [newTimeSlots, setNewTimeSlots] = useState<Record<string, string>>({});
+  const [newTimeSlot, setNewTimeSlot] = useState("");
 
   const [genStart, setGenStart] = useState("08:00");
   const [genEnd, setGenEnd] = useState("16:00");
@@ -272,7 +268,7 @@ export default function Home() {
       maiden_name: labMaidenName,
       taj_szam: labPatientTaj,
       birth_date: labBirthDate,
-      birth_place: labPatientAddress,
+      birth_place: labBirthPlace,
       address: labPatientAddress,
       phone_number: labPhone,
       email: labEmail,
@@ -523,11 +519,8 @@ export default function Home() {
         e.preventDefault(); 
         setShowStats(false); setShowLabCalculator(false); setShowPatients(false);
         setTimeout(() => {
-          const firstInput = document.querySelector('.new-time-slot-input') as HTMLInputElement;
-          if (firstInput) {
-            firstInput.focus();
-            firstInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
+          newTimeSlotRef.current?.focus();
+          document.getElementById('new-appointment-bar')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
       }
       if (e.key === 'Escape') { 
@@ -605,7 +598,6 @@ export default function Home() {
     }
   };
 
-  // MÓDOSÍTOTT FETCH: Lapozás, hogy minden adat betöltsön, ha több mint 1000 van
   const fetchAppointments = async () => {
     const today = new Date();
     const pastDate = new Date();
@@ -616,36 +608,15 @@ export default function Home() {
     const pastStr = pastDate.toISOString().split('T')[0];
     const futureStr = futureDate.toISOString().split('T')[0];
 
-    let allData: any[] = [];
-    let from = 0;
-    const step = 1000;
-    let hasMore = true;
+    const { data, error } = await supabase
+      .from("appointments")
+      .select("*")
+      .gte("appointment_date", pastStr)
+      .lte("appointment_date", futureStr)
+      .order("appointment_date", { ascending: true })
+      .order("time_slot", { ascending: true });
 
-    while (hasMore) {
-      const { data, error } = await supabase
-        .from("appointments")
-        .select("*")
-        .gte("appointment_date", pastStr)
-        .lte("appointment_date", futureStr)
-        .order("appointment_date", { ascending: true })
-        .order("time_slot", { ascending: true })
-        .range(from, from + step - 1);
-
-      if (error || !data) {
-        console.error("Hiba az adatok lekérésekor:", error);
-        break;
-      }
-
-      allData = [...allData, ...data];
-
-      if (data.length < step) {
-        hasMore = false;
-      } else {
-        from += step;
-      }
-    }
-
-    setAppointments(allData);
+    if (!error && data) setAppointments(data);
   };
 
   const fetchPatientsList = async () => {
@@ -750,7 +721,7 @@ export default function Home() {
       const fieldNames: Record<string, string> = {
         patient_name: "Páciens neve", taj_szam: "TAJ szám", phone_number: "Telefon", 
         birth_date: "Születési idő",
-        status: "Státusz", examination_type: "Vizsgálat", notes: "Megjegyzés"
+        status: "Státusz", examination_type: "Vizsgálat", notes: "Megjegyzés", location: "Helyszín"
       };
       const fieldLabel = fieldNames[field] || field;
       
@@ -791,6 +762,26 @@ export default function Home() {
         }
       }
     }
+  };
+
+  // ÚJ FÜGGVÉNY: NAPI HELYSZÍN MENTÉSE (Dátum + Szakrendelés alapján)
+  const updateDayLocation = async (date: string, department: string, location: string) => {
+    if (!user) return;
+    const modifierName = getDisplayName();
+    const now = new Date().toISOString();
+
+    setAppointments(appointments.map((app: any) => 
+      (app.appointment_date === date && app.department === department) 
+        ? { ...app, location, last_modified_by: modifierName, last_modified_at: now } 
+        : app
+    ));
+
+    await supabase.from("appointments")
+      .update({ location, last_modified_by: modifierName, last_modified_at: now })
+      .eq("appointment_date", date)
+      .eq("department", department);
+
+    showToast("Napi helyszín sikeresen frissítve!");
   };
 
   const clearEmptySlots = async (date: string) => {
@@ -897,15 +888,16 @@ export default function Home() {
     const dayApps = groupedByDate[date]?.filter((a: any) => !a.is_deleted).sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot)) || [];
     if (dayApps.length === 0) return showAlert("Üres nap", "Nincs letölthető adat ezen a napon.");
 
-    const headers = ["Időpont", "Páciens neve", "Születési idő", "TAJ szám", "Telefon", "Státusz", "Vizsgálat", "Megjegyzés"]; // ÚJ Header
+    const headers = ["Időpont", "Páciens neve", "Születési idő", "TAJ szám", "Telefon", "Státusz", "Vizsgálat", "Helyszín", "Megjegyzés"]; // ÚJ Header
     const rows = dayApps.map((app: any) => [
       app.time_slot.replace(" (Online)", ""), 
       app.patient_name || "",
-      app.birth_date || "", // ÚJ Oszlop
+      app.birth_date || "", 
       app.taj_szam || "",
       app.phone_number || "",
       app.status || "",
       app.examination_type || "",
+      app.location || "",
       app.notes || ""
     ]);
 
@@ -991,26 +983,15 @@ export default function Home() {
 
     if (slotsToCreate.length === 0) return showAlert("Sikertelen generálás", "A megadott feltételekkel (intervallum, szünetek) nem jött létre egyetlen időpont sem.");
     
-    // --- DUPLIKÁCIÓK KISZŰRÉSE ---
-    const existingDayApps = appointments.filter((a: any) => a.department === activeTab && a.appointment_date === selectedDate && !a.is_deleted);
-    const existingTimeSlots = existingDayApps.map((a: any) => a.time_slot);
-
-    // Csak azokat tartjuk meg, amik még nincsenek az adatbázisban
-    const finalSlotsToCreate = slotsToCreate.filter(slot => !existingTimeSlots.includes(slot));
-
-    if (finalSlotsToCreate.length === 0) {
-      return showAlert("Már létező időpontok", "Ezen a napon már az összes megadott időpont létezik a rendszerben!");
-    }
-    
     showConfirm(
       "Napi előjegyzés generálása",
-      `Sikeresen kiszámoltam ${finalSlotsToCreate.length} db új időpontot a kiválaszt napra.\n\nLétrehozhatom őket?`,
+      `Sikeresen kiszámoltam ${slotsToCreate.length} db új időpontot a kiválaszt napra.\n\nLétrehozhatom őket?`,
       "Lista Generálása",
       "bg-red-600 hover:bg-red-700 text-white",
       async () => {
         const modifierName = getDisplayName();
         const now = new Date().toISOString();
-        const newAppointments = finalSlotsToCreate.map((slot: string) => ({
+        const newAppointments = slotsToCreate.map((slot: string) => ({
           department: activeTab, appointment_date: selectedDate, time_slot: slot,
           patient_name: "", taj_szam: "", phone_number: "", birth_date: "", examination_type: "", notes: "", status: "Előjegyzett",
           last_modified_by: modifierName, last_modified_at: now, is_deleted: false
@@ -1023,42 +1004,26 @@ export default function Home() {
               appointment_id: app.id, modified_by: modifierName, action: "Létrehozás", details: "Napi lista generálással létrehozva"
            }));
            await supabase.from('appointment_logs').insert(logs);
-
-           // AZONNALI KÉPERNYŐ FRISSÍTÉS
-           setAppointments(prev => [...prev, ...data]);
         }
         showToast("Napi időpontok sikeresen legenerálva!");
       }
     );
   };
 
-  // MÓDOSÍTOTT IDŐPONT HOZZÁADÁS (konkrét dátumhoz rendelve)
-  const addSingleAppointment = async (targetDate: string) => {
-    const slotValue = newTimeSlots[targetDate] || "";
-    if (!user || !slotValue.trim()) return showAlert("Hiányzó adat", "Kérlek, adj meg egy pontos időpontot (pl. 17:00)!");
-    
-    // --- DUPLIKÁCIÓ ELLENŐRZÉSE ---
-    const existing = appointments.find((a: any) => a.department === activeTab && a.appointment_date === targetDate && a.time_slot === slotValue && !a.is_deleted);
-    if (existing) {
-      return showAlert("Hiba", "Ez az időpont már létezik ezen a napon ebben a szakrendelésben!");
-    }
-
+  const addSingleAppointment = async () => {
+    if (!user || !newTimeSlot.trim() || !selectedDate) return showAlert("Hiányzó adat", "Kérlek, válassz dátumot és adj meg egy pontos időpontot is (pl. 17:00)!");
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
     const { data } = await supabase.from("appointments").insert([{
-      department: activeTab, appointment_date: targetDate, time_slot: slotValue,
+      department: activeTab, appointment_date: selectedDate, time_slot: newTimeSlot,
       patient_name: "", taj_szam: "", phone_number: "", birth_date: "", examination_type: "", notes: "", status: "Előjegyzett",
       last_modified_by: modifierName, last_modified_at: now, is_deleted: false
     }]).select();
     
     if (data && data[0]) {
-       await logAction(data[0].id, "Létrehozás", `Egyedi időpont manuálisan hozzáadva ehhez: ${targetDate}`);
-       
-       // AZONNALI KÉPERNYŐ FRISSÍTÉS
-       setAppointments(prev => [...prev, ...data]);
+       await logAction(data[0].id, "Létrehozás", "Egyedi időpont manuálisan hozzáadva");
     }
-    
-    setNewTimeSlots(prev => ({ ...prev, [targetDate]: "" }));
+    setNewTimeSlot("");
     showToast("Új időpont sikeresen hozzáadva!");
   };
 
@@ -2172,13 +2137,11 @@ export default function Home() {
     filteredAppointments = filteredAppointments.filter((app: any) => app.department === activeTab);
 
     filteredAppointments = filteredAppointments.filter((app: any) => {
-      const appDateStr = app.appointment_date || "";
-      const cleanAppDate = normalizeDate(appDateStr);
-      
+      const appDate = app.appointment_date || "";
       if (isArchiveView) {
-        return cleanAppDate < todayStr; // Csak tegnapi és régebbi
+        return appDate < todayStr; // Csak tegnapi és régebbi
       } else {
-        return cleanAppDate >= todayStr; // Mai és jövőbeli
+        return appDate >= todayStr; // Mai és jövőbeli
       }
     });
   }
@@ -2194,10 +2157,8 @@ export default function Home() {
 
   // Dátumok rendezése: Archívumban csökkenő, Aktuálisban növekvő
   const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
-    const cleanA = normalizeDate(a);
-    const cleanB = normalizeDate(b);
-    if (isArchiveView) return cleanB.localeCompare(cleanA);
-    return cleanA.localeCompare(cleanB);
+    if (isArchiveView) return b.localeCompare(a);
+    return a.localeCompare(b);
   });
 
   const freeSlotsSummary = sortedDates.map(date => {
@@ -2608,9 +2569,27 @@ export default function Home() {
                     <div className={`p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-slate-100'}`}>
                       
                       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                        <div className="flex items-center gap-3 text-slate-900">
-                          <CalendarIcon size={20} />
-                          <h2 className="text-xl font-bold">{date} {debouncedSearchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}</h2>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-3 text-slate-900">
+                            <CalendarIcon size={20} />
+                            <h2 className="text-xl font-bold">{date} {debouncedSearchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}</h2>
+                          </div>
+                          
+                          {/* --- ÚJ: HELYSZÍN VÁLASZTÓ (Szakrendelés specifikus) --- */}
+                          {!printingDate && debouncedSearchTerm === "" && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <MapPinIcon size={16} className="text-slate-400" />
+                              <select 
+                                value={dayAppointments[0]?.location || ""} 
+                                onChange={(e) => updateDayLocation(date, dayAppointments[0].department, e.target.value)}
+                                className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-2 py-1 focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none cursor-pointer"
+                              >
+                                <option value="">Helyszín nincs megadva</option>
+                                <option value="Eötvös utca 21.">Eötvös utca 21.</option>
+                                <option value="Árpád utca 12.">Árpád utca 12.</option>
+                              </select>
+                            </div>
+                          )}
                         </div>
                         
                         {!printingDate && debouncedSearchTerm === "" && (
@@ -2683,9 +2662,7 @@ export default function Home() {
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[220px]">Páciens neve</th>
                             
-                            {/* FIX SZÉLESSÉGEK, HOGY NE UGRÁLJON A TÁBLÁZAT KATTINTÁSKOR */}
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[130px]">Szül. idő</th>
-                            
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">TAJ szám</th>
                             
                             {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">Telefon</th>}
@@ -2788,15 +2765,18 @@ export default function Home() {
                                 
                                 <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
                                   {printingDate ? app.examination_type : (
-                                    <div className={`rounded-xl px-1.5 transition-colors border shadow-sm ${app.examination_type ? getExamColor(app.examination_type) : 'border-transparent bg-transparent shadow-none'}`}>
-                                      <EditableCell 
-                                        disabled={isDel} 
-                                        highlight={false} 
-                                        value={app.examination_type} 
-                                        onSave={(val) => updateAppointment(app.id, "examination_type", val)} 
-                                        searchTerm={debouncedSearchTerm} 
-                                        suggestions={allPrices.filter(p => p.department === app.department).map(p => p.name)}
-                                      />
+                                    <div className={`rounded-xl px-1.5 py-1 transition-colors border shadow-sm ${app.examination_type ? getExamColor(app.examination_type) : 'border-slate-200 bg-white'}`}>
+                                      <select
+                                        disabled={isDel}
+                                        value={app.examination_type || ""}
+                                        onChange={(e) => updateAppointment(app.id, "examination_type", e.target.value)}
+                                        className="w-full bg-transparent border-none text-xs font-bold text-slate-800 focus:ring-0 outline-none cursor-pointer truncate"
+                                      >
+                                        <option value="">Válassz vizsgálatot...</option>
+                                        {allPrices.filter(p => p.department === app.department).map(p => (
+                                          <option key={p.id} value={p.name}>{p.name}</option>
+                                        ))}
+                                      </select>
                                     </div>
                                   )}
                                 </td>
@@ -2925,14 +2905,19 @@ export default function Home() {
                                 
                                 <div className={`bg-white/70 p-2.5 rounded-xl border relative z-0 ${app.examination_type ? getExamColor(app.examination_type) : 'border-white/50'}`}>
                                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat & Megjegyzés</span>
-                                  <EditableCell 
-                                    disabled={isDel} 
-                                    highlight={false} 
-                                    value={app.examination_type} 
-                                    onSave={(val) => updateAppointment(app.id, "examination_type", val)} 
-                                    searchTerm={debouncedSearchTerm} 
-                                    suggestions={allPrices.filter(p => p.department === app.department).map(p => p.name)}
-                                  />
+                                  
+                                  <select
+                                    disabled={isDel}
+                                    value={app.examination_type || ""}
+                                    onChange={(e) => updateAppointment(app.id, "examination_type", e.target.value)}
+                                    className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 outline-none cursor-pointer mb-1 shadow-sm"
+                                  >
+                                    <option value="">Válassz vizsgálatot...</option>
+                                    {allPrices.filter(p => p.department === app.department).map(p => (
+                                      <option key={p.id} value={p.name}>{p.name}</option>
+                                    ))}
+                                  </select>
+
                                   <div className="mt-1 border-t border-black/10 pt-1">
                                     <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={debouncedSearchTerm} />
                                   </div>
@@ -2943,31 +2928,26 @@ export default function Home() {
                         })}
                       </div>
                     </div>
-
-                    {/* --- ÚJ IDŐPONT HOZZÁADÁSA (KÖZVETLENÜL AZ ADOTT NAP ALJÁRA) --- */}
-                    {!printingDate && debouncedSearchTerm === "" && !isArchiveView && (
-                      <div className="p-4 bg-slate-50/50 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-end gap-3 rounded-b-3xl mt-0">
-                         <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mr-auto hidden sm:flex items-center gap-1.5">
-                           <PlusIcon size={14}/> Új időpont hozzáadása ({date}):
-                         </span>
-                         <input 
-                           type="text" 
-                           placeholder="pl. 17:00 - 17:15" 
-                           value={newTimeSlots[date] || ""} 
-                           onChange={(e) => setNewTimeSlots(prev => ({...prev, [date]: e.target.value}))}
-                           onKeyDown={(e) => e.key === "Enter" && addSingleAppointment(date)} 
-                           className="new-time-slot-input w-full sm:w-40 bg-white border border-slate-200 p-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 text-sm font-semibold text-slate-900 transition-all text-center sm:text-left shadow-sm" 
-                         />
-                         <button onClick={() => addSingleAppointment(date)} className="w-full sm:w-auto bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-black font-semibold shadow-md transition-all active:scale-95 text-sm flex items-center justify-center gap-1.5 cursor-pointer">
-                           Hozzáadás
-                         </button>
-                      </div>
-                    )}
                   </div>
                 );
               })
             )}
           </>
+        )}
+
+        {!printingDate && debouncedSearchTerm === "" && !isInitialLoading && !isArchiveView && (
+          <div id="new-appointment-bar" className="mt-6 flex flex-col sm:flex-row items-center justify-end gap-3 bg-white/90 backdrop-blur-xl p-4 rounded-3xl shadow-sm border border-white/60 w-full sm:w-max sm:ml-auto no-print scroll-mt-24">
+            <input 
+              ref={newTimeSlotRef}
+              type="text" 
+              placeholder="pl. 17:00 - 17:15" 
+              value={newTimeSlot} 
+              onChange={(e) => setNewTimeSlot(e.target.value)} 
+              onKeyDown={(e) => e.key === "Enter" && addSingleAppointment()} 
+              className="new-time-slot-input w-full sm:w-40 bg-white/80 border border-white p-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500 text-sm font-semibold text-slate-900 transition-all text-center sm:text-left shadow-sm" 
+            />
+            <button onClick={addSingleAppointment} className="w-full sm:w-auto bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-black font-semibold shadow-md transition-all active:scale-95 text-sm flex items-center justify-center gap-1.5 cursor-pointer"><PlusIcon /> Új időpont</button>
+          </div>
         )}
       </div>
 

@@ -2561,7 +2561,7 @@ export default function Home() {
                 const formattedRevenue = dailyRevenue > 0 ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyRevenue) : "0 Ft";
 
                 return (
-                  <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] scroll-mt-[100px] print-container relative z-0 ${printingDate ? 'bg-white border-0 shadow-none' : 'overflow-hidden bg-white/90 backdrop-blur-xl border border-white/60'}`}>
+                  <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] scroll-mt-[100px] print-container relative z-0 flex flex-col ${printingDate ? 'bg-white border-0 shadow-none' : 'overflow-hidden bg-white/90 backdrop-blur-xl border border-white/60'}`}>
                     
                     <div className={`p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-slate-100'}`}>
                       
@@ -2647,30 +2647,12 @@ export default function Home() {
                                 <TrashIcon /> <span className="hidden sm:inline">Nap törlése</span>
                               </button>
                             )}
-
-                            {/* --- ÚJ PER NAPI IDŐPONT HOZZÁADÓ --- */}
-                            {!printingDate && debouncedSearchTerm === "" && !isArchiveView && (
-                              <div className="flex items-center gap-1.5 bg-white px-2 py-1.5 rounded-xl shadow-sm border border-slate-200 ml-2">
-                                <input 
-                                  type="text" 
-                                  placeholder="pl. 17:00" 
-                                  value={dayNewTimeSlots[date] || ""} 
-                                  onChange={(e) => setDayNewTimeSlots(prev => ({...prev, [date]: e.target.value}))}
-                                  onKeyDown={(e) => e.key === "Enter" && addDaySingleAppointment(date)}
-                                  className="w-16 sm:w-20 text-xs font-bold text-slate-800 outline-none bg-transparent"
-                                />
-                                <button onClick={() => addDaySingleAppointment(date)} title="Új időpont ehhez a naphoz" className="bg-slate-900 text-white p-1 rounded-lg hover:bg-black transition-all cursor-pointer">
-                                  <PlusIcon size={14}/>
-                                </button>
-                              </div>
-                            )}
-
                           </>
                         )}
                       </div>
                     </div>
 
-                    <div className={`overflow-x-auto custom-scrollbar ${printingDate ? 'overflow-visible' : ''}`}>
+                    <div className={`overflow-x-auto custom-scrollbar flex-1 ${printingDate ? 'overflow-visible' : ''}`}>
                       <table className="min-w-full text-left border-collapse print-table hidden lg:table print:table">
                         <thead className="sticky top-0 z-20 shadow-sm bg-white">
                           <tr className="border-b border-slate-200/60 print-border">
@@ -2943,6 +2925,34 @@ export default function Home() {
                         })}
                       </div>
                     </div>
+
+                    {/* MOVED: NAPI ÚJ IDŐPONT HOZZÁADÓ (TELJES SÁV ALUL) */}
+                    {!printingDate && debouncedSearchTerm === "" && !isArchiveView && (
+                      <div className="border-t border-slate-200/60 bg-white/40 p-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 no-print rounded-b-3xl shrink-0 mt-auto">
+                         <div className="flex items-center gap-2 text-slate-600 font-extrabold text-sm">
+                            <PlusIcon size={18} />
+                            <span>Új időpont hozzáadása ehhez a naphoz:</span>
+                         </div>
+                         <div className="flex items-center gap-2 w-full sm:w-auto">
+                           <input 
+                              type="text" 
+                              placeholder="pl. 17:00" 
+                              value={dayNewTimeSlots[date] || ""} 
+                              onChange={(e) => setDayNewTimeSlots(prev => ({...prev, [date]: e.target.value}))}
+                              onKeyDown={(e) => e.key === "Enter" && addDaySingleAppointment(date)}
+                              className="flex-1 sm:w-32 bg-white border border-slate-200 text-sm font-bold text-slate-800 px-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 shadow-sm transition-all"
+                            />
+                            <button 
+                              onClick={() => addDaySingleAppointment(date)} 
+                              title="Hozzáadás" 
+                              className="bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-black transition-all cursor-pointer flex items-center justify-center font-bold text-sm shadow-md active:scale-95 whitespace-nowrap"
+                            >
+                              Hozzáadás
+                            </button>
+                         </div>
+                      </div>
+                    )}
+
                   </div>
                 );
               })

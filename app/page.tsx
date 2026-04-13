@@ -250,7 +250,7 @@ export default function Home() {
   };
 
   const handlePrintLabQuote = () => {
-    if (selectedLabTests.length === 0) return showAlert("Üres ajánlat", "Kérlek, válassz ki legalább egy vizsgálatot a nyomtatáshoz!");
+    if (selectedLabTests.length === 0) return showAlert("Üres ajánlat", "Kérlek, v��lassz ki legalább egy vizsgálatot a nyomtatáshoz!");
     setPrintingLabQuote(true);
     setTimeout(() => { window.print(); }, 300);
   };
@@ -415,7 +415,7 @@ export default function Home() {
       formData.append("_subject", "Új hibabejelentés: Medical-Aqua");
       formData.append("_captcha", "false");
 
-      const response = await fetch("https://formsubmit.co/ajax/kovacs.zoltan1998@gmail.com", {
+      const response = await fetch("https://formsubmit.co/ajax/TE_EMAIL_CIMED@gmail.com", {
         method: "POST",
         body: formData
       });

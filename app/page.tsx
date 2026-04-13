@@ -72,7 +72,6 @@ const getExamColor = (exam: string) => {
 // --- Főoldal ---
 export default function Home() {
   const searchInputRef = useRef<HTMLInputElement>(null); 
-  const newTimeSlotRef = useRef<HTMLInputElement>(null); 
 
   const [isInitialLoading, setIsInitialLoading] = useState(true); 
 
@@ -139,7 +138,6 @@ export default function Home() {
   const [profileNameInput, setProfileNameInput] = useState("");
   
   const [selectedDate, setSelectedDate] = useState(""); 
-  const [newTimeSlot, setNewTimeSlot] = useState("");
   
   // NAPI ÚJ IDŐPONT ÁLLAPOT
   const [dayNewTimeSlots, setDayNewTimeSlots] = useState<Record<string, string>>({});
@@ -295,14 +293,31 @@ export default function Home() {
 
   const fetchSavedCalculations = async () => {
     setIsLoadingSavedLabs(true);
-    const { data, error } = await supabase
-      .from('lab_calculations')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (!error && data) {
-      setSavedCalculations(data);
+    let allData: any[] = [];
+    let hasMore = true;
+    let from = 0;
+    const step = 1000;
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('lab_calculations')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(from, from + step - 1);
+      
+      if (error) {
+        console.error("Hiba a kalkulációk betöltésekor:", error);
+        break;
+      }
+      if (data) {
+        allData = [...allData, ...data];
+        if (data.length < step) hasMore = false;
+        else from += step;
+      } else {
+        hasMore = false;
+      }
     }
+    setSavedCalculations(allData);
     setIsLoadingSavedLabs(false);
   };
 
@@ -418,7 +433,7 @@ export default function Home() {
       formData.append("_subject", "Új hibabejelentés: Medical-Aqua");
       formData.append("_captcha", "false");
 
-      const response = await fetch("https://formsubmit.co/ajax/TE_EMAIL_CIMED@gmail.com", {
+      const response = await fetch("https://formsubmit.co/ajax/kovacs.zoltan1998@gmail.com", {
         method: "POST",
         body: formData
       });
@@ -603,21 +618,63 @@ export default function Home() {
     const pastStr = pastDate.toISOString().split('T')[0];
     const futureStr = futureDate.toISOString().split('T')[0];
 
-    const { data, error } = await supabase
-      .from("appointments")
-      .select("*")
-      .gte("appointment_date", pastStr)
-      .lte("appointment_date", futureStr)
-      .order("appointment_date", { ascending: true })
-      .order("time_slot", { ascending: true });
+    let allData: any[] = [];
+    let hasMore = true;
+    let from = 0;
+    const step = 1000;
 
-    if (!error && data) setAppointments(data);
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("*")
+        .gte("appointment_date", pastStr)
+        .lte("appointment_date", futureStr)
+        .order("appointment_date", { ascending: true })
+        .order("time_slot", { ascending: true })
+        .range(from, from + step - 1);
+
+      if (error) {
+        console.error("Hiba az időpontok betöltésekor:", error);
+        break;
+      }
+      if (data) {
+        allData = [...allData, ...data];
+        if (data.length < step) hasMore = false;
+        else from += step;
+      } else {
+        hasMore = false;
+      }
+    }
+    setAppointments(allData);
   };
 
   const fetchPatientsList = async () => {
     setIsLoadingPatients(true);
-    const { data, error } = await supabase.from('patients').select('*').order('name', { ascending: true });
-    if (!error && data) setPatientsList(data);
+    let allData: any[] = [];
+    let hasMore = true;
+    let from = 0;
+    const step = 1000;
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('patients')
+        .select('*')
+        .order('name', { ascending: true })
+        .range(from, from + step - 1);
+
+      if (error) {
+        console.error("Hiba a páciensek betöltésekor:", error);
+        break;
+      }
+      if (data) {
+        allData = [...allData, ...data];
+        if (data.length < step) hasMore = false;
+        else from += step;
+      } else {
+        hasMore = false;
+      }
+    }
+    setPatientsList(allData);
     setIsLoadingPatients(false);
   };
 

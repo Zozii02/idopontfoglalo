@@ -76,7 +76,6 @@ const normalizeDate = (d: string) => {
 // --- Főoldal ---
 export default function Home() {
   const searchInputRef = useRef<HTMLInputElement>(null); 
-  const newTimeSlotRef = useRef<HTMLInputElement>(null); 
 
   const [isInitialLoading, setIsInitialLoading] = useState(true); 
 
@@ -142,7 +141,8 @@ export default function Home() {
   const [needsProfileName, setNeedsProfileName] = useState(false);
   const [profileNameInput, setProfileNameInput] = useState("");
   
-    const [selectedDate, setSelectedDate] = useState(""); 
+  const [selectedDate, setSelectedDate] = useState(""); 
+  // ÚJ: Minden napnak saját state-je van az új időpont beírásához
   const [newTimeSlots, setNewTimeSlots] = useState<Record<string, string>>({});
 
   const [genStart, setGenStart] = useState("08:00");
@@ -419,7 +419,7 @@ export default function Home() {
       formData.append("_subject", "Új hibabejelentés: Medical-Aqua");
       formData.append("_captcha", "false");
 
-      const response = await fetch("https://formsubmit.co/ajax/TE_EMAIL_CIMED@gmail.com", {
+      const response = await fetch("https://formsubmit.co/ajax/kovacs.zoltan1998@gmail.com", {
         method: "POST",
         body: formData
       });
@@ -523,8 +523,11 @@ export default function Home() {
         e.preventDefault(); 
         setShowStats(false); setShowLabCalculator(false); setShowPatients(false);
         setTimeout(() => {
-          newTimeSlotRef.current?.focus();
-          document.getElementById('new-appointment-bar')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const firstInput = document.querySelector('.new-time-slot-input') as HTMLInputElement;
+          if (firstInput) {
+            firstInput.focus();
+            firstInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }, 100);
       }
       if (e.key === 'Escape') { 
@@ -942,7 +945,7 @@ export default function Home() {
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
     const { data } = await supabase.from("appointments").insert([{
-      department: activeTab, appointment_date: date, time_slot: "VÁR��LISTA",
+      department: activeTab, appointment_date: date, time_slot: "VÁRÓLISTA",
       patient_name: "", taj_szam: "", phone_number: "", birth_date: "", examination_type: "", notes: "", status: "Várólista",
       last_modified_by: modifierName, last_modified_at: now, is_deleted: false
     }]).select();
@@ -1029,11 +1032,13 @@ export default function Home() {
     );
   };
 
-  const addSingleAppointment = async () => {
-    if (!user || !newTimeSlot.trim() || !selectedDate) return showAlert("Hiányzó adat", "Kérlek, válassz dátumot és adj meg egy pontos időpontot is (pl. 17:00)!");
+  // MÓDOSÍTOTT IDŐPONT HOZZÁADÁS (konkrét dátumhoz rendelve)
+  const addSingleAppointment = async (targetDate: string) => {
+    const slotValue = newTimeSlots[targetDate] || "";
+    if (!user || !slotValue.trim()) return showAlert("Hiányzó adat", "Kérlek, adj meg egy pontos időpontot (pl. 17:00)!");
     
     // --- DUPLIKÁCIÓ ELLENŐRZÉSE ---
-    const existing = appointments.find((a: any) => a.department === activeTab && a.appointment_date === selectedDate && a.time_slot === newTimeSlot && !a.is_deleted);
+    const existing = appointments.find((a: any) => a.department === activeTab && a.appointment_date === targetDate && a.time_slot === slotValue && !a.is_deleted);
     if (existing) {
       return showAlert("Hiba", "Ez az időpont már létezik ezen a napon ebben a szakrendelésben!");
     }
@@ -1041,18 +1046,19 @@ export default function Home() {
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
     const { data } = await supabase.from("appointments").insert([{
-      department: activeTab, appointment_date: selectedDate, time_slot: newTimeSlot,
+      department: activeTab, appointment_date: targetDate, time_slot: slotValue,
       patient_name: "", taj_szam: "", phone_number: "", birth_date: "", examination_type: "", notes: "", status: "Előjegyzett",
       last_modified_by: modifierName, last_modified_at: now, is_deleted: false
     }]).select();
     
     if (data && data[0]) {
-       await logAction(data[0].id, "Létrehozás", "Egyedi időpont manuálisan hozzáadva");
+       await logAction(data[0].id, "Létrehozás", `Egyedi időpont manuálisan hozzáadva ehhez: ${targetDate}`);
        
        // AZONNALI KÉPERNYŐ FRISSÍTÉS
        setAppointments(prev => [...prev, ...data]);
     }
-    setNewTimeSlot("");
+    
+    setNewTimeSlots(prev => ({ ...prev, [targetDate]: "" }));
     showToast("Új időpont sikeresen hozzáadva!");
   };
 
@@ -2937,26 +2943,31 @@ export default function Home() {
                         })}
                       </div>
                     </div>
+
+                    {/* --- ÚJ IDŐPONT HOZZÁADÁSA (KÖZVETLENÜL AZ ADOTT NAP ALJÁRA) --- */}
+                    {!printingDate && debouncedSearchTerm === "" && !isArchiveView && (
+                      <div className="p-4 bg-slate-50/50 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-end gap-3 rounded-b-3xl mt-0">
+                         <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mr-auto hidden sm:flex items-center gap-1.5">
+                           <PlusIcon size={14}/> Új időpont hozzáadása ({date}):
+                         </span>
+                         <input 
+                           type="text" 
+                           placeholder="pl. 17:00 - 17:15" 
+                           value={newTimeSlots[date] || ""} 
+                           onChange={(e) => setNewTimeSlots(prev => ({...prev, [date]: e.target.value}))}
+                           onKeyDown={(e) => e.key === "Enter" && addSingleAppointment(date)} 
+                           className="new-time-slot-input w-full sm:w-40 bg-white border border-slate-200 p-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 text-sm font-semibold text-slate-900 transition-all text-center sm:text-left shadow-sm" 
+                         />
+                         <button onClick={() => addSingleAppointment(date)} className="w-full sm:w-auto bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-black font-semibold shadow-md transition-all active:scale-95 text-sm flex items-center justify-center gap-1.5 cursor-pointer">
+                           Hozzáadás
+                         </button>
+                      </div>
+                    )}
                   </div>
                 );
               })
             )}
           </>
-        )}
-
-        {!printingDate && debouncedSearchTerm === "" && !isInitialLoading && !isArchiveView && (
-          <div id="new-appointment-bar" className="mt-6 flex flex-col sm:flex-row items-center justify-end gap-3 bg-white/90 backdrop-blur-xl p-4 rounded-3xl shadow-sm border border-white/60 w-full sm:w-max sm:ml-auto no-print scroll-mt-24">
-            <input 
-              ref={newTimeSlotRef}
-              type="text" 
-              placeholder="pl. 17:00 - 17:15" 
-              value={newTimeSlot} 
-              onChange={(e) => setNewTimeSlot(e.target.value)} 
-              onKeyDown={(e) => e.key === "Enter" && addSingleAppointment()} 
-              className="w-full sm:w-40 bg-white/80 border border-white p-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500 text-sm font-semibold text-slate-900 transition-all text-center sm:text-left shadow-sm" 
-            />
-            <button onClick={addSingleAppointment} className="w-full sm:w-auto bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-black font-semibold shadow-md transition-all active:scale-95 text-sm flex items-center justify-center gap-1.5 cursor-pointer"><PlusIcon /> Új időpont</button>
-          </div>
         )}
       </div>
 

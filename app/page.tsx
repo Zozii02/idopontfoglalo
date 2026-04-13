@@ -987,6 +987,7 @@ export default function Home() {
               appointment_id: app.id, modified_by: modifierName, action: "Létrehozás", details: "Napi lista generálással létrehozva"
            }));
            await supabase.from('appointment_logs').insert(logs);
+           setAppointments((prev: any) => [...prev, ...data]);
         }
         showToast("Napi időpontok sikeresen legenerálva!");
       }

@@ -53,29 +53,6 @@ import { ModernStatusSelect } from "../components/ModernStatusSelect";
 import { ModernDatePicker } from "../components/ModernDatePicker";
 import { PatientAutocomplete } from "../components/PatientAutocomplete";
 
-// --- ÚJ KOMPONENS: Vizsgálat legördülő menü (Árlista alapján) ---
-const ExaminationDropdown = ({ value, onChange, disabled, department, allPrices }: any) => {
-  const options = allPrices.filter((p: any) => p.department === department).map((p: any) => p.name);
-  
-  return (
-    <select
-      value={value || ""}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={disabled}
-      className={`w-full bg-transparent border-none text-sm font-semibold p-1 outline-none transition-colors rounded-md focus:bg-white focus:ring-2 focus:ring-blue-100 truncate ${disabled ? 'opacity-70 cursor-not-allowed' : 'hover:bg-black/5 text-slate-800 cursor-pointer'}`}
-      title={value || "Válassz vizsgálatot"}
-    >
-      <option value="">- Válassz -</option>
-      {value && !options.includes(value) && (
-        <option value={value}>{value} (Egyedi)</option>
-      )}
-      {options.map((opt: string, i: number) => (
-        <option key={i} value={opt}>{opt}</option>
-      ))}
-    </select>
-  );
-};
-
 // --- AUTO SZÍNEZŐ SEGÉDFÜGGVÉNY A VIZSGÁLATOKHOZ ---
 const getExamColor = (exam: string) => {
   if (!exam) return "border-transparent";
@@ -86,6 +63,28 @@ const getExamColor = (exam: string) => {
   if (lower.includes("konzultáció") || lower.includes("vizsgálat")) return "bg-purple-50 text-purple-900 border-purple-200";
   if (lower.includes("röntgen") || lower.includes("rtg")) return "bg-amber-50 text-amber-900 border-amber-200";
   return "bg-slate-50 text-slate-900 border-slate-200"; 
+};
+
+// --- ÚJ KOMPONENS: Vizsgálat típus legördülő menü árak alapján ---
+const ExamTypeSelect = ({ value, onChange, disabled, department, allPrices }: { value: string, onChange: (v: string) => void, disabled: boolean, department: string, allPrices: any[] }) => {
+  const deptPrices = allPrices.filter(p => p.department === department);
+  
+  return (
+    <select 
+      disabled={disabled}
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full bg-transparent border-none outline-none text-sm font-semibold text-slate-800 focus:ring-0 cursor-pointer disabled:cursor-not-allowed appearance-none py-1.5"
+    >
+      <option value="">(Nincs megadva)</option>
+      {deptPrices.map(p => (
+        <option key={p.id} value={p.name}>{p.name}</option>
+      ))}
+      {value && !deptPrices.find(p => p.name === value) && (
+        <option value={value}>{value}</option>
+      )}
+    </select>
+  );
 };
 
 // --- Főoldal ---
@@ -995,14 +994,20 @@ export default function Home() {
           last_modified_by: modifierName, last_modified_at: now, is_deleted: false
         }));
 
-        const { data } = await supabase.from("appointments").insert(newAppointments).select();
+        const { data, error } = await supabase.from("appointments").insert(newAppointments).select();
         
+        if (error) {
+          console.error("Generálási hiba:", error);
+          return showAlert("Hiba a generáláskor", `Nem sikerült létrehozni az időpontokat az adatbázisban: ${error.message}`);
+        }
+
         if (data) {
            const logs = data.map((app: any) => ({
               appointment_id: app.id, modified_by: modifierName, action: "Létrehozás", details: "Napi lista generálással létrehozva"
            }));
            await supabase.from('appointment_logs').insert(logs);
         }
+        await fetchAppointments(); // Lista azonnali manuális frissítése
         showToast("Napi időpontok sikeresen legenerálva!");
       }
     );
@@ -2745,21 +2750,13 @@ export default function Home() {
                                   </>
                                 )}
                                 
-                                {/* ÚJ: Itt az EditableCell le lett cserélve az ExaminationDropdown komponensre */}
                                 <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
                                   {printingDate ? app.examination_type : (
-                                    <div className={`rounded-xl px-1.5 py-0.5 transition-colors border shadow-sm ${app.examination_type ? getExamColor(app.examination_type) : 'border-transparent bg-transparent shadow-none'}`}>
-                                      <ExaminationDropdown 
-                                        value={app.examination_type} 
-                                        onChange={(val: string) => updateAppointment(app.id, "examination_type", val)} 
-                                        disabled={isDel} 
-                                        department={app.department} 
-                                        allPrices={allPrices} 
-                                      />
+                                    <div className={`rounded-xl px-1.5 transition-colors border shadow-sm ${app.examination_type ? getExamColor(app.examination_type) : 'border-transparent bg-transparent shadow-none'}`}>
+                                      <ExamTypeSelect disabled={isDel} value={app.examination_type} onChange={(val) => updateAppointment(app.id, "examination_type", val)} department={app.department || activeTab} allPrices={allPrices} />
                                     </div>
                                   )}
                                 </td>
-                                
                                 <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
                                   {printingDate ? app.notes : <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={debouncedSearchTerm} />}
                                 </td>
@@ -2868,6 +2865,7 @@ export default function Home() {
                                   />
                                 </div>
                                 
+                                {/* ÚJ: Három oszlopos grid a TAJ, Telefon és Születési időnek */}
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 relative z-0">
                                   <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Szül. idő</span>
@@ -2883,16 +2881,11 @@ export default function Home() {
                                   </div>
                                 </div>
                                 
-                                {/* ÚJ: Itt is az ExaminationDropdown van már */}
                                 <div className={`bg-white/70 p-2.5 rounded-xl border relative z-0 ${app.examination_type ? getExamColor(app.examination_type) : 'border-white/50'}`}>
                                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat & Megjegyzés</span>
-                                  <ExaminationDropdown 
-                                    value={app.examination_type} 
-                                    onChange={(val: string) => updateAppointment(app.id, "examination_type", val)} 
-                                    disabled={isDel} 
-                                    department={app.department} 
-                                    allPrices={allPrices} 
-                                  />
+                                  <div className="mb-1">
+                                     <ExamTypeSelect disabled={isDel} value={app.examination_type} onChange={(val) => updateAppointment(app.id, "examination_type", val)} department={app.department || activeTab} allPrices={allPrices} />
+                                  </div>
                                   <div className="mt-1 border-t border-black/10 pt-1">
                                     <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={debouncedSearchTerm} />
                                   </div>

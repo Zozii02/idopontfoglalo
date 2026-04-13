@@ -142,8 +142,8 @@ export default function Home() {
   const [needsProfileName, setNeedsProfileName] = useState(false);
   const [profileNameInput, setProfileNameInput] = useState("");
   
-  const [selectedDate, setSelectedDate] = useState(""); 
-  const [newTimeSlot, setNewTimeSlot] = useState("");
+    const [selectedDate, setSelectedDate] = useState(""); 
+  const [newTimeSlots, setNewTimeSlots] = useState<Record<string, string>>({});
 
   const [genStart, setGenStart] = useState("08:00");
   const [genEnd, setGenEnd] = useState("16:00");

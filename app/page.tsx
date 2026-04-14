@@ -1900,25 +1900,25 @@ export default function Home() {
                  <table className="min-w-full text-left border-collapse">
                    <thead className="bg-slate-50 border-b border-slate-200">
                      <tr>
-                       <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Név</th>
-                       <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Születési idő</th>
-                       <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">TAJ Szám</th>
-                       <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Telefon</th>
-                       <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Utolsó Látogatás</th>
-                       <th className="px-6 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap text-right">Művelet</th>
+                       <th className="px-3 py-2.5 md:px-6 md:py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Név</th>
+                       <th className="px-3 py-2.5 md:px-6 md:py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Születési idő</th>
+                       <th className="px-3 py-2.5 md:px-6 md:py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">TAJ Szám</th>
+                       <th className="px-3 py-2.5 md:px-6 md:py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Telefon</th>
+                       <th className="px-3 py-2.5 md:px-6 md:py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Utolsó Látogatás</th>
+                       <th className="px-3 py-2.5 md:px-6 md:py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap text-right">Művelet</th>
                      </tr>
                    </thead>
                    <tbody className="divide-y divide-slate-100">
                      {filteredPatientsList.map(patient => (
                        <tr key={patient.id} className="hover:bg-purple-50/30 transition-colors group">
-                         <td className="px-6 py-4 font-extrabold text-slate-900">{patient.name}</td>
-                         <td className="px-6 py-4 text-sm text-slate-600 font-medium">{patient.birth_date || "-"}</td>
-                         <td className="px-6 py-4 font-mono text-sm text-slate-600">{formatTAJ(patient.taj_szam) || "-"}</td>
-                         <td className="px-6 py-4 text-sm text-slate-600 font-medium">{formatPhone(patient.phone_number) || "-"}</td>
-                         <td className="px-6 py-4 text-sm text-slate-500">
+                         <td className="px-3 py-2.5 md:px-6 md:py-4 font-extrabold text-slate-900">{patient.name}</td>
+                         <td className="px-3 py-2.5 md:px-6 md:py-4 text-sm text-slate-600 font-medium">{patient.birth_date || "-"}</td>
+                         <td className="px-3 py-2.5 md:px-6 md:py-4 font-mono text-sm text-slate-600">{formatTAJ(patient.taj_szam) || "-"}</td>
+                         <td className="px-3 py-2.5 md:px-6 md:py-4 text-sm text-slate-600 font-medium">{formatPhone(patient.phone_number) || "-"}</td>
+                         <td className="px-3 py-2.5 md:px-6 md:py-4 text-sm text-slate-500">
                            {patient.last_visit ? formatShortDate(patient.last_visit.split('T')[0]) : "Ismeretlen"}
                          </td>
-                         <td className="px-6 py-4 text-right">
+                         <td className="px-3 py-2.5 md:px-6 md:py-4 text-right">
                            <button 
                              onClick={() => openPatientHistory(patient.name, patient.taj_szam)}
                              className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-purple-50 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap"
@@ -1965,7 +1965,7 @@ export default function Home() {
     const sortedSavedDates = Object.keys(groupedSavedLabs).sort((a, b) => b.localeCompare(a));
 
     return (
-      <div className={`min-h-screen font-sans relative ${printingLabQuote ? 'bg-white print-mode' : 'bg-slate-50 overflow-hidden flex flex-col'}`}>
+      <div className={`min-h-screen font-sans relative ${printingLabQuote ? 'bg-white print-mode' : 'bg-slate-50 overflow-y-auto flex flex-col'}`}>
         {customModalUI}
         {toastUI}
         
@@ -1984,7 +1984,7 @@ export default function Home() {
               </button>
             </div>
             
-            <div className="max-w-[1600px] mx-auto px-4 md:px-8 mt-4 flex gap-6 border-b border-slate-200 shrink-0 overflow-x-auto no-scrollbar">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-8 mt-4 flex gap-6 border-b border-slate-200 shrink-0 overflow-x-auto no-scrollbar whitespace-nowrap">
                <button 
                  onClick={() => setActiveLabTab('new')} 
                  className={`py-3 px-2 font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${activeLabTab === 'new' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
@@ -2552,7 +2552,16 @@ export default function Home() {
             <p className="text-sm font-bold text-slate-600">Készült: {new Date().toLocaleDateString('hu-HU')}</p>
           </div>
         </div>
-        <table className="w-full text-left border-collapse">
+        <table className="w-full table-fixed text-left border-collapse">
+          <colgroup>
+            <col className="w-[7%]" />    {/* Időpont */}
+            <col className="w-[17%]" />   {/* Páciens neve */}
+            <col className="w-[9%]" />    {/* Szül. idő */}
+            <col className="w-[10%]" />   {/* TAJ szám */}
+            <col className="w-[10%]" />   {/* Telefon */}
+            <col className="w-[13%]" />   {/* Vizsgálat */}
+            <col />                        {/* Megjegyzés - fills remaining */}
+          </colgroup>
           <thead>
             <tr className="border-b-2 border-black">
               <th className="py-3 px-2 font-bold text-sm text-black">Időpont</th>
@@ -2567,7 +2576,7 @@ export default function Home() {
           <tbody className="divide-y divide-gray-300">
             {dayAppointments.filter((app: any) => !app.is_deleted).map((app: any) => (
               <tr key={app.id} className="break-inside-avoid">
-                <td className="py-3 px-2 font-bold text-black w-[100px]">
+                <td className="py-3 px-2 font-bold text-black">
                   {app.time_slot === "VÁRÓLISTA" ? "VÁRÓLISTA" : app.time_slot.replace(" (Online)", "")}
                 </td>
                 <td className="py-3 px-2 font-bold text-black">{app.patient_name || "-"}</td>
@@ -3072,15 +3081,15 @@ export default function Home() {
                     <div className={`overflow-x-auto custom-scrollbar flex-1 ${printingDate ? 'overflow-visible' : ''}`}>
                       <table className="w-full table-fixed text-left border-collapse print-table hidden lg:table print:table">
                         <colgroup>
-                          <col className="w-[80px]" />  {/* Időpont */}
+                          <col className="w-[7%]" />    {/* Időpont */}
                           <col className="w-[17%]" />   {/* Páciens neve */}
                           <col className="w-[9%]" />    {/* Szül. idő */}
                           <col className="w-[10%]" />   {/* TAJ szám */}
                           <col className="w-[10%]" />   {/* Telefon */}
-                          {!printingDate && <col className="w-[10%]" />}  {/* Státusz */}
+                          {!printingDate && <col className="w-[9%]" />}   {/* Státusz */}
                           <col className="w-[13%]" />   {/* Vizsgálat */}
                           <col />                        {/* Megjegyzés - fills remaining */}
-                          {!printingDate && <col className="w-[70px]" />}  {/* Művelet */}
+                          {!printingDate && <col className="w-[5%]" />}   {/* Művelet */}
                         </colgroup>
                         <thead className="sticky top-0 z-20 shadow-sm bg-white">
                           <tr className="border-b border-slate-200/60 print-border">
@@ -3307,7 +3316,7 @@ export default function Home() {
                             const rowBg = isDel ? "bg-slate-100/50" : isWaitingList ? "bg-orange-50/50" : isBooked ? "bg-white" : "bg-emerald-50/50";
 
                             return (
-                              <div key={app.id} className={`${rowBg} ${statusBorder} rounded-xl p-3 shadow-sm border border-slate-100 relative`}>
+                              <div key={app.id} className={`${rowBg} ${statusBorder} rounded-xl p-3 shadow-sm border border-slate-100 relative overflow-hidden min-w-0`}>
                                  {isDel && <div className="absolute inset-0 bg-slate-200/50 backdrop-blur-[1px] z-10 rounded-xl flex items-center justify-center">
                                     <button onClick={() => restoreAppointment(app.id)} className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-bold text-sm shadow-md flex items-center gap-1.5">
                                       <RestoreIcon /> Visszaállítás
@@ -3338,23 +3347,23 @@ export default function Home() {
                                        </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-2.5">
-                                       <div>
+                                    <div className="grid grid-cols-2 gap-2.5 min-w-0">
+                                       <div className="min-w-0">
                                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 block">Születési idő</label>
                                          <EditableCell value={app.birth_date} onSave={(val) => updateAppointment(app.id, "birth_date", val)} placeholder="ÉÉÉÉ.HH.NN" className="bg-slate-50 text-sm" />
                                        </div>
-                                       <div>
+                                       <div className="min-w-0">
                                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 block">TAJ Szám</label>
                                          <EditableCell value={formatTAJ(app.taj_szam)} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} placeholder="000 000 000" className="bg-slate-50 font-mono text-sm" />
                                        </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-2.5">
-                                       <div>
+                                    <div className="grid grid-cols-2 gap-2.5 min-w-0">
+                                       <div className="min-w-0">
                                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 block">Telefon</label>
                                          <EditableCell value={formatPhone(app.phone_number)} onSave={(val) => updateAppointment(app.id, "phone_number", val)} placeholder="06 30 000 0000" className="bg-slate-50 text-sm" />
                                        </div>
-                                       <div>
+                                       <div className="min-w-0">
                                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 block">Státusz</label>
                                          <ModernStatusSelect value={app.status || "Előjegyzett"} onChange={(val) => updateAppointment(app.id, "status", val)} disabled={!isBooked && !isWaitingList} />
                                        </div>

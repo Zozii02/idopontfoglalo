@@ -33,7 +33,7 @@ export function ModernExamSelect({
       <select
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
-        className={`appearance-none w-full text-[10px] uppercase font-bold tracking-widest px-2 py-1 pr-7 rounded-md outline-none cursor-pointer border shadow-sm transition-all focus:ring-2 focus:ring-offset-1 ${currentStyle}`}
+        className={`appearance-none w-full text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 pr-5 rounded outline-none cursor-pointer border shadow-sm transition-all focus:ring-1 focus:ring-offset-1 ${currentStyle}`}
       >
         <option value="">— Nincs kiválasztva —</option>
         {options.map((opt) => (
@@ -42,7 +42,7 @@ export function ModernExamSelect({
           </option>
         ))}
       </select>
-      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-current opacity-60">
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-current opacity-60">
         <ChevronDownIcon />
       </div>
     </div>

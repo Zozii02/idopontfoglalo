@@ -12,7 +12,6 @@ import {
   FeedbackIcon, CalculatorIcon, DocumentIcon 
 } from "../components/icons";
 
-// Új ikonok
 const ChartPieIcon = ({ size = 20 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
 );
@@ -57,7 +56,6 @@ import { ModernStatusSelect } from "../components/ModernStatusSelect";
 import { ModernDatePicker } from "../components/ModernDatePicker";
 import { PatientAutocomplete } from "../components/PatientAutocomplete";
 
-// --- AUTO SZÍNEZŐ SEGÉDFÜGGVÉNY A VIZSGÁLATOKHOZ ---
 const getExamColor = (exam: string) => {
   if (!exam) return "border-transparent";
   const lower = exam.toLowerCase();
@@ -69,7 +67,6 @@ const getExamColor = (exam: string) => {
   return "bg-slate-50 text-slate-900 border-slate-200"; 
 };
 
-// --- Főoldal ---
 export default function Home() {
   const searchInputRef = useRef<HTMLInputElement>(null); 
 
@@ -78,26 +75,21 @@ export default function Home() {
   const [categories, setCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("");
   
-  // --- NÉZETEK (VIEWS) ---
   const [showLabCalculator, setShowLabCalculator] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showPatients, setShowPatients] = useState(false);
-  
-  // Archívum nézet állapota
   const [isArchiveView, setIsArchiveView] = useState(false);
 
-  // --- PÁCIENS NÉZET ÁLLAPOTAI ---
   const [patientsList, setPatientsList] = useState<any[]>([]);
   const [patientsSearchTerm, setPatientsSearchTerm] = useState("");
   const [isLoadingPatients, setIsLoadingPatients] = useState(false);
 
   // --- LABOR KALKULÁTOR ÁLLAPOTOK ---
-  const [activeLabTab, setActiveLabTab] = useState<'new' | 'saved'>('new');
+  const [activeLabTab, setActiveLabTab] = useState<'new' | 'saved' | 'slots'>('new');
   const [selectedLabTests, setSelectedLabTests] = useState<string[]>([]);
   const [labSearchTerm, setLabSearchTerm] = useState("");
   const [includeBloodDrawFee, setIncludeBloodDrawFee] = useState(true);
   
-  // Labor páciens adatok
   const [labPatientName, setLabPatientName] = useState("");
   const [labMaidenName, setLabMaidenName] = useState("");
   const [labBirthDate, setLabBirthDate] = useState("");
@@ -106,21 +98,24 @@ export default function Home() {
   const [labPhone, setLabPhone] = useState("");
   const [labEmail, setLabEmail] = useState("");
   const [labPatientAddress, setLabPatientAddress] = useState("");
-  const [labArrivalTime, setLabArrivalTime] = useState(""); // ÚJ: Érkezési idő változója
+  
+  // Labor Napok állapotai
+  const [labSlots, setLabSlots] = useState<any[]>([]);
+  const [labSelectedSlotId, setLabSelectedSlotId] = useState(""); // Új: legördülőhöz
+  const [labGenDate, setLabGenDate] = useState("");
+  const [labGenStart, setLabGenStart] = useState("08:00");
+  const [labGenEnd, setLabGenEnd] = useState("12:00");
+  const [labGenDuration, setLabGenDuration] = useState("10");
 
-  // Mentett labor kalkulációk állapota
   const [savedCalculations, setSavedCalculations] = useState<any[]>([]);
   const [isLoadingSavedLabs, setIsLoadingSavedLabs] = useState(false);
-  const [printingSavedLab, setPrintingSavedLab] = useState<any>(null); // Tárolja, ha egy régi mentést nyomtatunk
+  const [printingSavedLab, setPrintingSavedLab] = useState<any>(null); 
 
-  // --- STATISZTIKA ÁLLAPOTOK ---
   const [statsPeriod, setStatsPeriod] = useState<'today' | 'week' | 'month' | 'all'>('month');
 
-  // --- ÚJ LEGÖRDÜLŐ MENÜ ÁLLAPOT ---
   const [isDeptDropdownOpen, setIsDeptDropdownOpen] = useState(false);
   const deptDropdownRef = useRef<HTMLDivElement>(null);
 
-  // --- ONLINE FELHASZNÁLÓK ÁLLAPOTAI ---
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
   const [isOnlineDropdownOpen, setIsOnlineDropdownOpen] = useState(false);
   const onlineRef = useRef<HTMLDivElement>(null);
@@ -140,7 +135,6 @@ export default function Home() {
   
   const [selectedDate, setSelectedDate] = useState(""); 
   
-  // NAPI ÚJ IDŐPONT ÁLLAPOT
   const [dayNewTimeSlots, setDayNewTimeSlots] = useState<Record<string, string>>({});
 
   const [genStart, setGenStart] = useState("08:00");
@@ -265,6 +259,15 @@ export default function Home() {
     const testsTotal = items.reduce((sum, item) => sum + item.price, 0);
     const testsList = items.map(i => i.name).join(", ");
 
+    let erkezesi_ido_val = null;
+    if (labSelectedSlotId) {
+       const slot = labSlots.find(s => s.id.toString() === labSelectedSlotId);
+       if (slot) {
+          const dt = new Date(`${slot.slot_date}T${slot.slot_time}`);
+          erkezesi_ido_val = dt.toISOString();
+       }
+    }
+
     const { error } = await supabase.from('lab_calculations').insert([{
       patient_name: labPatientName,
       maiden_name: labMaidenName,
@@ -277,21 +280,84 @@ export default function Home() {
       tests_list: testsList,
       total_price: testsTotal,
       created_by: getDisplayName(),
-      erkezesi_ido: labArrivalTime || null // ÚJ
+      erkezesi_ido: erkezesi_ido_val 
     }]);
 
     if (error) {
       console.error(error);
       showAlert("Hiba", "Nem sikerült elmenteni a kalkulációt az adatbázisba.");
     } else {
+      if (labSelectedSlotId) {
+        await supabase.from('lab_slots').update({ is_booked: true, patient_name: labPatientName }).eq('id', labSelectedSlotId);
+      }
       showToast("Kalkuláció sikeresen elmentve az adatbázisba!");
       setLabPatientName(""); setLabMaidenName(""); setLabPatientTaj(""); setLabBirthDate("");
       setLabBirthPlace(""); setLabPatientAddress(""); setLabPhone(""); setLabEmail("");
-      setLabArrivalTime(""); // ÚJ
+      setLabSelectedSlotId(""); 
       setSelectedLabTests([]);
       setActiveLabTab('saved');
+      fetchLabSlots();
       fetchSavedCalculations();
     }
+  };
+
+  const fetchLabSlots = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const { data } = await supabase.from('lab_slots').select('*').gte('slot_date', today).order('slot_date').order('slot_time');
+    if (data) setLabSlots(data);
+  };
+
+  const generateLabSlots = async () => {
+    if (!labGenDate || !labGenStart || !labGenEnd || !labGenDuration) return showAlert("Hiányzó adat", "Minden labor generátor mezőt ki kell tölteni!");
+    const durationMins = parseInt(labGenDuration);
+    if (isNaN(durationMins) || durationMins <= 0) return showAlert("Hibás érték", "A vizsgálat hossza (perc) nullánál nagyobb kell, hogy legyen!");
+
+    let current = timeToMins(labGenStart);
+    const end = timeToMins(labGenEnd);
+    const slotsToCreate = [];
+
+    while (current + durationMins <= end) {
+      slotsToCreate.push({
+        slot_date: labGenDate,
+        slot_time: minsToTime(current) + ":00",
+        is_booked: false,
+        patient_name: null
+      });
+      current += durationMins;
+    }
+
+    if (slotsToCreate.length === 0) return showAlert("Sikertelen generálás", "A megadott feltételekkel nem jött létre időpont.");
+
+    showConfirm(
+      "Labor nap generálása",
+      `Sikeresen kiszámoltam ${slotsToCreate.length} db új labor időpontot a kiválasztott napra.\n\nLétrehozhatom őket?`,
+      "Generálás",
+      "bg-emerald-600 hover:bg-emerald-700 text-white",
+      async () => {
+        const { error } = await supabase.from('lab_slots').insert(slotsToCreate);
+        if (error) {
+           console.error(error);
+           showAlert("Hiba", "Nem sikerült elmenteni az időpontokat.");
+        } else {
+           showToast("Labor időpontok sikeresen legenerálva!");
+           fetchLabSlots();
+        }
+      }
+    );
+  };
+
+  const deleteLabDay = async (date: string) => {
+    showConfirm(
+      "Labor nap törlése",
+      `Biztosan törlöd a teljes ${date} labor napot?\nFigyelem: A foglalt időpontok is törlődnek a listából (a kalkulációk viszont megmaradnak az archívumban).`,
+      "Igen, törlés",
+      "bg-red-600 hover:bg-red-700 text-white",
+      async () => {
+        await supabase.from('lab_slots').delete().eq('slot_date', date);
+        showToast("Labor nap törölve!");
+        fetchLabSlots();
+      }
+    );
   };
 
   const fetchSavedCalculations = async () => {
@@ -338,7 +404,6 @@ export default function Home() {
     );
   };
 
-  // ÚJ: A megérkezett státusz váltása
   const toggleLabArrived = async (id: number, currentValue: boolean) => {
     const { error } = await supabase.from('lab_calculations').update({ megerkezett: !currentValue }).eq('id', id);
     if (error) {
@@ -704,7 +769,8 @@ export default function Home() {
       fetchCategories(),
       fetchAppointments(),
       fetchAllPrices(),
-      fetchNotifications()
+      fetchNotifications(),
+      fetchLabSlots() 
     ]);
     setIsInitialLoading(false);
   };
@@ -733,6 +799,10 @@ export default function Home() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'departments' }, () => fetchCategories())
         .subscribe();
 
+      const labSlotsChannel = supabase.channel('live-lab-slots')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'lab_slots' }, () => fetchLabSlots())
+        .subscribe();
+
       const presenceChannel = supabase.channel('online-users');
       presenceChannel
         .on('presence', { event: 'sync' }, () => {
@@ -754,6 +824,7 @@ export default function Home() {
         supabase.removeChannel(pricesChannel); 
         supabase.removeChannel(notifChannel); 
         supabase.removeChannel(deptChannel); 
+        supabase.removeChannel(labSlotsChannel);
         supabase.removeChannel(presenceChannel); 
       };
     } 
@@ -830,7 +901,6 @@ export default function Home() {
     }
   };
 
-  // NAPI HELYSZÍN MENTÉSE
   const updateDayLocation = async (date: string, department: string, location: string) => {
     if (!user) return;
     const modifierName = getDisplayName();
@@ -887,7 +957,7 @@ export default function Home() {
   const confirmDeleteApp = (id: number) => {
     showConfirm(
       "Időpont törlése",
-      "Biztosan t��rlöd ezt az időpontot?\n\nKésőbb a 'Törölt sorok mutatása' gombbal visszaállítható.",
+      "Biztosan törlöd ezt az időpontot?\n\nKésőbb a 'Törölt sorok mutatása' gombbal visszaállítható.",
       "Igen, törlöm",
       "bg-red-600 hover:bg-red-700 text-white",
       () => executeDeleteApp(id)
@@ -905,7 +975,6 @@ export default function Home() {
     await supabase.from("appointments").update({ is_deleted: true, deleted_by: modifierName, deleted_at: now }).eq("id", id);
     await logAction(id, "Törlés", "Időpont törölve a listából");
     
-    // Várólista ellenőrzés
     const waitingCount = appointments.filter(a => a.appointment_date === date && a.time_slot === "VÁRÓLISTA" && !a.is_deleted).length;
     if (waitingCount > 0 && appToDelete?.time_slot !== "VÁRÓLISTA" && isBooked) {
        showToast(`Időpont törölve! Figyelem: ${waitingCount} beteg van a várólistán!`, 'warning');
@@ -954,7 +1023,7 @@ export default function Home() {
     const dayApps = groupedByDate[date]?.filter((a: any) => !a.is_deleted).sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot)) || [];
     if (dayApps.length === 0) return showAlert("Üres nap", "Nincs letölthető adat ezen a napon.");
 
-    const headers = ["Időpont", "Páciens neve", "Születési idő", "TAJ szám", "Telefon", "Státusz", "Vizsgálat", "Helyszín", "Megjegyzés"]; // ÚJ Header
+    const headers = ["Időpont", "Páciens neve", "Születési idő", "TAJ szám", "Telefon", "Státusz", "Vizsgálat", "Helyszín", "Megjegyzés"];
     const rows = dayApps.map((app: any) => [
       app.time_slot.replace(" (Online)", ""), 
       app.patient_name || "",
@@ -1026,7 +1095,6 @@ export default function Home() {
     const bStart = genBreakStart ? timeToMins(genBreakStart) : null;
     const bEnd = genBreakEnd ? timeToMins(genBreakEnd) : null;
     
-    // Online sáv 
     const oStart = genOnlineStart ? timeToMins(genOnlineStart) : null;
     const oEnd = genOnlineEnd ? timeToMins(genOnlineEnd) : null;
 
@@ -1076,7 +1144,6 @@ export default function Home() {
     );
   };
 
-  // EGYEDI IDŐPONT ADOTT NAPHOZ
   const addDaySingleAppointment = async (date: string) => {
     const slot = dayNewTimeSlots[date];
     if (!user || !slot || !slot.trim()) return showAlert("Hiányzó adat", "Kérlek, adj meg egy pontos időpontot (pl. 17:00)!");
@@ -1404,7 +1471,6 @@ export default function Home() {
     </div>
   );
 
-  // Belépés ellenőrzés
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
@@ -1440,7 +1506,6 @@ export default function Home() {
     );
   }
 
-  // --- HA VAN FELHASZNÁLÓ, DE NINCS MÉG NEVE MEGADVA ---
   if (needsProfileName) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
@@ -1457,7 +1522,6 @@ export default function Home() {
     );
   }
 
-  // --- HA A STATISZTIKA NÉZET VAN NYITVA ---
   if (showStats) {
     let validApps = appointments.filter(a => !a.is_deleted && a.patient_name && a.patient_name.trim() !== "");
     
@@ -1511,8 +1575,6 @@ export default function Home() {
 
     return (
       <div className="min-h-screen bg-slate-50 font-sans relative pb-10">
-        
-        {/* FEJLÉC */}
         <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm">
           <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex justify-between items-center">
             <div className="flex items-center gap-4">
@@ -1547,7 +1609,6 @@ export default function Home() {
             ))}
           </div>
 
-          {/* KPI Kártyák */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
              <div className="bg-white p-6 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] border border-slate-200">
                <div className="flex items-center gap-3 mb-4">
@@ -1651,7 +1712,6 @@ export default function Home() {
     );
   }
 
-  // --- HA A PÁCIENS NÉZET VAN NYITVA ---
   if (showPatients) {
     const filteredPatientsList = patientsList.filter(p => {
       if (!patientsSearchTerm) return true;
@@ -1761,15 +1821,22 @@ export default function Home() {
     );
   }
 
-  // --- HA A LABOR KALKULÁTOR VAN NYITVA (NYOMTATÁSI NÉZET IS ITT) ---
+  // --- LABOR KALKULÁTOR / NYOMTATÁSI NÉZET ---
   if (showLabCalculator) {
     const selectedItems = getSelectedLabItemsData();
     const totalPrice = calculateLabTotal();
     const formattedTotal = new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(totalPrice);
     
-        // Mentett kalkulációk dátum szerinti csoportosítása (Érkezés alapján)
+    // Szabad labor időpontok (A legördülő menühöz)
+    const availableSlots = labSlots.filter(s => !s.is_booked);
+    const availableSlotsByDate = availableSlots.reduce((acc: any, slot: any) => {
+       if (!acc[slot.slot_date]) acc[slot.slot_date] = [];
+       acc[slot.slot_date].push(slot);
+       return acc;
+    }, {});
+    
+    // Mentett kalkulációk dátum szerinti csoportosítása (Érkezés alapján)
     const groupedSavedLabs = savedCalculations.reduce((acc: any, curr: any) => {
-      // Ha van megadva érkezési idő, az alapján csoportosítunk. Ha nincs, marad a mentés dátuma.
       const targetDate = curr.erkezesi_ido ? curr.erkezesi_ido : curr.created_at;
       const dateKey = targetDate ? targetDate.split('T')[0] : "Ismeretlen";
       
@@ -1784,7 +1851,6 @@ export default function Home() {
         {customModalUI}
         {toastUI}
         
-        {/* FEJLÉC (csak nem nyomtatáskor) */}
         {!printingLabQuote && (
           <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm no-print">
             <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-3 flex justify-between items-center">
@@ -1800,17 +1866,22 @@ export default function Home() {
               </button>
             </div>
             
-            {/* ÚJ: FÜLEK (TABS) */}
-            <div className="max-w-[1600px] mx-auto px-4 md:px-8 mt-4 flex gap-6 border-b border-slate-200 shrink-0">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-8 mt-4 flex gap-6 border-b border-slate-200 shrink-0 overflow-x-auto no-scrollbar">
                <button 
                  onClick={() => setActiveLabTab('new')} 
-                 className={`py-3 px-2 font-bold text-sm border-b-2 transition-all cursor-pointer ${activeLabTab === 'new' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+                 className={`py-3 px-2 font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${activeLabTab === 'new' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
                >
                  <span className="flex items-center gap-2"><CalculatorIcon size={18}/> Új Ajánlat Készítése</span>
                </button>
                <button 
+                 onClick={() => setActiveLabTab('slots')} 
+                 className={`py-3 px-2 font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${activeLabTab === 'slots' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+               >
+                 <span className="flex items-center gap-2"><CalendarPlusIcon size={18}/> Labor Napok Generálása</span>
+               </button>
+               <button 
                  onClick={() => { setActiveLabTab('saved'); fetchSavedCalculations(); }} 
-                 className={`py-3 px-2 font-bold text-sm border-b-2 transition-all cursor-pointer ${activeLabTab === 'saved' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+                 className={`py-3 px-2 font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${activeLabTab === 'saved' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
                >
                  <span className="flex items-center gap-2"><DatabaseIcon size={18}/> Mentett Ajánlatok ({savedCalculations.length})</span>
                </button>
@@ -1818,10 +1889,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* LABOR TARTALOM */}
         <div className={`max-w-[1600px] w-full mx-auto ${printingLabQuote ? 'p-0 pt-0 max-w-none' : 'px-4 md:px-8 py-6 min-h-[calc(100vh-140px)] flex flex-col'}`}>
           
-          {/* NYOMTATÁSI NÉZET - KIZÁRÓLAG NYOMTATÁSKOR JELENIK MEG */}
           {printingLabQuote && (
             <div className="bg-white text-black max-w-4xl mx-auto printable-quote">
               <div className="flex justify-between items-start border-b-2 border-emerald-600 pb-3 mb-4">
@@ -1871,8 +1940,6 @@ export default function Home() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    
-                    {/* Ha egy régi mentést nyomtatunk újra */}
                     {printingSavedLab ? (
                       printingSavedLab.tests_list.split(', ').map((testName: string, i: number) => (
                         <tr key={i}>
@@ -1881,7 +1948,6 @@ export default function Home() {
                         </tr>
                       ))
                     ) : (
-                      /* Ha egy aktív, új kalkulációt nyomtatunk */
                       selectedItems.map(item => (
                         <tr key={item.id}>
                           <td className="py-1 px-1 font-bold text-slate-900">{item.name}</td>
@@ -1890,7 +1956,6 @@ export default function Home() {
                       ))
                     )}
                     
-                    {/* Kezelési díj sor, csak akkor ha Új kalkulációt nyomtatunk és be van pipálva */}
                     {!printingSavedLab && includeBloodDrawFee && (
                       <tr className="bg-slate-50 print-bg-light border-t-2 border-slate-200">
                         <td className="py-1 px-1 font-bold text-slate-900">Vérvételi / Kezelési díj</td>
@@ -1917,11 +1982,10 @@ export default function Home() {
             </div>
           )}
 
-          {/* INTERAKTÍV FELÜLET (NEM NYOMTATÁSKOR) */}
+          {/* ÚJ AJÁNLAT FÜL */}
           {!printingLabQuote && activeLabTab === 'new' && (
             <div className="flex flex-col lg:flex-row gap-6 items-start flex-1 min-h-0 w-full animate-in fade-in duration-300">
               
-              {/* BAL OSZLOP: Vizsgálatok listája */}
               <div className="w-full lg:w-2/3 bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col min-h-0 h-full">
                 <div className="flex justify-between items-center mb-4 shrink-0">
                   <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><ListPlusIcon /> Vizsgálatok kiválasztása</h2>
@@ -1977,7 +2041,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* JOBB OSZLOP: Kalkuláció és Nyomtatás */}
               <div className="w-full lg:w-1/3 bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col h-full min-h-0">
                 <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 shrink-0"><DocumentIcon /> Ajánlat & Páciens adatai</h2>
                 
@@ -2023,7 +2086,20 @@ export default function Home() {
 
                   <div>
                     <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Érkezés pontos ideje (Opcionális)</label>
-                    <input type="datetime-local" value={labArrivalTime} onChange={(e) => setLabArrivalTime(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-slate-800 font-bold" />
+                    <select 
+                      value={labSelectedSlotId} 
+                      onChange={(e) => setLabSelectedSlotId(e.target.value)} 
+                      className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-slate-800 font-bold cursor-pointer"
+                    >
+                      <option value="">Nincs időpont választva (Séta be)</option>
+                      {Object.keys(availableSlotsByDate).sort().map(date => (
+                         <optgroup key={date} label={formatShortDate(date)}>
+                           {availableSlotsByDate[date].map((s: any) => (
+                              <option key={s.id} value={s.id}>{s.slot_time.substring(0, 5)}</option>
+                           ))}
+                         </optgroup>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
@@ -2093,7 +2169,80 @@ export default function Home() {
             </div>
           )}
 
-          {/* ÚJ NÉZET: MENTETT AJÁNLATOK */}
+          {/* ÚJ NÉZET: LABOR NAPOK GENERÁLÁSA */}
+          {!printingLabQuote && activeLabTab === 'slots' && (
+            <div className="flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
+               <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-8">
+                  <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><CalendarPlusIcon /> Új labor nap generálása</h2>
+                  <div className="flex flex-wrap items-end gap-4">
+                    <div className="w-full sm:w-auto sm:flex-1 md:w-[220px] md:flex-none">
+                       <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Dátum</label>
+                       <ModernDatePicker selectedDate={labGenDate} onChange={setLabGenDate} />
+                    </div>
+                    <div className="w-[calc(50%-0.5rem)] sm:w-24">
+                       <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Kezdés</label>
+                       <input type="time" value={labGenStart} onChange={(e) => setLabGenStart(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm outline-none font-bold text-slate-800" />
+                    </div>
+                    <div className="w-[calc(50%-0.5rem)] sm:w-24">
+                       <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Befejezés</label>
+                       <input type="time" value={labGenEnd} onChange={(e) => setLabGenEnd(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm outline-none font-bold text-slate-800" />
+                    </div>
+                    <div className="w-full sm:w-20">
+                       <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Perc</label>
+                       <input type="number" min="1" value={labGenDuration} onChange={(e) => setLabGenDuration(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm outline-none font-bold text-slate-800" />
+                    </div>
+                    <button onClick={generateLabSlots} className="w-full sm:w-auto bg-emerald-600 text-white px-8 py-2.5 rounded-xl font-bold shadow-md hover:bg-emerald-700 transition-all active:scale-95 sm:ml-auto">Generálás</button>
+                  </div>
+               </div>
+
+               {Object.keys(labSlots.reduce((acc: any, s: any) => ({...acc, [s.slot_date]: true}), {})).sort().length === 0 ? (
+                  <div className="bg-white p-12 text-center rounded-3xl shadow-sm border border-slate-200">
+                     <CalendarIcon size={48} />
+                     <h3 className="text-xl font-bold text-slate-800 mb-2 mt-4">Nincsenek aktív labor napok</h3>
+                     <p className="text-slate-500 font-medium text-sm">Generálj egy új napot a fenti sáv segítségével!</p>
+                  </div>
+               ) : (
+                  <div className="space-y-6">
+                    {Object.keys(labSlots.reduce((acc: any, s: any) => ({...acc, [s.slot_date]: true}), {})).sort().map(date => {
+                       const daySlots = labSlots.filter(s => s.slot_date === date).sort((a,b) => a.slot_time.localeCompare(b.slot_time));
+                       const bookedCount = daySlots.filter(s => s.is_booked).length;
+                       const freeCount = daySlots.length - bookedCount;
+
+                       return (
+                         <div key={date} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-slate-100 pb-4">
+                              <div className="flex items-center gap-3">
+                                 <h3 className="text-lg font-extrabold text-slate-900">{formatShortDate(date)}</h3>
+                                 <div className="flex gap-2">
+                                   <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-200">Összes: {daySlots.length}</span>
+                                   <span className="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg text-xs font-bold border border-emerald-200">Szabad: {freeCount}</span>
+                                   <span className="bg-red-100 text-red-800 px-2.5 py-1 rounded-lg text-xs font-bold border border-red-200">Foglalt: {bookedCount}</span>
+                                 </div>
+                              </div>
+                              <button onClick={() => deleteLabDay(date)} className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5">
+                                 <TrashIcon size={16} /> Nap törlése
+                              </button>
+                           </div>
+
+                           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                             {daySlots.map(slot => (
+                                <div key={slot.id} className={`p-3 rounded-xl border text-center relative group flex flex-col items-center justify-center min-h-[60px] ${slot.is_booked ? 'bg-red-50 border-red-200 shadow-sm' : 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100'}`}>
+                                   <span className={`text-sm font-extrabold ${slot.is_booked ? 'text-red-900' : 'text-emerald-900'}`}>{slot.slot_time.substring(0, 5)}</span>
+                                   {slot.is_booked && (
+                                     <div className="mt-1 text-[10px] font-bold text-red-700 truncate w-full px-1" title={slot.patient_name}>{slot.patient_name}</div>
+                                   )}
+                                </div>
+                             ))}
+                           </div>
+                         </div>
+                       );
+                    })}
+                  </div>
+               )}
+            </div>
+          )}
+
+          {/* MENTETT AJÁNLATOK NÉZET */}
           {!printingLabQuote && activeLabTab === 'saved' && (
             <div className="flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
                {isLoadingSavedLabs ? (
@@ -2110,10 +2259,9 @@ export default function Home() {
                ) : (
                  <div className="space-y-8">
                    {sortedSavedDates.map(dateKey => {
-                      const displayDate = formatShortDate(dateKey); // Szép formátum
+                      const displayDate = formatShortDate(dateKey); 
                       const labsForDay = groupedSavedLabs[dateKey];
                       
-                      // NAPI ÖSSZEG KISZÁMÍTÁSA
                       const dailyTotal = labsForDay.reduce((sum: number, calc: any) => sum + (calc.total_price || 0), 0);
                       const formattedDailyTotal = new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyTotal);
                       
@@ -2137,7 +2285,6 @@ export default function Home() {
                                      <span className="text-sm font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 whitespace-nowrap shrink-0 ml-2">
                                        {calc.total_price.toLocaleString('hu-HU')} Ft
                                      </span>
-                                     {/* ÚJ: Checkbox a megérkezett státuszhoz */}
                                      <label className="flex items-center gap-2 cursor-pointer bg-slate-50 hover:bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 transition-colors">
                                         <input type="checkbox" checked={calc.megerkezett || false} onChange={() => toggleLabArrived(calc.id, calc.megerkezett || false)} className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer" />
                                         <span className={`text-[10px] font-extrabold uppercase tracking-widest ${calc.megerkezett ? 'text-emerald-600' : 'text-slate-500'}`}>Megérkezett</span>
@@ -2196,16 +2343,12 @@ export default function Home() {
     );
   }
 
-  // --- NORMÁL ELŐJEGYZÉS NÉZET ---
   const filteredCategories = categories.filter(c => c.toLowerCase().includes(departmentSearch.toLowerCase()));
-
-  // Kiszűrjük az aktuális dátumot string formában a szűréshez
   const todayStr = new Date().toISOString().split('T')[0];
 
   let filteredAppointments = appointments;
   
   if (debouncedSearchTerm.trim() !== "") {
-    // Keresésnél nem vesszük figyelembe az Archívum/Aktuális kapcsolót
     const term = debouncedSearchTerm.toLowerCase();
     const termNoSpace = term.replace(/\s+/g, ''); 
     
@@ -2217,15 +2360,14 @@ export default function Home() {
       return nameMatch || tajMatch || phoneMatch || birthMatch;
     });
   } else {
-    // Ha NINCS keresés, akkor szűrünk a szakrendelésre és a dátumra (Archívum vs Aktuális)
     filteredAppointments = filteredAppointments.filter((app: any) => app.department === activeTab);
 
     filteredAppointments = filteredAppointments.filter((app: any) => {
       const appDate = app.appointment_date || "";
       if (isArchiveView) {
-        return appDate < todayStr; // Csak tegnapi és régebbi
+        return appDate < todayStr; 
       } else {
-        return appDate >= todayStr; // Mai és jövőbeli
+        return appDate >= todayStr; 
       }
     });
   }
@@ -2239,7 +2381,6 @@ export default function Home() {
     return acc;
   }, {});
 
-  // Dátumok rendezése: Archívumban csökkenő, Aktuálisban növekvő
   const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
     if (isArchiveView) return b.localeCompare(a);
     return a.localeCompare(b);
@@ -2263,7 +2404,6 @@ export default function Home() {
       {toastUI}
       {!printingDate && <div className="absolute inset-0 bg-slate-100/70 backdrop-blur-2xl z-0 pointer-events-none no-print"></div>}
 
-      {/* --- FEJLÉC ÉS KERESŐ --- */}
       <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-white/50 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] relative no-print">
         <div className="max-w-[1600px] mx-auto px-2 sm:px-4 md:px-8 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-4 w-full md:w-auto">
@@ -2385,14 +2525,12 @@ export default function Home() {
 
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8 relative z-10 min-h-[80vh]">
         
-        {/* --- KONTROLL SÁV --- */}
         {!printingDate && debouncedSearchTerm === "" && (
           <div className="relative z-30 bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-6 mb-6 no-print">
             <div className="flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between">
               
               <div className="w-full xl:w-[45%] flex flex-col gap-4">
                 
-                {/* ÚJ: Aktuális / Archívum Váltó kisebb méretben */}
                 <div className="flex bg-slate-100/80 p-1.5 rounded-2xl w-full sm:w-max shadow-inner border border-slate-200/60 mb-2">
                   <button
                     onClick={() => setIsArchiveView(false)}
@@ -2555,7 +2693,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* --- SKELETON LOADER (Betöltési animáció) --- */}
         {!printingDate && isInitialLoading ? (
           <div className="space-y-8 animate-pulse no-print relative z-10">
             {[1, 2].map((dayBlock) => (
@@ -2580,7 +2717,6 @@ export default function Home() {
           </div>
         ) : (
           <>
-            {/* Naptár áttekintés (Csak ha már betöltött) */}
             {!printingDate && debouncedSearchTerm === "" && freeSlotsSummary.length > 0 && (
               <div className="mb-8 no-print">
                 <div className="flex items-center gap-2 mb-3 text-slate-700 font-bold uppercase tracking-widest text-xs ml-1">
@@ -2616,7 +2752,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Adatok megjelenítése */}
             {sortedDates.length === 0 ? (
               <div className="bg-white/80 backdrop-blur-xl p-12 md:p-20 text-center rounded-3xl shadow-sm border border-white/60 flex flex-col items-center no-print relative z-0">
                 <div className="text-slate-300 mb-4"><CalendarIcon size={64} /></div>
@@ -2634,14 +2769,12 @@ export default function Home() {
                 const dayAppointments = groupedByDate[date].sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot));
                 const activeSlots = dayAppointments.filter((a: any) => !a.is_deleted);
                 
-                // Várólista és normál szétválasztás számításokhoz
                 const activeNormalSlots = activeSlots.filter((a: any) => a.time_slot !== "VÁRÓLISTA");
                 const waitingListSlots = activeSlots.filter((a: any) => a.time_slot === "VÁRÓLISTA");
 
                 const bookedCount = activeNormalSlots.filter((a: any) => a.patient_name && a.patient_name.trim() !== "").length;
                 const freeCount = activeNormalSlots.length - bookedCount;
                 
-                // --- MINI DASHBOARD Számítások ---
                 const percent = activeNormalSlots.length > 0 ? Math.round((bookedCount / activeNormalSlots.length) * 100) : 0;
                 const deptPrices = allPrices.filter(p => p.department === (dayAppointments[0]?.department || activeTab));
                 const dailyRevenue = getDailyRevenue(activeNormalSlots, deptPrices);
@@ -2659,7 +2792,6 @@ export default function Home() {
                             <h2 className="text-xl font-bold">{date} {debouncedSearchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}</h2>
                           </div>
                           
-                          {/* --- ÚJ: HELYSZÍN VÁLASZTÓ (Szakrendelés specifikus) --- */}
                           {!printingDate && debouncedSearchTerm === "" && (
                             <div className="flex items-center gap-2 mt-1">
                               <MapPinIcon size={16} className="text-slate-400" />
@@ -2769,7 +2901,6 @@ export default function Home() {
                             
                             if (printingDate && isDel) return null; 
 
-                            // Vizuális Státusz Színek a sor szélére
                             const statusBorder = printingDate || isDel || (!isBooked && !isWaitingList) ? "" :
                               isWaitingList ? "border-l-4 border-l-orange-400" :
                               app.status === "Megérkezett" ? "border-l-4 border-l-amber-400" :
@@ -3019,7 +3150,6 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* MOVED: NAPI ÚJ IDŐPONT HOZZÁADÓ (TELJES SÁV ALUL) */}
                     {!printingDate && debouncedSearchTerm === "" && !isArchiveView && (
                       <div className="border-t border-slate-200/60 bg-white/40 p-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 no-print rounded-b-3xl shrink-0 mt-auto">
                          <div className="flex items-center gap-2 text-slate-600 font-extrabold text-sm">
@@ -3054,14 +3184,12 @@ export default function Home() {
         )}
       </div>
 
-      {/* --- LÁBLÉC (COPYRIGHT) --- */}
       {!printingDate && (
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6 text-right text-slate-600/70 text-xs font-bold no-print relative z-10">
           &copy; 2026 Created by Zozi
         </div>
       )}
 
-      {/* --- SCROLL TO TOP GOMB --- */}
       {!printingDate && showScrollTop && (
         <button
           onClick={scrollToTop}
@@ -3073,20 +3201,11 @@ export default function Home() {
       )}
       
       <style dangerouslySetInnerHTML={{__html: `
-        /* MEGOLDÁS AZ UGRÁLÁSRA / ZOOMOLÁSRA: Mindig tartsa ott a görgetősáv helyét */
         html { 
           overflow-y: scroll; 
         }
-
-        /* Megakadályozza, hogy az input mezők szétfeszítsék a táblázatot */
         td input { min-width: 0 !important; width: 100%; }
-
-        /* Megakadályozza a laptop touchpad-es dupla kattintásos véletlen nagyítását */
-        input, textarea, button, select {
-          touch-action: manipulation;
-        }
-
-        /* Mobilos zoomolás letiltása inputoknál (iOS fix) */
+        input, textarea, button, select { touch-action: manipulation; }
         @media screen and (max-width: 768px) {
           input, select, textarea { font-size: 16px !important; }
         }
@@ -3100,35 +3219,58 @@ export default function Home() {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
         @media print {
-          @page { 
-            size: A4 portrait;
-            margin: 10mm 15mm;
-          }
+          @page { size: A4 portrait; margin: 10mm 15mm; }
           body, html { background: white !important; color: black !important; font-family: Arial, Helvetica, sans-serif; font-size: 10px !important; }
           .no-print { display: none !important; }
+          .print-mode { background: white !important; min-height: auto !important; padding: 0 !important; display: block !important; }
           
-          .print-mode { background: white !important; min-height: auto !important; padding: 0 !important; display: block !important; position: static !important; overflow: visible !important; }
+          .printable-quote { 
+            width: 100% !important; 
+            max-width: 100% !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            box-shadow: none !important; 
+            border: none !important; 
+          }
           
-          /* Labor ajánlat sűrítése */
-          .printable-quote { padding: 0 !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
-          .printable-quote h1 { font-size: 18px !important; margin-bottom: 2px !important; }
-          .printable-quote h2, .printable-quote h3 { font-size: 12px !important; margin-bottom: 2px !important; }
-          .printable-quote p { font-size: 10px !important; margin-bottom: 1px !important; line-height: 1.2 !important; }
-          .printable-quote .text-2xl { font-size: 16px !important; }
+          .print-bg-light {
+            background-color: #f8fafc !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          .print-container { 
+            box-shadow: none !important; 
+            border: none !important; 
+            margin-bottom: 20px !important; 
+            break-inside: avoid;
+            background: white !important;
+          }
+          .print-header { 
+            border-bottom: 2px solid #000 !important; 
+            padding-bottom: 8px !important; 
+            margin-bottom: 8px !important; 
+            background: white !important;
+          }
           
-          /* Táblázatok sűrítése */
-          .print-table, .printable-quote table { width: 100% !important; border-collapse: collapse !important; margin-top: 5px !important; table-layout: fixed; }
-          .print-table th, .printable-quote th { border-bottom: 1px solid #999 !important; padding: 3px 2px !important; font-size: 9px !important; background: transparent !important; color: black !important; }
-          .print-table td, .printable-quote td { border-bottom: 1px dotted #ccc !important; padding: 3px 2px !important; font-size: 10px !important; line-height: 1.1 !important; word-break: break-word; }
+          .print-table { 
+            width: 100% !important; 
+            border-collapse: collapse !important; 
+          }
+          .print-table th { 
+            border-bottom: 1px solid #000 !important; 
+            color: #000 !important; 
+            padding: 4px !important; 
+            font-size: 9px !important; 
+          }
+          .print-table td { 
+            border-bottom: 1px solid #ccc !important; 
+            padding: 4px !important; 
+            font-size: 10px !important; 
+          }
           
-          /* Előjegyzés specifikus print */
-          .print-container { box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; page-break-after: auto; }
-          .print-header { padding: 0 0 5px 0 !important; margin-bottom: 5px !important; border-bottom: 1.5px solid black !important; display: flex !important; justify-content: space-between !important; align-items: flex-end !important; flex-direction: row !important; }
-          .print-header h2 { font-size: 14px !important; margin: 0 !important; }
-          .print-header span { display: none !important; }
+          .print-border { border-bottom: 2px solid black !important; }
           .print-hidden { display: none !important; }
-          
-          mark { background: transparent !important; color: black !important; font-weight: normal !important; }
         }
       `}} />
     </div>

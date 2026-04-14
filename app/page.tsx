@@ -53,6 +53,7 @@ import {
 
 import { EditableCell } from "../components/EditableCell";
 import { ModernStatusSelect } from "../components/ModernStatusSelect";
+import { ModernExamSelect } from "../components/ModernExamSelect";
 import { ModernDatePicker } from "../components/ModernDatePicker";
 import { PatientAutocomplete } from "../components/PatientAutocomplete";
 
@@ -3224,23 +3225,11 @@ export default function Home() {
                                   ) : isDel ? (
                                     <div className="text-slate-500">{app.examination_type || "-"}</div>
                                   ) : (
-                                    <div className="relative">
-                                      <EditableCell 
-                                        value={app.examination_type} 
-                                        onSave={(val) => updateAppointment(app.id, "examination_type", val)} 
-                                        placeholder="Kattints ide..." 
-                                        className={`font-semibold border text-sm shadow-sm transition-colors ${getExamColor(app.examination_type)}`} 
-                                        suggestions={examinationSuggestions}
-                                      />
-                                      {currentPrices.length > 0 && app.examination_type && (
-                                         <div className="absolute -bottom-5 left-0 text-[9px] font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap shadow-sm border border-emerald-100">
-                                            {(()=>{
-                                               const match = currentPrices.find(p => app.examination_type.toLowerCase().includes(p.name.toLowerCase()));
-                                               return match ? match.price : "Nincs egyezés az árlistában";
-                                            })()}
-                                         </div>
-                                      )}
-                                    </div>
+                                    <ModernExamSelect
+                                      value={app.examination_type}
+                                      onChange={(val) => updateAppointment(app.id, "examination_type", val)}
+                                      options={examinationSuggestions}
+                                    />
                                   )}
                                 </td>
 
@@ -3360,7 +3349,7 @@ export default function Home() {
 
                                     <div>
                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Vizsgálat</label>
-                                       <EditableCell value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} placeholder="Vizsgálat típusa..." className={`text-sm ${getExamColor(app.examination_type)}`} suggestions={examinationSuggestions} />
+                                       <ModernExamSelect value={app.examination_type} onChange={(val) => updateAppointment(app.id, "examination_type", val)} options={examinationSuggestions} />
                                     </div>
 
                                     <div>

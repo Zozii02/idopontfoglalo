@@ -3099,8 +3099,9 @@ export default function Home() {
                                     <div className="flex items-center gap-2">
                                       <PatientAutocomplete
                                         value={app.patient_name}
-                                        onChange={(val) => updateAppointment(app.id, "patient_name", val)}
-                                        onSelect={(patient) => handleSelectPatient(app.id, patient)}
+                                        onSave={(val) => updateAppointment(app.id, "patient_name", val)}
+                                        onSelectPatient={(patient) => handleSelectPatient(app.id, patient)}
+                                        searchPatients={searchPatients}
                                         placeholder="Páciens neve..."
                                       />
                                       {canShowHistory && (
@@ -3120,7 +3121,7 @@ export default function Home() {
                                   ) : (
                                     <EditableCell 
                                       value={app.birth_date} 
-                                      onChange={(val) => updateAppointment(app.id, "birth_date", val)} 
+                                      onSave={(val) => updateAppointment(app.id, "birth_date", val)} 
                                       placeholder="ÉÉÉÉ.HH.NN" 
                                       className="font-medium text-slate-700" 
                                     />
@@ -3135,7 +3136,7 @@ export default function Home() {
                                   ) : (
                                     <EditableCell 
                                       value={formatTAJ(app.taj_szam)} 
-                                      onChange={(val) => updateAppointment(app.id, "taj_szam", val)} 
+                                      onSave={(val) => updateAppointment(app.id, "taj_szam", val)} 
                                       placeholder="000 000 000" 
                                       className="font-mono font-bold text-slate-700" 
                                     />
@@ -3149,7 +3150,7 @@ export default function Home() {
                                     ) : (
                                       <EditableCell 
                                         value={formatPhone(app.phone_number)} 
-                                        onChange={(val) => updateAppointment(app.id, "phone_number", val)} 
+                                        onSave={(val) => updateAppointment(app.id, "phone_number", val)} 
                                         placeholder="06 30 000 0000" 
                                         className="font-medium text-slate-700" 
                                       />
@@ -3180,7 +3181,7 @@ export default function Home() {
                                     <div className="relative">
                                       <EditableCell 
                                         value={app.examination_type} 
-                                        onChange={(val) => updateAppointment(app.id, "examination_type", val)} 
+                                        onSave={(val) => updateAppointment(app.id, "examination_type", val)} 
                                         placeholder="Kattints ide..." 
                                         className={`font-semibold border text-sm shadow-sm transition-colors ${getExamColor(app.examination_type)}`} 
                                       />
@@ -3204,7 +3205,7 @@ export default function Home() {
                                   ) : (
                                     <EditableCell 
                                       value={app.notes} 
-                                      onChange={(val) => updateAppointment(app.id, "notes", val)} 
+                                      onSave={(val) => updateAppointment(app.id, "notes", val)} 
                                       placeholder="Kattints ide..." 
                                       className="text-slate-600 italic text-sm" 
                                     />
@@ -3279,7 +3280,7 @@ export default function Home() {
                                     <div>
                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Páciens neve</label>
                                        <div className="flex gap-2">
-                                         <PatientAutocomplete value={app.patient_name} onChange={(val) => updateAppointment(app.id, "patient_name", val)} onSelect={(patient) => handleSelectPatient(app.id, patient)} placeholder="Páciens neve..." />
+                                         <PatientAutocomplete value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} onSelectPatient={(patient) => handleSelectPatient(app.id, patient)} searchPatients={searchPatients} placeholder="Páciens neve..." />
                                          {canShowHistory && (
                                            <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-2.5 bg-purple-50 text-purple-600 rounded-xl border border-purple-200" title="Karton">
                                               <HistoryIcon />
@@ -3291,18 +3292,18 @@ export default function Home() {
                                     <div className="grid grid-cols-2 gap-3">
                                        <div>
                                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Születési idő</label>
-                                         <EditableCell value={app.birth_date} onChange={(val) => updateAppointment(app.id, "birth_date", val)} placeholder="ÉÉÉÉ.HH.NN" className="bg-slate-50 text-sm" />
+                                         <EditableCell value={app.birth_date} onSave={(val) => updateAppointment(app.id, "birth_date", val)} placeholder="ÉÉÉÉ.HH.NN" className="bg-slate-50 text-sm" />
                                        </div>
                                        <div>
                                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">TAJ Szám</label>
-                                         <EditableCell value={formatTAJ(app.taj_szam)} onChange={(val) => updateAppointment(app.id, "taj_szam", val)} placeholder="000 000 000" className="bg-slate-50 font-mono text-sm" />
+                                         <EditableCell value={formatTAJ(app.taj_szam)} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} placeholder="000 000 000" className="bg-slate-50 font-mono text-sm" />
                                        </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3">
                                        <div>
                                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Telefon</label>
-                                         <EditableCell value={formatPhone(app.phone_number)} onChange={(val) => updateAppointment(app.id, "phone_number", val)} placeholder="06 30 000 0000" className="bg-slate-50 text-sm" />
+                                         <EditableCell value={formatPhone(app.phone_number)} onSave={(val) => updateAppointment(app.id, "phone_number", val)} placeholder="06 30 000 0000" className="bg-slate-50 text-sm" />
                                        </div>
                                        <div>
                                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Státusz</label>
@@ -3312,12 +3313,12 @@ export default function Home() {
 
                                     <div>
                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Vizsgálat</label>
-                                       <EditableCell value={app.examination_type} onChange={(val) => updateAppointment(app.id, "examination_type", val)} placeholder="Vizsgálat típusa..." className={`text-sm ${getExamColor(app.examination_type)}`} />
+                                       <EditableCell value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} placeholder="Vizsgálat típusa..." className={`text-sm ${getExamColor(app.examination_type)}`} />
                                     </div>
 
                                     <div>
                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Megjegyzés</label>
-                                       <EditableCell value={app.notes} onChange={(val) => updateAppointment(app.id, "notes", val)} placeholder="Ide írhatsz..." className="bg-slate-50 italic text-sm" />
+                                       <EditableCell value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} placeholder="Ide írhatsz..." className="bg-slate-50 italic text-sm" />
                                     </div>
                                  </div>
                               </div>

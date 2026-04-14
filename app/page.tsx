@@ -3150,9 +3150,9 @@ export default function Home() {
 
                                 <td className="px-2.5 py-2 align-middle">
                                   {printingDate ? (
-                                    <div className="font-bold text-black text-sm truncate">{app.patient_name}</div>
+                                    <div className="font-bold text-black text-sm truncate" title={app.patient_name}>{app.patient_name}</div>
                                   ) : isDel ? (
-                                    <div className="font-semibold text-slate-500 line-through truncate">{app.patient_name || "-"}</div>
+                                    <div className="font-semibold text-slate-500 line-through truncate" title={app.patient_name || ""}>{app.patient_name || "-"}</div>
                                   ) : (
                                     <div className="flex items-center gap-1.5">
                                       <div className="flex-1 min-w-0">
@@ -3234,9 +3234,9 @@ export default function Home() {
 
                                 <td className="px-2.5 py-2 align-middle">
                                   {printingDate ? (
-                                    <div className="text-black text-sm font-semibold truncate">{app.examination_type}</div>
+                                    <div className="text-black text-sm font-semibold truncate" title={app.examination_type}>{app.examination_type}</div>
                                   ) : isDel ? (
-                                    <div className="text-slate-500 text-sm truncate">{app.examination_type || "-"}</div>
+                                    <div className="text-slate-500 text-sm truncate" title={app.examination_type || ""}>{app.examination_type || "-"}</div>
                                   ) : (
                                     <ModernExamSelect
                                       value={app.examination_type}
@@ -3248,9 +3248,9 @@ export default function Home() {
 
                                 <td className="px-2.5 py-2 align-middle">
                                   {printingDate ? (
-                                    <div className="text-black text-sm italic truncate">{app.notes}</div>
+                                    <div className="text-black text-sm italic truncate" title={app.notes}>{app.notes}</div>
                                   ) : isDel ? (
-                                    <div className="text-slate-500 italic text-sm truncate">{app.notes || "-"}</div>
+                                    <div className="text-slate-500 italic text-sm truncate" title={app.notes || ""}>{app.notes || "-"}</div>
                                   ) : (
                                     <EditableCell 
                                       value={app.notes} 

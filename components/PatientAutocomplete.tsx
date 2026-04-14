@@ -91,7 +91,7 @@ export function PatientAutocomplete({
     setTimeout(() => { isSelecting.current = false; }, 200);
   };
 
-  if (disabled) return <div className="p-2 text-slate-400 font-medium line-through bg-slate-50/50 rounded-lg break-words">{value || "-"}</div>;
+  if (disabled) return <div className="px-1.5 py-1 text-slate-400 font-medium line-through bg-slate-50/50 rounded-lg break-words text-sm">{value || "-"}</div>;
 
   if (isEditing) {
     return (
@@ -108,7 +108,7 @@ export function PatientAutocomplete({
             }
           }}
           placeholder="Név keresése..."
-          className="w-full min-w-0 bg-white border border-emerald-400 p-2 rounded-lg focus:outline-none focus:ring-4 focus:ring-emerald-100 text-slate-900 font-semibold shadow-sm transition-all"
+          className="w-full min-w-0 bg-white border border-emerald-400 px-1.5 py-1 rounded-lg focus:outline-none focus:ring-4 focus:ring-emerald-100 text-slate-900 font-semibold text-sm shadow-sm transition-all"
         />
         {/* Lenyíló találati lista */}
         {results.length > 0 && (
@@ -138,11 +138,11 @@ export function PatientAutocomplete({
 
   return (
     <div onClick={() => { setIsEditing(true); setCurrentValue(value || ""); }}
-      className={`cursor-pointer min-h-[38px] p-2 rounded-lg transition-all border border-transparent hover:bg-white/80 hover:border-slate-200 font-medium break-words
+      className={`cursor-pointer min-h-[32px] px-1.5 py-1 rounded-lg transition-all border border-transparent hover:bg-white/80 hover:border-slate-200 font-medium text-sm break-words overflow-hidden
         ${highlight ? "text-red-950 font-bold" : "text-emerald-950"}`}
       title="Kattints a kereséshez vagy szerkesztéshez"
     >
-      {value ? <HighlightText text={value} highlight={searchTerm} /> : <span className="text-slate-400 italic text-sm font-normal opacity-70">Üres (kattints)</span>}
+      {value ? <HighlightText text={value} highlight={searchTerm} /> : <span className="text-slate-400 italic text-xs font-normal opacity-70">Üres (kattints)</span>}
     </div>
   );
 }

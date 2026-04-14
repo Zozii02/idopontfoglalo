@@ -106,6 +106,7 @@ export default function Home() {
   const [labPhone, setLabPhone] = useState("");
   const [labEmail, setLabEmail] = useState("");
   const [labPatientAddress, setLabPatientAddress] = useState("");
+  const [labArrivalTime, setLabArrivalTime] = useState("");
 
   // Mentett labor kalkulációk állapota
   const [savedCalculations, setSavedCalculations] = useState<any[]>([]);
@@ -276,6 +277,7 @@ export default function Home() {
       tests_list: testsList,
       total_price: testsTotal,
       created_by: getDisplayName()
+      erkezesi_ido: labArrivalTime || null
     }]);
 
     if (error) {
@@ -285,6 +287,7 @@ export default function Home() {
       showToast("Kalkuláció sikeresen elmentve az adatbázisba!");
       setLabPatientName(""); setLabMaidenName(""); setLabPatientTaj(""); setLabBirthDate("");
       setLabBirthPlace(""); setLabPatientAddress(""); setLabPhone(""); setLabEmail("");
+       setLabArrivalTime("");
       setSelectedLabTests([]);
       setActiveLabTab('saved');
       fetchSavedCalculations();
@@ -333,6 +336,15 @@ export default function Home() {
         showToast("Kalkuláció véglegesen törölve!");
       }
     );
+  };
+   const toggleLabArrived = async (id: number, currentValue: boolean) => {
+    const { error } = await supabase.from('lab_calculations').update({ megerkezett: !currentValue }).eq('id', id);
+    if (error) {
+      showAlert("Hiba", "Nem sikerült frissíteni a státuszt.");
+    } else {
+      setSavedCalculations(prev => prev.map(c => c.id === id ? { ...c, megerkezett: !currentValue } : c));
+      showToast(!currentValue ? "Sikeresen kipipálva (Megérkezett)!" : "Státusz visszavonva!");
+    }
   };
 
   const handlePrintSavedLab = (calc: any) => {
@@ -2004,6 +2016,11 @@ export default function Home() {
                     <input type="email" placeholder="minta@email.hu" value={labEmail} onChange={(e) => setLabEmail(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm" />
                   </div>
 
+                   <div>
+                    <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Érkezés pontos ideje (Opcionális)</label>
+                    <input type="datetime-local" value={labArrivalTime} onChange={(e) => setLabArrivalTime(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-slate-800 font-bold" />
+                  </div>
+
                   <div>
                     <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Teljes Lakcím</label>
                     <input type="text" placeholder="1234 Budapest, Példa utca 1." value={labPatientAddress} onChange={(e) => setLabPatientAddress(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-sm font-semibold text-slate-800 transition-all outline-none shadow-sm" />
@@ -2106,21 +2123,31 @@ export default function Home() {
                           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                             {labsForDay.map((calc: any) => (
                               <div key={calc.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all flex flex-col h-full">
-                                <div className="flex justify-between items-start mb-4">
+                                                                <div className="flex justify-between items-start mb-4">
                                    <div>
                                      <h4 className="font-extrabold text-slate-900 text-lg leading-tight">{calc.patient_name}</h4>
                                      {calc.maiden_name && <p className="text-xs text-slate-400 font-medium mt-0.5">Leánykori: {calc.maiden_name}</p>}
                                    </div>
-                                   <span className="text-sm font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 whitespace-nowrap shrink-0 ml-2">
-                                     {calc.total_price.toLocaleString('hu-HU')} Ft
-                                   </span>
+                                   <div className="flex flex-col items-end gap-2">
+                                     <span className="text-sm font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 whitespace-nowrap shrink-0 ml-2">
+                                       {calc.total_price.toLocaleString('hu-HU')} Ft
+                                     </span>
+                                     {/* ÚJ: Checkbox a megérkezett státuszhoz */}
+                                     <label className="flex items-center gap-2 cursor-pointer bg-slate-50 hover:bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 transition-colors">
+                                        <input type="checkbox" checked={calc.megerkezett || false} onChange={() => toggleLabArrived(calc.id, calc.megerkezett || false)} className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer" />
+                                        <span className={`text-[10px] font-extrabold uppercase tracking-widest ${calc.megerkezett ? 'text-emerald-600' : 'text-slate-500'}`}>Megérkezett</span>
+                                     </label>
+                                   </div>
                                 </div>
                                 
                                 <div className="grid grid-cols-2 gap-x-2 gap-y-3 text-[11px] text-slate-600 font-medium mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                   {/* ÚJ: Érkezési idő kiírása kék háttérrel, ha van */}
+                                   {calc.erkezesi_ido && <div className="col-span-2 bg-blue-50/50 p-2 rounded-lg border border-blue-100"><span className="block text-[9px] uppercase font-bold text-blue-500 tracking-widest">Tervezett érkezés</span><span className="font-bold text-blue-900 text-sm">{new Date(calc.erkezesi_ido).toLocaleString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span></div>}
+                                   
                                    {calc.taj_szam && <div><span className="block text-[9px] uppercase font-bold text-slate-400 tracking-widest">TAJ</span><span className="font-bold text-slate-800">{formatTAJ(calc.taj_szam)}</span></div>}
                                    {calc.birth_date && <div><span className="block text-[9px] uppercase font-bold text-slate-400 tracking-widest">Szül. idő</span><span className="font-bold text-slate-800">{calc.birth_date}</span></div>}
                                    {calc.phone_number && <div><span className="block text-[9px] uppercase font-bold text-slate-400 tracking-widest">Telefon</span><span className="font-bold text-slate-800">{formatPhone(calc.phone_number)}</span></div>}
-                                   {calc.email && <div><span className="block text-[9px] uppercase font-bold text-slate-400 tracking-widest">E-mail</span><span className="font-bold text-slate-800 truncate block w-full" title={calc.email}>{calc.email}</span></div>}
+                                   {calc.email && <div><span className="block text-[9px] uppercase font-bold text-slate-400 tracking-widest">E-mail</span><span className="font-bold text-slate-800 truncate">{calc.email}</span></div>}
                                 </div>
 
                                 <div className="mb-4 flex-1">

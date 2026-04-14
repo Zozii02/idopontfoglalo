@@ -3032,7 +3032,7 @@ export default function Home() {
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[130px]">Szül. idő</th>
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">TAJ szám</th>
                             
-                            {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">Telefon</th>}
+                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">Telefon</th>
                             {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">Státusz</th>}
                             
                             <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto min-w-[150px]">Vizsgálat</th>
@@ -3143,20 +3143,20 @@ export default function Home() {
                                   )}
                                 </td>
 
-                                {!printingDate && (
-                                  <td className="px-4 py-3 align-middle">
-                                    {isDel ? (
-                                      <div className="text-slate-500">{formatPhone(app.phone_number) || "-"}</div>
-                                    ) : (
-                                      <EditableCell 
-                                        value={formatPhone(app.phone_number)} 
-                                        onSave={(val) => updateAppointment(app.id, "phone_number", val)} 
-                                        placeholder="06 30 000 0000" 
-                                        className="font-medium text-slate-700" 
-                                      />
-                                    )}
-                                  </td>
-                                )}
+                                <td className="px-4 py-3 align-middle">
+                                  {printingDate ? (
+                                    <div className="text-black text-sm">{formatPhone(app.phone_number)}</div>
+                                  ) : isDel ? (
+                                    <div className="text-slate-500">{formatPhone(app.phone_number) || "-"}</div>
+                                  ) : (
+                                    <EditableCell 
+                                      value={formatPhone(app.phone_number)} 
+                                      onSave={(val) => updateAppointment(app.id, "phone_number", val)} 
+                                      placeholder="06 30 000 0000" 
+                                      className="font-medium text-slate-700" 
+                                    />
+                                  )}
+                                </td>
 
                                 {!printingDate && (
                                   <td className="px-4 py-3 align-middle">

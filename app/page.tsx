@@ -89,6 +89,7 @@ export default function Home() {
   const [selectedLabTests, setSelectedLabTests] = useState<string[]>([]);
   const [labSearchTerm, setLabSearchTerm] = useState("");
   const [includeBloodDrawFee, setIncludeBloodDrawFee] = useState(true);
+  const [editingLabId, setEditingLabId] = useState<number | null>(null);
   
   const [labPatientName, setLabPatientName] = useState("");
   const [labMaidenName, setLabMaidenName] = useState("");
@@ -101,11 +102,12 @@ export default function Home() {
   
   // Labor Napok állapotai
   const [labSlots, setLabSlots] = useState<any[]>([]);
-  const [labSelectedSlotId, setLabSelectedSlotId] = useState(""); // Új: legördülőhöz
+  const [labSelectedSlotId, setLabSelectedSlotId] = useState("");
   const [labGenDate, setLabGenDate] = useState("");
   const [labGenStart, setLabGenStart] = useState("08:00");
   const [labGenEnd, setLabGenEnd] = useState("12:00");
   const [labGenDuration, setLabGenDuration] = useState("10");
+  const [labDayNewTimeSlots, setLabDayNewTimeSlots] = useState<Record<string, string>>({});
 
   const [savedCalculations, setSavedCalculations] = useState<any[]>([]);
   const [isLoadingSavedLabs, setIsLoadingSavedLabs] = useState(false);
@@ -268,7 +270,7 @@ export default function Home() {
        }
     }
 
-    const { error } = await supabase.from('lab_calculations').insert([{
+    const payload = {
       patient_name: labPatientName,
       maiden_name: labMaidenName,
       taj_szam: labPatientTaj,
@@ -281,7 +283,16 @@ export default function Home() {
       total_price: testsTotal,
       created_by: getDisplayName(),
       erkezesi_ido: erkezesi_ido_val 
-    }]);
+    };
+
+    let error;
+    if (editingLabId) {
+      const { error: updateError } = await supabase.from('lab_calculations').update(payload).eq('id', editingLabId);
+      error = updateError;
+    } else {
+      const { error: insertError } = await supabase.from('lab_calculations').insert([payload]);
+      error = insertError;
+    }
 
     if (error) {
       console.error(error);
@@ -290,15 +301,40 @@ export default function Home() {
       if (labSelectedSlotId) {
         await supabase.from('lab_slots').update({ is_booked: true, patient_name: labPatientName }).eq('id', labSelectedSlotId);
       }
-      showToast("Kalkuláció sikeresen elmentve az adatbázisba!");
+      showToast(editingLabId ? "Kalkuláció sikeresen frissítve!" : "Kalkuláció sikeresen elmentve az adatbázisba!");
       setLabPatientName(""); setLabMaidenName(""); setLabPatientTaj(""); setLabBirthDate("");
       setLabBirthPlace(""); setLabPatientAddress(""); setLabPhone(""); setLabEmail("");
       setLabSelectedSlotId(""); 
       setSelectedLabTests([]);
+      setEditingLabId(null);
       setActiveLabTab('saved');
       fetchLabSlots();
       fetchSavedCalculations();
     }
+  };
+
+  const handleEditLabCalculation = (calc: any) => {
+    setLabPatientName(calc.patient_name || "");
+    setLabMaidenName(calc.maiden_name || "");
+    setLabBirthDate(calc.birth_date || "");
+    setLabBirthPlace(calc.birth_place || "");
+    setLabPatientTaj(calc.taj_szam || "");
+    setLabPhone(calc.phone_number || "");
+    setLabEmail(calc.email || "");
+    setLabPatientAddress(calc.address || "");
+    
+    const testNames = calc.tests_list.split(", ");
+    const matchedTestIds: string[] = [];
+    LAB_DATABASE.forEach(cat => {
+      cat.items.forEach(item => {
+        if (testNames.includes(item.name)) matchedTestIds.push(item.id);
+      });
+    });
+    setSelectedLabTests(matchedTestIds);
+    setEditingLabId(calc.id);
+    setActiveLabTab('new');
+    
+    showToast("Adatok betöltve szerkesztésre!", 'success');
   };
 
   const fetchLabSlots = async () => {
@@ -346,6 +382,29 @@ export default function Home() {
     );
   };
 
+  const addLabDaySingleSlot = async (date: string) => {
+    const slotTime = labDayNewTimeSlots[date];
+    if (!slotTime || !slotTime.trim()) return showAlert("Hiányzó adat", "Kérlek, adj meg egy pontos időpontot (pl. 07:45)!");
+    
+    let formattedTime = slotTime.trim();
+    if (formattedTime.length === 5) formattedTime += ":00";
+
+    const { error } = await supabase.from('lab_slots').insert([{
+      slot_date: date,
+      slot_time: formattedTime,
+      is_booked: false,
+      patient_name: null
+    }]);
+
+    if (error) {
+      showAlert("Hiba", "Nem sikerült hozzáadni az időpontot.");
+    } else {
+      setLabDayNewTimeSlots(prev => ({...prev, [date]: ""}));
+      showToast("Új egyedi labor időpont sikeresen hozzáadva!");
+      fetchLabSlots();
+    }
+  };
+
   const deleteLabDay = async (date: string) => {
     showConfirm(
       "Labor nap törlése",
@@ -390,16 +449,31 @@ export default function Home() {
     setIsLoadingSavedLabs(false);
   };
 
-  const deleteSavedCalculation = async (id: number) => {
+  const deleteSavedCalculation = async (calc: any) => {
     showConfirm(
       "Mentett ajánlat törlése",
       "Biztosan törlöd ezt az elmentett labor kalkulációt a rendszerből?",
       "Igen, törlés",
       "bg-red-600 hover:bg-red-700 text-white",
       async () => {
-        await supabase.from('lab_calculations').delete().eq('id', id);
-        setSavedCalculations(prev => prev.filter(c => c.id !== id));
-        showToast("Kalkuláció véglegesen törölve!");
+        await supabase.from('lab_calculations').delete().eq('id', calc.id);
+        
+        if (calc.erkezesi_ido) {
+           const dt = new Date(calc.erkezesi_ido);
+           const slotDate = dt.toISOString().split('T')[0];
+           const slotTime = dt.toTimeString().split(' ')[0];
+           
+           await supabase.from('lab_slots')
+             .update({ is_booked: false, patient_name: null })
+             .eq('slot_date', slotDate)
+             .like('slot_time', `${slotTime.substring(0, 5)}%`)
+             .eq('patient_name', calc.patient_name);
+           
+           fetchLabSlots();
+        }
+        
+        setSavedCalculations(prev => prev.filter(c => c.id !== calc.id));
+        showToast("Kalkuláció véglegesen törölve, időpont felszabadítva!");
       }
     );
   };
@@ -770,7 +844,7 @@ export default function Home() {
       fetchAppointments(),
       fetchAllPrices(),
       fetchNotifications(),
-      fetchLabSlots() 
+      fetchLabSlots()
     ]);
     setIsInitialLoading(false);
   };
@@ -1871,19 +1945,19 @@ export default function Home() {
                  onClick={() => setActiveLabTab('new')} 
                  className={`py-3 px-2 font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${activeLabTab === 'new' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
                >
-                 <span className="flex items-center gap-2"><CalculatorIcon size={18}/> Új ajánlat készítése</span>
+                 <span className="flex items-center gap-2"><CalculatorIcon size={18}/> Új Ajánlat Készítése</span>
                </button>
                <button 
                  onClick={() => setActiveLabTab('slots')} 
                  className={`py-3 px-2 font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${activeLabTab === 'slots' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
                >
-                 <span className="flex items-center gap-2"><CalendarPlusIcon size={18}/> Labor napok generálása</span>
+                 <span className="flex items-center gap-2"><CalendarPlusIcon size={18}/> Labor Napok Generálása</span>
                </button>
                <button 
                  onClick={() => { setActiveLabTab('saved'); fetchSavedCalculations(); }} 
                  className={`py-3 px-2 font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${activeLabTab === 'saved' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
                >
-                 <span className="flex items-center gap-2"><DatabaseIcon size={18}/> Mentett ajánlatok ({savedCalculations.length})</span>
+                 <span className="flex items-center gap-2"><DatabaseIcon size={18}/> Mentett Ajánlatok ({savedCalculations.length})</span>
                </button>
             </div>
           </div>
@@ -2085,13 +2159,13 @@ export default function Home() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Érkezés pontos ideje</label>
+                    <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Érkezés pontos ideje (Opcionális)</label>
                     <select 
                       value={labSelectedSlotId} 
                       onChange={(e) => setLabSelectedSlotId(e.target.value)} 
                       className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-slate-800 font-bold cursor-pointer"
                     >
-                      <option value="">Nincs időpont választva</option>
+                      <option value="">Nincs időpont választva (Séta be)</option>
                       {Object.keys(availableSlotsByDate).sort().map(date => (
                          <optgroup key={date} label={formatShortDate(date)}>
                            {availableSlotsByDate[date].map((s: any) => (
@@ -2153,7 +2227,7 @@ export default function Home() {
                       className="w-1/2 py-3 rounded-xl font-bold shadow-md transition-all active:scale-95 flex justify-center items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Kezelési díj nélkül menti az adatbázisba"
                     >
-                      <DatabaseIcon /> Mentés (Adatbázis)
+                      <DatabaseIcon /> {editingLabId ? "Frissítés (Mentés)" : "Mentés (Adatbázis)"}
                     </button>
                     <button 
                       onClick={handlePrintLabQuote} 
@@ -2224,7 +2298,7 @@ export default function Home() {
                               </button>
                            </div>
 
-                           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 mb-4">
                              {daySlots.map(slot => (
                                 <div key={slot.id} className={`p-3 rounded-xl border text-center relative group flex flex-col items-center justify-center min-h-[60px] ${slot.is_booked ? 'bg-red-50 border-red-200 shadow-sm' : 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100'}`}>
                                    <span className={`text-sm font-extrabold ${slot.is_booked ? 'text-red-900' : 'text-emerald-900'}`}>{slot.slot_time.substring(0, 5)}</span>
@@ -2233,6 +2307,27 @@ export default function Home() {
                                    )}
                                 </div>
                              ))}
+                           </div>
+
+                           {/* ÚJ: EGYEDI IDŐPONT HOZZÁADÁSA A LABOR NAPHOZ */}
+                           <div className="border-t border-slate-100 pt-4 mt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+                             <div className="flex items-center gap-2 text-slate-500 font-bold text-xs">
+                               <PlusIcon size={16} /> Egyedi időpont hozzáadása:
+                             </div>
+                             <div className="flex items-center gap-2 w-full sm:w-auto">
+                               <input 
+                                  type="time" 
+                                  value={labDayNewTimeSlots[date] || ""} 
+                                  onChange={(e) => setLabDayNewTimeSlots(prev => ({...prev, [date]: e.target.value}))}
+                                  className="flex-1 sm:w-32 bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 px-3 py-2 rounded-xl outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400"
+                                />
+                                <button 
+                                  onClick={() => addLabDaySingleSlot(date)}
+                                  className="bg-slate-800 text-white px-4 py-2 rounded-xl hover:bg-black transition-all font-bold text-xs shadow-sm active:scale-95"
+                                >
+                                  Hozzáadás
+                                </button>
+                             </div>
                            </div>
                          </div>
                        );
@@ -2313,6 +2408,13 @@ export default function Home() {
                                    </span>
                                    <div className="flex gap-1.5">
                                       <button 
+                                        onClick={() => handleEditLabCalculation(calc)} 
+                                        className="text-slate-500 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-colors border border-transparent hover:border-blue-200" 
+                                        title="Szerkesztés"
+                                      >
+                                        <SettingsIcon size={18} />
+                                      </button>
+                                      <button 
                                         onClick={() => handlePrintSavedLab(calc)} 
                                         className="text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 p-2 rounded-lg transition-colors border border-transparent hover:border-emerald-200" 
                                         title="Újra-nyomtatás"
@@ -2320,7 +2422,7 @@ export default function Home() {
                                         <PrintIcon />
                                       </button>
                                       <button 
-                                        onClick={() => deleteSavedCalculation(calc.id)} 
+                                        onClick={() => deleteSavedCalculation(calc)} 
                                         className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors border border-transparent hover:border-red-200" 
                                         title="Kalkuláció törlése"
                                       >
@@ -2932,250 +3034,270 @@ export default function Home() {
                                         )}
                                       </div>
                                    )}
-                                    {!printingDate && !isDel && !isWaitingList && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isBooked ? "bg-white text-red-700 border border-red-200 shadow-sm" : "bg-emerald-100 text-emerald-700"}`}>
-                                      {isBooked ? "Foglalt" : "Szabad"}
+                                    {!printingDate && !isDel && !isWaitingList && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md text-center w-full shadow-sm
+                                      ${isBooked ? 'bg-red-200 text-red-800 border border-red-300' : 'bg-emerald-200 text-emerald-800 border border-emerald-300'}`}>
+                                      {isBooked ? 'Foglalt' : 'Szabad'}
                                     </span>}
-                                    {!printingDate && isDel && <span className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max bg-slate-200 text-slate-700">Törölt sor</span>}
                                   </div>
                                 </td>
-                                
-                                <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black font-bold text-sm border-l border-gray-300' : ''}`}>
-                                  {printingDate ? app.patient_name : (
-                                    <div className="relative">
-                                      <PatientAutocomplete 
-                                        disabled={isDel} 
-                                        highlight={isBooked} 
-                                        value={app.patient_name} 
-                                        onSave={(val) => updateAppointment(app.id, "patient_name", val)} 
-                                        onSelectPatient={(p) => handleSelectPatient(app.id, p)}
-                                        searchPatients={searchPatients}
-                                        searchTerm={debouncedSearchTerm} 
+
+                                <td className="px-4 py-3 align-middle min-w-[220px]">
+                                  {printingDate ? (
+                                    <div className="font-bold text-black text-sm">{app.patient_name}</div>
+                                  ) : isDel ? (
+                                    <div className="font-semibold text-slate-500 line-through">{app.patient_name || "-"}</div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <PatientAutocomplete
+                                        value={app.patient_name}
+                                        onChange={(val) => updateAppointment(app.id, "patient_name", val)}
+                                        onSelect={(patient) => handleSelectPatient(app.id, patient)}
+                                        placeholder="Páciens neve..."
                                       />
                                       {canShowHistory && (
-                                        <button 
-                                          onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} 
-                                          className="absolute right-0 top-1/2 -translate-y-1/2 p-2 bg-white text-slate-500 hover:text-red-600 shadow-sm rounded-lg border border-slate-200 opacity-0 group-hover:opacity-100 transition-all cursor-pointer mr-1"
-                                          title="Előzmények / Karton"
-                                        >
-                                          <HistoryIcon />
+                                        <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-2 bg-white text-purple-600 border border-purple-200 hover:bg-purple-100 hover:border-purple-300 rounded-xl shadow-sm transition-all flex-shrink-0" title="Karton">
+                                           <HistoryIcon />
                                         </button>
                                       )}
                                     </div>
                                   )}
                                 </td>
                                 
-                                <td className={`px-4 py-3 align-middle whitespace-nowrap ${printingDate ? 'text-black font-mono text-sm border-l border-gray-300' : ''}`}>
-                                  {printingDate ? app.birth_date : <EditableCell disabled={isDel} highlight={isBooked} value={app.birth_date} onSave={(val) => updateAppointment(app.id, "birth_date", val)} searchTerm={debouncedSearchTerm} placeholder="ÉÉÉÉ.HH.NN" />}
+                                <td className="px-4 py-3 align-middle">
+                                  {printingDate ? (
+                                    <div className="text-black text-sm">{app.birth_date}</div>
+                                  ) : isDel ? (
+                                    <div className="text-slate-500">{app.birth_date || "-"}</div>
+                                  ) : (
+                                    <EditableCell 
+                                      value={app.birth_date} 
+                                      onChange={(val) => updateAppointment(app.id, "birth_date", val)} 
+                                      placeholder="ÉÉÉÉ.HH.NN" 
+                                      className="font-medium text-slate-700" 
+                                    />
+                                  )}
                                 </td>
 
-                                <td className={`px-4 py-3 align-middle whitespace-nowrap ${printingDate ? 'text-black font-mono text-sm border-l border-gray-300' : ''}`}>
-                                  {printingDate ? formatTAJ(app.taj_szam) : <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} searchTerm={debouncedSearchTerm} placeholder="TAJ szám" />}
+                                <td className="px-4 py-3 align-middle">
+                                  {printingDate ? (
+                                    <div className="font-mono text-black text-sm">{formatTAJ(app.taj_szam)}</div>
+                                  ) : isDel ? (
+                                    <div className="font-mono text-slate-500">{formatTAJ(app.taj_szam) || "-"}</div>
+                                  ) : (
+                                    <EditableCell 
+                                      value={formatTAJ(app.taj_szam)} 
+                                      onChange={(val) => updateAppointment(app.id, "taj_szam", val)} 
+                                      placeholder="000 000 000" 
+                                      className="font-mono font-bold text-slate-700" 
+                                    />
+                                  )}
                                 </td>
-                                
+
                                 {!printingDate && (
-                                  <>
-                                    <td className="px-4 py-3 align-middle whitespace-nowrap"><EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={debouncedSearchTerm} placeholder="Telefonszám" /></td>
-                                    
-                                    <td className="px-4 py-3 align-middle whitespace-nowrap"><ModernStatusSelect disabled={isDel || (!isBooked && !isWaitingList)} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></td>
-                                  </>
+                                  <td className="px-4 py-3 align-middle">
+                                    {isDel ? (
+                                      <div className="text-slate-500">{formatPhone(app.phone_number) || "-"}</div>
+                                    ) : (
+                                      <EditableCell 
+                                        value={formatPhone(app.phone_number)} 
+                                        onChange={(val) => updateAppointment(app.id, "phone_number", val)} 
+                                        placeholder="06 30 000 0000" 
+                                        className="font-medium text-slate-700" 
+                                      />
+                                    )}
+                                  </td>
                                 )}
-                                
-                                <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
-                                  {printingDate ? app.examination_type : (
-                                    <div className={`rounded-xl px-1.5 py-1 transition-colors border shadow-sm ${app.examination_type ? getExamColor(app.examination_type) : 'border-slate-200 bg-white/60'}`}>
-                                      <select
-                                        disabled={isDel}
-                                        value={app.examination_type || ""}
-                                        onChange={(e) => updateAppointment(app.id, "examination_type", e.target.value)}
-                                        className="w-full bg-transparent border-none text-xs font-bold text-slate-800 focus:ring-0 outline-none cursor-pointer truncate"
-                                      >
-                                        <option value="">Válassz vizsgálatot...</option>
-                                        {allPrices.filter(p => p.department === app.department).map(p => (
-                                          <option key={p.id} value={p.name}>{p.name}</option>
-                                        ))}
-                                      </select>
+
+                                {!printingDate && (
+                                  <td className="px-4 py-3 align-middle">
+                                    {isDel ? (
+                                      <div className="text-slate-500">{app.status || "-"}</div>
+                                    ) : (
+                                      <ModernStatusSelect 
+                                        value={app.status || "Előjegyzett"} 
+                                        onChange={(val) => updateAppointment(app.id, "status", val)} 
+                                        disabled={!isBooked && !isWaitingList}
+                                      />
+                                    )}
+                                  </td>
+                                )}
+
+                                <td className="px-4 py-3 align-middle">
+                                  {printingDate ? (
+                                    <div className="text-black text-sm font-semibold">{app.examination_type}</div>
+                                  ) : isDel ? (
+                                    <div className="text-slate-500">{app.examination_type || "-"}</div>
+                                  ) : (
+                                    <div className="relative">
+                                      <EditableCell 
+                                        value={app.examination_type} 
+                                        onChange={(val) => updateAppointment(app.id, "examination_type", val)} 
+                                        placeholder="Kattints ide..." 
+                                        className={`font-semibold border text-sm shadow-sm transition-colors ${getExamColor(app.examination_type)}`} 
+                                      />
+                                      {currentPrices.length > 0 && app.examination_type && (
+                                         <div className="absolute -bottom-5 left-0 text-[9px] font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap shadow-sm border border-emerald-100">
+                                            {(()=>{
+                                               const match = currentPrices.find(p => app.examination_type.toLowerCase().includes(p.name.toLowerCase()));
+                                               return match ? match.price : "Nincs egyezés az árlistában";
+                                            })()}
+                                         </div>
+                                      )}
                                     </div>
                                   )}
                                 </td>
-                                <td className={`px-4 py-3 align-middle ${printingDate ? 'text-black text-sm border-l border-gray-300' : ''}`}>
-                                  {printingDate ? app.notes : <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={debouncedSearchTerm} placeholder="Kiegészítés..." />}
+
+                                <td className="px-4 py-3 align-middle">
+                                  {printingDate ? (
+                                    <div className="text-black text-sm italic">{app.notes}</div>
+                                  ) : isDel ? (
+                                    <div className="text-slate-500 italic">{app.notes || "-"}</div>
+                                  ) : (
+                                    <EditableCell 
+                                      value={app.notes} 
+                                      onChange={(val) => updateAppointment(app.id, "notes", val)} 
+                                      placeholder="Kattints ide..." 
+                                      className="text-slate-600 italic text-sm" 
+                                    />
+                                  )}
                                 </td>
-                                
+
                                 {!printingDate && (
-                                  <td className="px-4 py-3 align-middle text-center no-print whitespace-nowrap">
-                                    <div className="flex items-center justify-center gap-1">
+                                  <td className="px-4 py-3 align-middle text-center no-print w-min whitespace-nowrap">
+                                    <div className="flex items-center justify-center gap-2">
+                                      <button onClick={() => openAppInfoModal(app)} className="text-slate-400 hover:text-blue-600 hover:bg-blue-100 p-2 rounded-xl transition-all" title="Napló">
+                                        <InfoIcon />
+                                      </button>
                                       {isDel ? (
-                                        <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 transition-all cursor-pointer flex items-center gap-1">
-                                          <RestoreIcon /> Visszaállítás
+                                        <button onClick={() => restoreAppointment(app.id)} className="text-emerald-500 hover:text-emerald-700 hover:bg-emerald-100 p-2 rounded-xl transition-all" title="Visszaállítás">
+                                          <RestoreIcon />
                                         </button>
                                       ) : (
-                                        <button onClick={() => confirmDeleteApp(app.id)} className="text-black/30 hover:text-red-600 hover:bg-red-50 shadow-sm p-2 rounded-lg transition-all cursor-pointer" title="Időpont törlése">
+                                        <button onClick={() => confirmDeleteApp(app.id)} className="text-red-400 hover:text-red-600 hover:bg-red-100 p-2 rounded-xl transition-all" title="Törlés">
                                           <TrashIcon />
                                         </button>
                                       )}
-                                      
-                                      <button onClick={() => openAppInfoModal(app)} className="text-blue-400 hover:text-blue-600 hover:bg-blue-50 shadow-sm p-2 rounded-lg transition-all cursor-pointer" title="Információ és napló">
-                                        <InfoIcon />
-                                      </button>
                                     </div>
                                   </td>
                                 )}
+                                
                               </tr>
                             );
                           })}
                         </tbody>
                       </table>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 lg:hidden no-print">
-                        {dayAppointments.map((app: any) => {
-                          const isDel = app.is_deleted === true;
-                          const isBooked = app.patient_name && app.patient_name.trim() !== "";
-                          const isWaitingList = app.time_slot === "VÁRÓLISTA";
-                          const isOnlineSlot = app.time_slot.includes("(Online)");
-                          const displayTime = app.time_slot.replace(" (Online)", "");
-
-                          const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
-                          
-                          const statusBorder = isDel || (!isBooked && !isWaitingList) ? "" :
+                      {/* MOBIL NÉZET */}
+                      <div className="lg:hidden flex flex-col gap-3 p-3">
+                         {dayAppointments.map((app: any) => {
+                            if (printingDate) return null;
+                            const isDel = app.is_deleted === true;
+                            const isBooked = app.patient_name && app.patient_name.trim() !== "";
+                            const isWaitingList = app.time_slot === "VÁRÓLISTA";
+                            const displayTime = app.time_slot.replace(" (Online)", "");
+                            const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
+                            
+                            const statusBorder = isDel || (!isBooked && !isWaitingList) ? "border-l-4 border-l-slate-200" :
                               isWaitingList ? "border-l-4 border-l-orange-400" :
                               app.status === "Megérkezett" ? "border-l-4 border-l-amber-400" :
                               app.status === "Vizsgálaton" ? "border-l-4 border-l-blue-400" :
                               app.status === "Befejezve" ? "border-l-4 border-l-emerald-500" :
                               app.status === "Nem jelent meg" ? "border-l-4 border-l-slate-800" :
-                              "border-l-4 border-l-transparent";
+                              "border-l-4 border-l-slate-200";
 
-                          const cardStyle = isDel 
-                            ? "bg-slate-100/50 border-slate-200/50 opacity-80" 
-                            : isWaitingList 
-                              ? `bg-orange-50/90 border-white shadow-sm ${statusBorder}`
-                              : isBooked 
-                                ? `bg-red-50/90 border-white shadow-sm ${statusBorder}` 
-                                : "bg-emerald-50/90 border-white shadow-sm border-l-4 border-l-transparent";
+                            const rowBg = isDel ? "bg-slate-100/50" : isWaitingList ? "bg-orange-50/50" : isBooked ? "bg-white" : "bg-emerald-50/50";
 
-                          return (
-                            <div key={`mob-${app.id}`} className={`rounded-2xl p-5 border transition-all ${cardStyle}`}>
-                              <div className="flex justify-between items-start mb-4">
-                                <div className="flex flex-col gap-1">
-                                   {isWaitingList ? (
-                                      <span className="font-extrabold text-orange-700 flex items-center gap-1"><ClockIcon size={18}/> VÁRÓLISTA</span>
-                                   ) : (
-                                      <div className="flex items-center gap-2">
-                                        <span className={`font-bold text-xl ${isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{displayTime}</span>
-                                        {isOnlineSlot && !isDel && (
-                                          <span className="bg-blue-100 text-blue-700 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border border-blue-200 shadow-sm">Online</span>
-                                        )}
-                                      </div>
-                                   )}
-                                   
-                                   {!isWaitingList && (
-                                     <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded text-center w-max ${isDel ? "bg-slate-200 text-slate-700" : isBooked ? "bg-white text-red-700 border border-red-200 shadow-sm" : "bg-emerald-100 text-emerald-700"}`}>
-                                       {isDel ? "Törölt" : isBooked ? "Foglalt" : "Szabad"}
-                                     </span>
-                                   )}
-                                </div>
-                                
-                                <div className="flex items-center gap-1">
-                                  <button onClick={() => openAppInfoModal(app)} className="text-blue-400 hover:text-blue-600 hover:bg-white/80 shadow-sm p-2 rounded-lg cursor-pointer" title="Info"><InfoIcon /></button>
-                                  
-                                  {isDel ? (
-                                    <button onClick={() => restoreAppointment(app.id)} className="bg-white/80 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-white shadow-sm border border-slate-200 transition-all cursor-pointer"><RestoreIcon /></button>
-                                  ) : (
-                                    <button onClick={() => confirmDeleteApp(app.id)} className="text-black/40 hover:text-red-600 hover:bg-white/80 shadow-sm p-2 rounded-lg cursor-pointer"><TrashIcon /></button>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              <div className="flex flex-col gap-3">
-                                <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
-                                  <div className="flex justify-between items-center mb-1 relative z-10">
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Páciens neve</span>
-                                    <div className="flex items-center gap-2">
-                                      {canShowHistory && (
-                                        <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-1.5 bg-white text-slate-600 shadow-sm rounded-lg border border-slate-200 cursor-pointer">
-                                          <HistoryIcon />
-                                        </button>
-                                      )}
-                                      <div className="w-[130px]"><ModernStatusSelect disabled={isDel || (!isBooked && !isWaitingList)} value={app.status} onChange={(val) => updateAppointment(app.id, "status", val)} /></div>
+                            return (
+                              <div key={app.id} className={`${rowBg} ${statusBorder} rounded-2xl p-4 shadow-sm border border-slate-100 relative`}>
+                                 {isDel && <div className="absolute inset-0 bg-slate-200/50 backdrop-blur-[1px] z-10 rounded-2xl flex items-center justify-center">
+                                    <button onClick={() => restoreAppointment(app.id)} className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold shadow-md flex items-center gap-2">
+                                      <RestoreIcon /> Visszaállítás
+                                    </button>
+                                 </div>}
+
+                                 <div className="flex justify-between items-start mb-3 border-b border-slate-100 pb-3">
+                                    <div className="flex flex-col gap-1">
+                                      <span className={`text-lg font-extrabold ${isWaitingList ? 'text-orange-600' : 'text-slate-900'}`}>{isWaitingList ? 'VÁRÓLISTA' : displayTime}</span>
+                                      {!isWaitingList && <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-lg w-max ${isBooked ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{isBooked ? 'Foglalt' : 'Szabad'}</span>}
                                     </div>
-                                  </div>
-                                  <PatientAutocomplete 
-                                    disabled={isDel} 
-                                    highlight={isBooked} 
-                                    value={app.patient_name} 
-                                    onSave={(val) => updateAppointment(app.id, "patient_name", val)} 
-                                    onSelectPatient={(p) => handleSelectPatient(app.id, p)}
-                                    searchPatients={searchPatients}
-                                    searchTerm={debouncedSearchTerm} 
-                                  />
-                                </div>
-                                
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 relative z-0">
-                                  <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Szül. idő</span>
-                                    <EditableCell disabled={isDel} highlight={isBooked} value={app.birth_date} onSave={(val) => updateAppointment(app.id, "birth_date", val)} searchTerm={debouncedSearchTerm} placeholder="ÉÉÉÉ.HH.NN" />
-                                  </div>
-                                  <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">TAJ szám</span>
-                                    <EditableCell disabled={isDel} highlight={isBooked} formatter={formatTAJ} value={app.taj_szam} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} searchTerm={debouncedSearchTerm} placeholder="TAJ szám" />
-                                  </div>
-                                  <div className="bg-white/70 p-2.5 rounded-xl border border-white/50">
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Telefon</span>
-                                    <EditableCell disabled={isDel} highlight={isBooked} formatter={formatPhone} value={app.phone_number} onSave={(val) => updateAppointment(app.id, "phone_number", val)} searchTerm={debouncedSearchTerm} placeholder="Telefonszám" />
-                                  </div>
-                                </div>
-                                
-                                <div className={`bg-white/70 p-2.5 rounded-xl border relative z-0 ${app.examination_type ? getExamColor(app.examination_type) : 'border-white/50'}`}>
-                                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Vizsgálat & Megjegyzés</span>
-                                  
-                                  <select
-                                    disabled={isDel}
-                                    value={app.examination_type || ""}
-                                    onChange={(e) => updateAppointment(app.id, "examination_type", e.target.value)}
-                                    className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 outline-none cursor-pointer mb-1 shadow-sm"
-                                  >
-                                    <option value="">Válassz vizsgálatot...</option>
-                                    {allPrices.filter(p => p.department === app.department).map(p => (
-                                      <option key={p.id} value={p.name}>{p.name}</option>
-                                    ))}
-                                  </select>
+                                    <div className="flex gap-2">
+                                       <button onClick={() => openAppInfoModal(app)} className="p-2 bg-slate-100 text-slate-500 rounded-xl" title="Napló"><InfoIcon /></button>
+                                       {!isDel && <button onClick={() => confirmDeleteApp(app.id)} className="p-2 bg-red-50 text-red-500 rounded-xl" title="Törlés"><TrashIcon /></button>}
+                                    </div>
+                                 </div>
 
-                                  <div className="mt-1 border-t border-black/10 pt-1">
-                                    <EditableCell disabled={isDel} highlight={isBooked} value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} searchTerm={debouncedSearchTerm} placeholder="Kiegészítés..." />
-                                  </div>
-                                </div>
+                                 <div className="space-y-3">
+                                    <div>
+                                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Páciens neve</label>
+                                       <div className="flex gap-2">
+                                         <PatientAutocomplete value={app.patient_name} onChange={(val) => updateAppointment(app.id, "patient_name", val)} onSelect={(patient) => handleSelectPatient(app.id, patient)} placeholder="Páciens neve..." />
+                                         {canShowHistory && (
+                                           <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-2.5 bg-purple-50 text-purple-600 rounded-xl border border-purple-200" title="Karton">
+                                              <HistoryIcon />
+                                           </button>
+                                         )}
+                                       </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                       <div>
+                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Születési idő</label>
+                                         <EditableCell value={app.birth_date} onChange={(val) => updateAppointment(app.id, "birth_date", val)} placeholder="ÉÉÉÉ.HH.NN" className="bg-slate-50 text-sm" />
+                                       </div>
+                                       <div>
+                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">TAJ Szám</label>
+                                         <EditableCell value={formatTAJ(app.taj_szam)} onChange={(val) => updateAppointment(app.id, "taj_szam", val)} placeholder="000 000 000" className="bg-slate-50 font-mono text-sm" />
+                                       </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                       <div>
+                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Telefon</label>
+                                         <EditableCell value={formatPhone(app.phone_number)} onChange={(val) => updateAppointment(app.id, "phone_number", val)} placeholder="06 30 000 0000" className="bg-slate-50 text-sm" />
+                                       </div>
+                                       <div>
+                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Státusz</label>
+                                         <ModernStatusSelect value={app.status || "Előjegyzett"} onChange={(val) => updateAppointment(app.id, "status", val)} disabled={!isBooked && !isWaitingList} />
+                                       </div>
+                                    </div>
+
+                                    <div>
+                                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Vizsgálat</label>
+                                       <EditableCell value={app.examination_type} onChange={(val) => updateAppointment(app.id, "examination_type", val)} placeholder="Vizsgálat típusa..." className={`text-sm ${getExamColor(app.examination_type)}`} />
+                                    </div>
+
+                                    <div>
+                                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Megjegyzés</label>
+                                       <EditableCell value={app.notes} onChange={(val) => updateAppointment(app.id, "notes", val)} placeholder="Ide írhatsz..." className="bg-slate-50 italic text-sm" />
+                                    </div>
+                                 </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                         })}
                       </div>
-                    </div>
 
+                    </div>
+                    
                     {!printingDate && debouncedSearchTerm === "" && !isArchiveView && (
-                      <div className="border-t border-slate-200/60 bg-white/40 p-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 no-print rounded-b-3xl shrink-0 mt-auto">
-                         <div className="flex items-center gap-2 text-slate-600 font-extrabold text-sm">
-                            <PlusIcon size={18} />
-                            <span>Új időpont hozzáadása ehhez a naphoz:</span>
-                         </div>
-                         <div className="flex items-center gap-2 w-full sm:w-auto">
-                           <input 
+                      <div className="bg-slate-50/80 p-4 border-t border-slate-200/60 rounded-b-3xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                         <div className="text-slate-500 font-bold text-xs flex items-center gap-2"><PlusIcon size={16} /> Új időpont hozzáadása ehhez a naphoz:</div>
+                         <div className="flex gap-2 w-full sm:w-auto">
+                            <input 
                               type="text" 
-                              placeholder="pl. 17:00" 
+                              placeholder="pl. 17:30" 
                               value={dayNewTimeSlots[date] || ""} 
                               onChange={(e) => setDayNewTimeSlots(prev => ({...prev, [date]: e.target.value}))}
-                              onKeyDown={(e) => e.key === "Enter" && addDaySingleAppointment(date)}
-                              className="flex-1 sm:w-32 bg-white border border-slate-200 text-sm font-bold text-slate-800 px-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 transition-all"
+                              className="flex-1 sm:w-32 bg-white border border-slate-200 text-sm font-bold text-slate-800 px-3 py-2 rounded-xl outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 shadow-sm"
                             />
                             <button 
-                              onClick={() => addDaySingleAppointment(date)} 
-                              title="Hozzáadás" 
-                              className="bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-black transition-all cursor-pointer flex items-center justify-center font-bold text-sm shadow-md active:scale-95"
+                              onClick={() => addDaySingleAppointment(date)}
+                              className="bg-slate-800 text-white px-5 py-2 rounded-xl hover:bg-black transition-all font-bold text-xs shadow-sm active:scale-95"
                             >
                               Hozzáadás
                             </button>
                          </div>
                       </div>
                     )}
-
                   </div>
                 );
               })
@@ -3184,95 +3306,19 @@ export default function Home() {
         )}
       </div>
 
-      {!printingDate && (
-        <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6 text-right text-slate-600/70 text-xs font-bold no-print relative z-10">
-          &copy; 2026 Created by Zozi
-        </div>
-      )}
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-6 right-6 z-50 p-4 rounded-full bg-slate-900 text-white shadow-[0_10px_30px_rgba(0,0,0,0.3)] hover:bg-black transition-all duration-300 transform no-print ${showScrollTop && !toast.visible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-16 opacity-0 scale-50 pointer-events-none'}`}
+        title="Ugrás a tetejére"
+      >
+        <ArrowUpIcon />
+      </button>
 
-      {!printingDate && showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-6 left-6 md:left-auto md:right-6 z-50 bg-slate-900/90 backdrop-blur-md text-white p-3.5 rounded-full shadow-2xl hover:bg-black transition-all hover:scale-110 active:scale-95 cursor-pointer border border-slate-700"
-          title="Ugrás az oldal tetejére"
-        >
-          <ArrowUpIcon />
-        </button>
-      )}
-      
-      <style dangerouslySetInnerHTML={{__html: `
-        html { 
-          overflow-y: scroll; 
-        }
-        td input { min-width: 0 !important; width: 100%; }
-        input, textarea, button, select { touch-action: manipulation; }
-        @media screen and (max-width: 768px) {
-          input, select, textarea { font-size: 16px !important; }
-        }
+      <footer className="text-center pb-6 text-slate-500 font-medium text-xs no-print relative z-10 drop-shadow-sm">
+        Medical-Aqua Előjegyzési Rendszer © {new Date().getFullYear()}<br/>
+        <span className="opacity-70">Biztonságos kapcsolat</span>
+      </footer>
 
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.4); border-radius: 10px; margin: 0 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 0.8); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 1); }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        @media print {
-          @page { size: A4 portrait; margin: 10mm 15mm; }
-          body, html { background: white !important; color: black !important; font-family: Arial, Helvetica, sans-serif; font-size: 10px !important; }
-          .no-print { display: none !important; }
-          .print-mode { background: white !important; min-height: auto !important; padding: 0 !important; display: block !important; }
-          
-          .printable-quote { 
-            width: 100% !important; 
-            max-width: 100% !important; 
-            margin: 0 !important; 
-            padding: 0 !important; 
-            box-shadow: none !important; 
-            border: none !important; 
-          }
-          
-          .print-bg-light {
-            background-color: #f8fafc !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-
-          .print-container { 
-            box-shadow: none !important; 
-            border: none !important; 
-            margin-bottom: 20px !important; 
-            break-inside: avoid;
-            background: white !important;
-          }
-          .print-header { 
-            border-bottom: 2px solid #000 !important; 
-            padding-bottom: 8px !important; 
-            margin-bottom: 8px !important; 
-            background: white !important;
-          }
-          
-          .print-table { 
-            width: 100% !important; 
-            border-collapse: collapse !important; 
-          }
-          .print-table th { 
-            border-bottom: 1px solid #000 !important; 
-            color: #000 !important; 
-            padding: 4px !important; 
-            font-size: 9px !important; 
-          }
-          .print-table td { 
-            border-bottom: 1px solid #ccc !important; 
-            padding: 4px !important; 
-            font-size: 10px !important; 
-          }
-          
-          .print-border { border-bottom: 2px solid black !important; }
-          .print-hidden { display: none !important; }
-        }
-      `}} />
     </div>
   );
 }

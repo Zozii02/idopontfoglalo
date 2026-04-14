@@ -2207,7 +2207,7 @@ export default function Home() {
                     <select 
                       value={labSelectedSlotId} 
                       onChange={(e) => setLabSelectedSlotId(e.target.value)} 
-                      className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-slate-800 font-bold cursor-pointer"
+                      className="w-full bg-slate-50 border border-slate-200 px-2 py-1.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-slate-800 font-bold cursor-pointer"
                     >
                       <option value="">Nincs időpont választva (Séta be)</option>
                       {Object.keys(availableSlotsByDate).sort().map(date => (

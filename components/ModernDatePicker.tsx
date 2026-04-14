@@ -50,7 +50,7 @@ export function ModernDatePicker({ selectedDate, onChange }: { selectedDate: str
     <div className="relative w-full" ref={containerRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm"
+        className="w-full flex items-center justify-between bg-white/80 border border-white/60 px-2 py-1.5 rounded-xl text-xs focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm"
       >
         <span className="flex items-center gap-2">
           <span className="text-slate-400"><CalendarIcon size={16} /></span>
@@ -60,7 +60,7 @@ export function ModernDatePicker({ selectedDate, onChange }: { selectedDate: str
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-64 bg-white/95 backdrop-blur-xl border border-slate-200 shadow-2xl rounded-2xl z-[999] p-3 animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute top-full left-0 mt-2 w-56 bg-white/95 backdrop-blur-xl border border-slate-200 shadow-2xl rounded-2xl z-[999] p-2.5 animate-in fade-in zoom-in-95 duration-200">
           <div className="flex justify-between items-center mb-3">
             <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"><ChevronLeftIcon /></button>
             <div className="font-bold text-slate-800 text-sm">{viewDate.getFullYear()}. {monthNames[viewDate.getMonth()]}</div>

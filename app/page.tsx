@@ -203,7 +203,7 @@ export default function Home() {
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
     
-    setAppointments(appointments.map((app: any) => app.id === appId ? { 
+    setAppointments(prev => prev.map((app: any) => app.id === appId ? { 
       ...app, 
       patient_name: patient.name, 
       taj_szam: patient.taj_szam || app.taj_szam, 
@@ -922,13 +922,21 @@ export default function Home() {
   const updateAppointment = async (id: number, field: string, newValue: string) => {
     if (!user) return;
     
-    const oldApp = appointments.find((a: any) => a.id === id);
-    const oldValue = oldApp ? oldApp[field] : "";
+    const modifierName = getDisplayName();
+    const now = new Date().toISOString();
+    let oldValue = "";
     
-    if (oldValue !== newValue) {
-      const modifierName = getDisplayName();
-      const now = new Date().toISOString();
+    setAppointments(prev => {
+      const oldApp = prev.find((a: any) => a.id === id);
+      oldValue = oldApp ? oldApp[field] : "";
       
+      if (oldValue !== newValue) {
+        return prev.map((app: any) => app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app);
+      }
+      return prev;
+    });
+
+    if (oldValue !== newValue) {
       const fieldNames: Record<string, string> = {
         patient_name: "Páciens neve", taj_szam: "TAJ szám", phone_number: "Telefon", 
         birth_date: "Születési idő",
@@ -940,16 +948,15 @@ export default function Home() {
       const newDisp = newValue ? newValue : "(üres)";
       const details = `${fieldLabel}: "${oldDisp}" ➔ "${newDisp}"`;
 
-      setAppointments(appointments.map((app: any) => app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app));
-      
       await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
       await logAction(id, "Módosítás", details);
 
       if (["patient_name", "taj_szam", "phone_number", "birth_date"].includes(field)) {
-        const currentName = field === "patient_name" ? newValue : oldApp.patient_name;
-        const currentTaj = field === "taj_szam" ? newValue : oldApp.taj_szam;
-        const currentPhone = field === "phone_number" ? newValue : oldApp.phone_number;
-        const currentBirthDate = field === "birth_date" ? newValue : oldApp.birth_date;
+        const oldApp = appointments.find((a: any) => a.id === id);
+        const currentName = field === "patient_name" ? newValue : (oldApp ? oldApp.patient_name : "");
+        const currentTaj = field === "taj_szam" ? newValue : (oldApp ? oldApp.taj_szam : "");
+        const currentPhone = field === "phone_number" ? newValue : (oldApp ? oldApp.phone_number : "");
+        const currentBirthDate = field === "birth_date" ? newValue : (oldApp ? oldApp.birth_date : "");
         
         if (currentName && currentName.trim().length >= 3) {
           const { data: existingPatients } = await supabase.from('patients').select('id').eq('name', currentName.trim());
@@ -980,7 +987,7 @@ export default function Home() {
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
 
-    setAppointments(appointments.map((app: any) => 
+    setAppointments(prev => prev.map((app: any) => 
       (app.appointment_date === date && app.department === department) 
         ? { ...app, location, last_modified_by: modifierName, last_modified_at: now } 
         : app
@@ -1010,7 +1017,7 @@ export default function Home() {
         const now = new Date().toISOString();
         const idsToDelete = emptyApps.map((a: any) => a.id);
         
-        setAppointments(appointments.map((app: any) => 
+        setAppointments(prev => prev.map((app: any) => 
           idsToDelete.includes(app.id) ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app
         ));
 
@@ -1045,7 +1052,9 @@ export default function Home() {
     
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
-    setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app));
+    
+    setAppointments(prev => prev.map((app: any) => app.id === id ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app));
+    
     await supabase.from("appointments").update({ is_deleted: true, deleted_by: modifierName, deleted_at: now }).eq("id", id);
     await logAction(id, "Törlés", "Időpont törölve a listából");
     
@@ -1076,7 +1085,7 @@ export default function Home() {
         const now = new Date().toISOString();
         const idsToDelete = dayApps.map((a: any) => a.id);
         
-        setAppointments(appointments.map((app: any) => 
+        setAppointments(prev => prev.map((app: any) => 
           idsToDelete.includes(app.id) ? { ...app, is_deleted: true, deleted_by: modifierName, deleted_at: now } : app
         ));
 
@@ -1239,7 +1248,7 @@ export default function Home() {
   const restoreAppointment = async (id: number) => {
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
-    setAppointments(appointments.map((app: any) => app.id === id ? { ...app, is_deleted: false, last_modified_by: modifierName, last_modified_at: now } : app));
+    setAppointments(prev => prev.map((app: any) => app.id === id ? { ...app, is_deleted: false, last_modified_by: modifierName, last_modified_at: now } : app));
     await supabase.from("appointments").update({ is_deleted: false, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
     await logAction(id, "Visszaállítás", "Törölt időpont visszaállítva");
     showToast("Időpont sikeresen visszaállítva!");
@@ -2009,7 +2018,7 @@ export default function Home() {
                 <table className="w-full text-left border-collapse text-[10px]">
                   <thead>
                     <tr className="border-b border-slate-300">
-                      <th className="py-1 px-1 font-bold text-slate-600">Vizsgálat megnevezése</th>
+                      <th className="py-1 px-1 font-bold text-slate-600">Vizsg��lat megnevezése</th>
                       <th className="py-1 px-1 font-bold text-slate-600 text-right">Díj (HUF)</th>
                     </tr>
                   </thead>
@@ -3293,6 +3302,7 @@ export default function Home() {
                               placeholder="pl. 17:30" 
                               value={dayNewTimeSlots[date] || ""} 
                               onChange={(e) => setDayNewTimeSlots(prev => ({...prev, [date]: e.target.value}))}
+                              onKeyDown={(e) => e.key === "Enter" && addDaySingleAppointment(date)}
                               className="flex-1 sm:w-32 bg-white border border-slate-200 text-sm font-bold text-slate-800 px-3 py-2 rounded-xl outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 shadow-sm"
                             />
                             <button 

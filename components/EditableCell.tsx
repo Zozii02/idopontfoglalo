@@ -40,7 +40,7 @@ export function EditableCell({ value, onSave, disabled = false, highlight = fals
     setCurrentValue(finalVal);
   };
 
-  if (disabled) return <div className="p-2 text-slate-400 font-medium line-through bg-slate-50/50 rounded-lg break-words">{value || "-"}</div>;
+  if (disabled) return <div className="px-1.5 py-1 text-slate-400 font-medium line-through bg-slate-50/50 rounded-lg break-words text-sm">{value || "-"}</div>;
 
   if (isEditing) {
     return (
@@ -52,7 +52,7 @@ export function EditableCell({ value, onSave, disabled = false, highlight = fals
           onBlur={handleBlur} 
           onKeyDown={(e) => e.key === "Enter" && handleBlur()}
           list={suggestions && suggestions.length > 0 ? datalistId : undefined} // <--- Összekötés a listával
-          className="w-full min-w-0 bg-white border border-red-400 p-2 rounded-lg focus:outline-none focus:ring-4 focus:ring-red-100 text-slate-900 font-semibold shadow-sm transition-all"
+          className="w-full min-w-0 bg-white border border-red-400 px-1.5 py-1 rounded-lg focus:outline-none focus:ring-4 focus:ring-red-100 text-slate-900 font-semibold text-sm shadow-sm transition-all"
         />
         {/* <--- Legördülő lista renderelése az árlista elemeiből ---> */}
         {suggestions && suggestions.length > 0 && (
@@ -70,11 +70,11 @@ export function EditableCell({ value, onSave, disabled = false, highlight = fals
 
   return (
     <div onClick={() => { setIsEditing(true); setCurrentValue(value || ""); }}
-      className={`cursor-pointer min-h-[38px] p-2 rounded-lg transition-all border border-transparent hover:bg-white/80 hover:border-slate-200 font-medium break-words
+      className={`cursor-pointer min-h-[32px] px-1.5 py-1 rounded-lg transition-all border border-transparent hover:bg-white/80 hover:border-slate-200 font-medium text-sm break-words overflow-hidden
         ${highlight ? "text-red-950 font-bold" : "text-emerald-950"}`}
       title="Kattints a szerkesztéshez"
     >
-      {displayValue ? <HighlightText text={displayValue} highlight={searchTerm} /> : <span className="text-slate-400 italic text-sm font-normal opacity-70">Üres (kattints)</span>}
+      {displayValue ? <HighlightText text={displayValue} highlight={searchTerm} /> : <span className="text-slate-400 italic text-xs font-normal opacity-70">Üres (kattints)</span>}
     </div>
   );
 }

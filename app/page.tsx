@@ -3070,21 +3070,32 @@ export default function Home() {
                     </div>
 
                     <div className={`overflow-x-auto custom-scrollbar flex-1 ${printingDate ? 'overflow-visible' : ''}`}>
-                      <table className="min-w-full text-left border-collapse print-table hidden lg:table print:table">
+                      <table className="w-full table-fixed text-left border-collapse print-table hidden lg:table print:table">
+                        <colgroup>
+                          <col className="w-[100px]" /> {/* Időpont */}
+                          <col className="w-[18%]" />   {/* Páciens neve */}
+                          <col className="w-[10%]" />   {/* Szül. idő */}
+                          <col className="w-[10%]" />   {/* TAJ szám */}
+                          <col className="w-[11%]" />   {/* Telefon */}
+                          {!printingDate && <col className="w-[10%]" />}  {/* Státusz */}
+                          <col className="w-[14%]" />   {/* Vizsgálat */}
+                          <col />                        {/* Megjegyzés - fills remaining */}
+                          {!printingDate && <col className="w-[80px]" />}  {/* Művelet */}
+                        </colgroup>
                         <thead className="sticky top-0 z-20 shadow-sm bg-white">
                           <tr className="border-b border-slate-200/60 print-border">
-                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap w-min">Időpont</th>
-                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest min-w-[220px]">Páciens neve</th>
+                            <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Időpont</th>
+                            <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Páciens neve</th>
                             
-                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[130px]">Szül. idő</th>
-                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">TAJ szám</th>
+                            <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Szül. idő</th>
+                            <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">TAJ szám</th>
                             
-                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">Telefon</th>
-                            {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap min-w-[140px]">Státusz</th>}
+                            <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Telefon</th>
+                            {!printingDate && <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Státusz</th>}
                             
-                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto min-w-[150px]">Vizsgálat</th>
-                            <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest w-auto min-w-[150px]">Megjegyzés</th>
-                            {!printingDate && <th className="px-4 py-4 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap w-min">Művelet</th>}
+                            <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Vizsgálat</th>
+                            <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Megjegyzés</th>
+                            {!printingDate && <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap">Művelet</th>}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100/50 relative z-0 bg-white/50 backdrop-blur-sm">
@@ -3118,41 +3129,43 @@ export default function Home() {
                             return (
                               <tr key={app.id} className={`transition-colors group relative ${printingDate ? '' : rowStyle}`}>
                                 
-                                <td className="px-4 py-3 align-middle whitespace-nowrap">
-                                  <div className="flex flex-col gap-1 w-max">
+                                <td className="px-2.5 py-2 align-middle whitespace-nowrap">
+                                  <div className="flex flex-col gap-0.5">
                                     {isWaitingList ? (
-                                      <span className="font-extrabold text-orange-600 flex items-center gap-1.5"><ClockIcon size={16}/> VÁRÓLISTA</span>
+                                      <span className="font-extrabold text-orange-600 text-sm flex items-center gap-1"><ClockIcon size={14}/> VÁRÓLISTA</span>
                                     ) : (
-                                      <div className="flex items-center gap-2">
-                                        <span className={`font-bold text-base ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{displayTime}</span>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className={`font-bold text-sm ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{displayTime}</span>
                                         {isOnlineSlot && !printingDate && !isDel && (
-                                          <span className="bg-blue-100 text-blue-700 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded border border-blue-200 shadow-sm" title="Online előjegyzési sáv">Online</span>
+                                          <span className="bg-blue-100 text-blue-700 text-[8px] font-extrabold uppercase px-1 py-0.5 rounded border border-blue-200" title="Online előjegyzési sáv">Online</span>
                                         )}
                                       </div>
                                    )}
-                                    {!printingDate && !isDel && !isWaitingList && <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md text-center w-full shadow-sm
+                                    {!printingDate && !isDel && !isWaitingList && <span className={`text-[8px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded text-center w-full
                                       ${isBooked ? 'bg-red-200 text-red-800 border border-red-300' : 'bg-emerald-200 text-emerald-800 border border-emerald-300'}`}>
                                       {isBooked ? 'Foglalt' : 'Szabad'}
                                     </span>}
                                   </div>
                                 </td>
 
-                                <td className="px-4 py-3 align-middle min-w-[220px]">
+                                <td className="px-2.5 py-2 align-middle">
                                   {printingDate ? (
-                                    <div className="font-bold text-black text-sm">{app.patient_name}</div>
+                                    <div className="font-bold text-black text-sm truncate">{app.patient_name}</div>
                                   ) : isDel ? (
-                                    <div className="font-semibold text-slate-500 line-through">{app.patient_name || "-"}</div>
+                                    <div className="font-semibold text-slate-500 line-through truncate">{app.patient_name || "-"}</div>
                                   ) : (
-                                    <div className="flex items-center gap-2">
-                                      <PatientAutocomplete
-                                        value={app.patient_name}
-                                        onSave={(val) => updateAppointment(app.id, "patient_name", val)}
-                                        onSelectPatient={(patient) => handleSelectPatient(app.id, patient)}
-                                        searchPatients={searchPatients}
-                                        placeholder="Páciens neve..."
-                                      />
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="flex-1 min-w-0">
+                                        <PatientAutocomplete
+                                          value={app.patient_name}
+                                          onSave={(val) => updateAppointment(app.id, "patient_name", val)}
+                                          onSelectPatient={(patient) => handleSelectPatient(app.id, patient)}
+                                          searchPatients={searchPatients}
+                                          placeholder="Páciens neve..."
+                                        />
+                                      </div>
                                       {canShowHistory && (
-                                        <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-2 bg-white text-purple-600 border border-purple-200 hover:bg-purple-100 hover:border-purple-300 rounded-xl shadow-sm transition-all flex-shrink-0" title="Karton">
+                                        <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-1.5 bg-white text-purple-600 border border-purple-200 hover:bg-purple-100 hover:border-purple-300 rounded-lg shadow-sm transition-all flex-shrink-0" title="Karton">
                                            <HistoryIcon />
                                         </button>
                                       )}
@@ -3160,55 +3173,55 @@ export default function Home() {
                                   )}
                                 </td>
                                 
-                                <td className="px-4 py-3 align-middle">
+                                <td className="px-2.5 py-2 align-middle">
                                   {printingDate ? (
                                     <div className="text-black text-sm">{app.birth_date}</div>
                                   ) : isDel ? (
-                                    <div className="text-slate-500">{app.birth_date || "-"}</div>
+                                    <div className="text-slate-500 text-sm">{app.birth_date || "-"}</div>
                                   ) : (
                                     <EditableCell 
                                       value={app.birth_date} 
                                       onSave={(val) => updateAppointment(app.id, "birth_date", val)} 
                                       placeholder="ÉÉÉÉ.HH.NN" 
-                                      className="font-medium text-slate-700" 
+                                      className="font-medium text-slate-700 text-sm" 
                                     />
                                   )}
                                 </td>
 
-                                <td className="px-4 py-3 align-middle">
+                                <td className="px-2.5 py-2 align-middle">
                                   {printingDate ? (
                                     <div className="font-mono text-black text-sm">{formatTAJ(app.taj_szam)}</div>
                                   ) : isDel ? (
-                                    <div className="font-mono text-slate-500">{formatTAJ(app.taj_szam) || "-"}</div>
+                                    <div className="font-mono text-slate-500 text-sm">{formatTAJ(app.taj_szam) || "-"}</div>
                                   ) : (
                                     <EditableCell 
                                       value={formatTAJ(app.taj_szam)} 
                                       onSave={(val) => updateAppointment(app.id, "taj_szam", val)} 
                                       placeholder="000 000 000" 
-                                      className="font-mono font-bold text-slate-700" 
+                                      className="font-mono font-bold text-slate-700 text-sm" 
                                     />
                                   )}
                                 </td>
 
-                                <td className="px-4 py-3 align-middle">
+                                <td className="px-2.5 py-2 align-middle">
                                   {printingDate ? (
                                     <div className="text-black text-sm">{formatPhone(app.phone_number)}</div>
                                   ) : isDel ? (
-                                    <div className="text-slate-500">{formatPhone(app.phone_number) || "-"}</div>
+                                    <div className="text-slate-500 text-sm">{formatPhone(app.phone_number) || "-"}</div>
                                   ) : (
                                     <EditableCell 
                                       value={formatPhone(app.phone_number)} 
                                       onSave={(val) => updateAppointment(app.id, "phone_number", val)} 
                                       placeholder="06 30 000 0000" 
-                                      className="font-medium text-slate-700" 
+                                      className="font-medium text-slate-700 text-sm" 
                                     />
                                   )}
                                 </td>
 
                                 {!printingDate && (
-                                  <td className="px-4 py-3 align-middle">
+                                  <td className="px-2.5 py-2 align-middle">
                                     {isDel ? (
-                                      <div className="text-slate-500">{app.status || "-"}</div>
+                                      <div className="text-slate-500 text-sm">{app.status || "-"}</div>
                                     ) : (
                                       <ModernStatusSelect 
                                         value={app.status || "Előjegyzett"} 
@@ -3219,11 +3232,11 @@ export default function Home() {
                                   </td>
                                 )}
 
-                                <td className="px-4 py-3 align-middle">
+                                <td className="px-2.5 py-2 align-middle">
                                   {printingDate ? (
-                                    <div className="text-black text-sm font-semibold">{app.examination_type}</div>
+                                    <div className="text-black text-sm font-semibold truncate">{app.examination_type}</div>
                                   ) : isDel ? (
-                                    <div className="text-slate-500">{app.examination_type || "-"}</div>
+                                    <div className="text-slate-500 text-sm truncate">{app.examination_type || "-"}</div>
                                   ) : (
                                     <ModernExamSelect
                                       value={app.examination_type}
@@ -3233,11 +3246,11 @@ export default function Home() {
                                   )}
                                 </td>
 
-                                <td className="px-4 py-3 align-middle">
+                                <td className="px-2.5 py-2 align-middle">
                                   {printingDate ? (
-                                    <div className="text-black text-sm italic">{app.notes}</div>
+                                    <div className="text-black text-sm italic truncate">{app.notes}</div>
                                   ) : isDel ? (
-                                    <div className="text-slate-500 italic">{app.notes || "-"}</div>
+                                    <div className="text-slate-500 italic text-sm truncate">{app.notes || "-"}</div>
                                   ) : (
                                     <EditableCell 
                                       value={app.notes} 
@@ -3249,17 +3262,17 @@ export default function Home() {
                                 </td>
 
                                 {!printingDate && (
-                                  <td className="px-4 py-3 align-middle text-center no-print w-min whitespace-nowrap">
-                                    <div className="flex items-center justify-center gap-2">
-                                      <button onClick={() => openAppInfoModal(app)} className="text-slate-400 hover:text-blue-600 hover:bg-blue-100 p-2 rounded-xl transition-all" title="Napló">
+                                  <td className="px-2.5 py-2 align-middle text-center no-print whitespace-nowrap">
+                                    <div className="flex items-center justify-center gap-1">
+                                      <button onClick={() => openAppInfoModal(app)} className="text-slate-400 hover:text-blue-600 hover:bg-blue-100 p-1.5 rounded-lg transition-all" title="Napló">
                                         <InfoIcon />
                                       </button>
                                       {isDel ? (
-                                        <button onClick={() => restoreAppointment(app.id)} className="text-emerald-500 hover:text-emerald-700 hover:bg-emerald-100 p-2 rounded-xl transition-all" title="Visszaállítás">
+                                        <button onClick={() => restoreAppointment(app.id)} className="text-emerald-500 hover:text-emerald-700 hover:bg-emerald-100 p-1.5 rounded-lg transition-all" title="Visszaállítás">
                                           <RestoreIcon />
                                         </button>
                                       ) : (
-                                        <button onClick={() => confirmDeleteApp(app.id)} className="text-red-400 hover:text-red-600 hover:bg-red-100 p-2 rounded-xl transition-all" title="Törlés">
+                                        <button onClick={() => confirmDeleteApp(app.id)} className="text-red-400 hover:text-red-600 hover:bg-red-100 p-1.5 rounded-lg transition-all" title="Törlés">
                                           <TrashIcon />
                                         </button>
                                       )}

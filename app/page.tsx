@@ -1871,19 +1871,19 @@ export default function Home() {
                  onClick={() => setActiveLabTab('new')} 
                  className={`py-3 px-2 font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${activeLabTab === 'new' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
                >
-                 <span className="flex items-center gap-2"><CalculatorIcon size={18}/> Új Ajánlat Készítése</span>
+                 <span className="flex items-center gap-2"><CalculatorIcon size={18}/> Új ajánlat készítése</span>
                </button>
                <button 
                  onClick={() => setActiveLabTab('slots')} 
                  className={`py-3 px-2 font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${activeLabTab === 'slots' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
                >
-                 <span className="flex items-center gap-2"><CalendarPlusIcon size={18}/> Labor Napok Generálása</span>
+                 <span className="flex items-center gap-2"><CalendarPlusIcon size={18}/> Labor napok generálása</span>
                </button>
                <button 
                  onClick={() => { setActiveLabTab('saved'); fetchSavedCalculations(); }} 
                  className={`py-3 px-2 font-bold text-sm border-b-2 transition-all cursor-pointer whitespace-nowrap ${activeLabTab === 'saved' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
                >
-                 <span className="flex items-center gap-2"><DatabaseIcon size={18}/> Mentett Ajánlatok ({savedCalculations.length})</span>
+                 <span className="flex items-center gap-2"><DatabaseIcon size={18}/> Mentett ajánlatok ({savedCalculations.length})</span>
                </button>
             </div>
           </div>
@@ -2085,13 +2085,13 @@ export default function Home() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Érkezés pontos ideje (Opcionális)</label>
+                    <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Érkezés pontos ideje</label>
                     <select 
                       value={labSelectedSlotId} 
                       onChange={(e) => setLabSelectedSlotId(e.target.value)} 
                       className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 text-slate-800 font-bold cursor-pointer"
                     >
-                      <option value="">Nincs időpont választva (Séta be)</option>
+                      <option value="">Nincs időpont választva</option>
                       {Object.keys(availableSlotsByDate).sort().map(date => (
                          <optgroup key={date} label={formatShortDate(date)}>
                            {availableSlotsByDate[date].map((s: any) => (

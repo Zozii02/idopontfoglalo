@@ -1767,9 +1767,12 @@ export default function Home() {
     const totalPrice = calculateLabTotal();
     const formattedTotal = new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(totalPrice);
     
-    // Mentett kalkulációk dátum szerinti csoportosítása
+        // Mentett kalkulációk dátum szerinti csoportosítása (Érkezés alapján)
     const groupedSavedLabs = savedCalculations.reduce((acc: any, curr: any) => {
-      const dateKey = curr.created_at ? curr.created_at.split('T')[0] : "Ismeretlen";
+      // Ha van megadva érkezési idő, az alapján csoportosítunk. Ha nincs, marad a mentés dátuma.
+      const targetDate = curr.erkezesi_ido ? curr.erkezesi_ido : curr.created_at;
+      const dateKey = targetDate ? targetDate.split('T')[0] : "Ismeretlen";
+      
       if (!acc[dateKey]) acc[dateKey] = [];
       acc[dateKey].push(curr);
       return acc;

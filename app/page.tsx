@@ -123,6 +123,7 @@ export default function Home() {
   const onlineRef = useRef<HTMLDivElement>(null);
 
   const [appointments, setAppointments] = useState<any[]>([]);
+  const appointmentsRef = useRef(appointments); // Ref a legfrissebb állapothoz
   const [departmentSearch, setDepartmentSearch] = useState(""); 
   const [showDeleted, setShowDeleted] = useState(false);
   
@@ -184,6 +185,10 @@ export default function Home() {
   const [toast, setToast] = useState<{visible: boolean, message: string, type: 'success' | 'error' | 'warning'}>({
     visible: false, message: "", type: 'success'
   });
+
+  useEffect(() => {
+    appointmentsRef.current = appointments;
+  }, [appointments]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -862,7 +867,20 @@ export default function Home() {
           if (payload.eventType === 'INSERT') {
             setAppointments(prev => prev.find(a => a.id === payload.new.id) ? prev : [...prev, payload.new]);
           } else if (payload.eventType === 'UPDATE') {
-            setAppointments(prev => prev.map(app => app.id === payload.new.id ? payload.new : app));
+            setAppointments(prev => prev.map(app => {
+              if (app.id === payload.new.id) {
+                // Versenyhelyzet elkerülése: ha a mi adatunk újabb vagy egykorú, mint a beérkező módosítás,
+                // akkor ignoráljuk a Supabase realtime frissítést (mert ez valószínűleg a saját mentésünk visszhangja)
+                const localDate = new Date(app.last_modified_at || 0).getTime();
+                const incomingDate = new Date(payload.new.last_modified_at || 0).getTime();
+                
+                if (localDate >= incomingDate) {
+                  return app; // Megtartjuk a lokális, épp gépelt állapotot
+                }
+                return payload.new;
+              }
+              return app;
+            }));
           } else if (payload.eventType === 'DELETE') {
             setAppointments(prev => prev.filter(app => app.id !== payload.old.id));
           }
@@ -931,74 +949,71 @@ export default function Home() {
   const updateAppointment = async (id: number, field: string, newValue: string) => {
     if (!user) return;
     
-    setAppointments(prevAppointments => {
-      const oldApp = prevAppointments.find((a: any) => a.id === id);
-      const oldValue = oldApp ? oldApp[field] : "";
-      
-      // Ha nincs valós változás, ne indítsunk mentést feleslegesen
-      if (oldValue === newValue) return prevAppointments;
+    // 1. Megkeressük az aktuális elemet a ref segítségével (hogy a legfrissebb adatot lássuk)
+    const oldApp = appointmentsRef.current.find((a: any) => a.id === id);
+    if (!oldApp) return;
 
-      const modifierName = getDisplayName();
-      const now = new Date().toISOString();
-      
-      // Azonnali funkcionális állapotfrissítés, hogy a UI rögtön mutassa a változást
-      const newAppointments = prevAppointments.map((app: any) => 
-        app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app
-      );
+    const oldValue = oldApp[field] || "";
+    if (oldValue === newValue) return; // Ha tényleg nincs változás, nem csinálunk semmit
 
-      const fieldNames: Record<string, string> = {
-        patient_name: "Páciens neve", taj_szam: "TAJ szám", phone_number: "Telefon", 
-        birth_date: "Születési idő", status: "Státusz", examination_type: "Vizsgálat", 
-        notes: "Megjegyzés", location: "Helyszín"
-      };
-      
-      const fieldLabel = fieldNames[field] || field;
-      const oldDisp = oldValue ? oldValue : "(üres)";
-      const newDisp = newValue ? newValue : "(üres)";
-      const details = `${fieldLabel}: "${oldDisp}" ➔ "${newDisp}"`;
+    const modifierName = getDisplayName();
+    const now = new Date().toISOString();
 
-      // Aszinkron adatbázis mentés futtatása a háttérben
-      supabase.from("appointments").update({ 
-        [field]: newValue, 
-        last_modified_by: modifierName, 
-        last_modified_at: now 
-      }).eq("id", id).then(({ error }) => {
-        if (error) {
-           console.error("Supabase mentési hiba:", error);
-           // Csak akkor dobunk hibaüzenetet a felhasználónak, ha tényleg sikertelen
-           // Ilyenkor érdemes lehetne visszaállítani a UI-t az oldValue-ra, de most legalább látjuk
+    // 2. Azonnali UI frissítés, hogy a gépelés gördülékeny maradjon
+    setAppointments(prev => prev.map((app: any) => 
+      app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app
+    ));
+
+    const fieldNames: Record<string, string> = {
+      patient_name: "Páciens neve", taj_szam: "TAJ szám", phone_number: "Telefon", 
+      birth_date: "Születési idő", status: "Státusz", examination_type: "Vizsgálat", 
+      notes: "Megjegyzés", location: "Helyszín"
+    };
+    const fieldLabel = fieldNames[field] || field;
+    const details = `${fieldLabel}: "${oldValue || "(üres)"}" ➔ "${newValue || "(üres)"}"`;
+
+    // 3. Mentés a háttérben (Supabase)
+    const { error } = await supabase.from("appointments").update({ 
+      [field]: newValue, 
+      last_modified_by: modifierName, 
+      last_modified_at: now 
+    }).eq("id", id);
+
+    if (error) {
+      console.error("Adatbázis mentési hiba:", error);
+      showToast("Hiba a mentés során!", "error");
+      return; // Ha hiba van, megállítjuk a további logolást
+    }
+
+    logAction(id, "Módosítás", details);
+
+    // 4. Betegtörzs logika lefutása sikeres mentés esetén
+    if (["patient_name", "taj_szam", "phone_number", "birth_date"].includes(field)) {
+      const currentName = field === "patient_name" ? newValue : (oldApp.patient_name || "");
+      const currentTaj = field === "taj_szam" ? newValue : (oldApp.taj_szam || "");
+      const currentPhone = field === "phone_number" ? newValue : (oldApp.phone_number || "");
+      const currentBirthDate = field === "birth_date" ? newValue : (oldApp.birth_date || "");
+      
+      if (currentName && currentName.trim().length >= 3) {
+        const { data: existingPatients } = await supabase.from('patients').select('id').eq('name', currentName.trim());
+        if (existingPatients && existingPatients.length > 0) {
+           await supabase.from('patients').update({
+              taj_szam: currentTaj || null,
+              phone_number: currentPhone || null,
+              birth_date: currentBirthDate || null,
+              last_visit: now
+           }).eq('id', existingPatients[0].id);
         } else {
-           console.log(`[OK] Supabase sikeresen elmentette: ${field} = ${newValue}`);
-           logAction(id, "Módosítás", details);
-
-           // Betegtörzs logikájának futtatása sikeres mentés után
-           if (["patient_name", "taj_szam", "phone_number", "birth_date"].includes(field)) {
-             const currentName = field === "patient_name" ? newValue : (oldApp ? oldApp.patient_name : "");
-             const currentTaj = field === "taj_szam" ? newValue : (oldApp ? oldApp.taj_szam : "");
-             const currentPhone = field === "phone_number" ? newValue : (oldApp ? oldApp.phone_number : "");
-             const currentBirthDate = field === "birth_date" ? newValue : (oldApp ? oldApp.birth_date : "");
-             
-             if (currentName && currentName.trim().length >= 3) {
-               supabase.from('patients').select('id').eq('name', currentName.trim()).then(({ data: existingPatients }) => {
-                 if (existingPatients && existingPatients.length > 0) {
-                    supabase.from('patients').update({
-                       taj_szam: currentTaj || null, phone_number: currentPhone || null,
-                       birth_date: currentBirthDate || null, last_visit: now
-                    }).eq('id', existingPatients[0].id).then();
-                 } else {
-                    supabase.from('patients').insert([{
-                       name: currentName.trim(), taj_szam: currentTaj || null,
-                       phone_number: currentPhone || null, birth_date: currentBirthDate || null, last_visit: now
-                    }]).then();
-                 }
-               });
-             }
-           }
+           await supabase.from('patients').insert([{
+              name: currentName.trim(),
+              taj_szam: currentTaj || null,
+              phone_number: currentPhone || null,
+              birth_date: currentBirthDate || null,
+              last_visit: now
+           }]);
         }
-      });
-
-      return newAppointments;
-    });
+      }
+    }
   };
 
   const updateDayLocation = async (date: string, department: string, location: string) => {

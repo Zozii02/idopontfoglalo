@@ -1694,15 +1694,15 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-slate-50 font-sans relative pb-10">
         <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm">
-          <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex justify-between items-center">
-            <div className="flex items-center gap-4">
-               <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain" />
+          <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-2 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+               <img src="/logo.png" alt="Medical-Aqua" className="h-9 object-contain" />
                <div>
-                 <h1 className="text-xl font-bold tracking-tight text-slate-900">Vezetői Műszerfal</h1>
-                 <p className="text-blue-600 font-medium text-[11px] tracking-widest uppercase">Statisztikák és Kimutatások</p>
+                 <h1 className="text-lg font-bold tracking-tight text-slate-900">Vezetői Műszerfal</h1>
+                 <p className="text-blue-600 font-medium text-[10px] tracking-widest uppercase">Statisztikák és Kimutatások</p>
                </div>
             </div>
-            <button onClick={() => setShowStats(false)} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold shadow-sm hover:bg-black transition-all active:scale-95 flex items-center gap-2">
+            <button onClick={() => setShowStats(false)} className="px-4 py-2 bg-slate-900 text-white rounded-lg font-bold text-sm shadow-sm hover:bg-black transition-all active:scale-95 flex items-center gap-1.5">
               <ChevronLeftIcon /> Vissza az Előjegyzéshez
             </button>
           </div>
@@ -1710,7 +1710,7 @@ export default function Home() {
 
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8">
           
-          <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-2 w-max mx-auto md:mx-0 mb-8">
+          <div className="bg-white p-1.5 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-1 w-max mx-auto md:mx-0 mb-6">
             {[
               { id: 'today', label: 'Ma' },
               { id: 'week', label: 'Ezen a héten' },
@@ -1720,7 +1720,7 @@ export default function Home() {
               <button 
                 key={period.id}
                 onClick={() => setStatsPeriod(period.id as any)}
-                className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${statsPeriod === period.id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${statsPeriod === period.id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
               >
                 {period.label}
               </button>
@@ -1847,15 +1847,15 @@ export default function Home() {
         {customModalUI}
 
         <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm">
-          <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex justify-between items-center">
-            <div className="flex items-center gap-4">
-               <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain" />
+          <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-2 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+               <img src="/logo.png" alt="Medical-Aqua" className="h-9 object-contain" />
                <div>
-                 <h1 className="text-xl font-bold tracking-tight text-slate-900">Páciensek</h1>
-                 <p className="text-purple-600 font-medium text-[11px] tracking-widest uppercase">Kartonok és Törzsadatok</p>
+                 <h1 className="text-lg font-bold tracking-tight text-slate-900">Páciensek</h1>
+                 <p className="text-purple-600 font-medium text-[10px] tracking-widest uppercase">Kartonok és Törzsadatok</p>
                </div>
             </div>
-            <button onClick={() => setShowPatients(false)} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold shadow-sm hover:bg-black transition-all active:scale-95 flex items-center gap-2">
+            <button onClick={() => setShowPatients(false)} className="px-4 py-2 bg-slate-900 text-white rounded-lg font-bold text-sm shadow-sm hover:bg-black transition-all active:scale-95 flex items-center gap-1.5">
               <ChevronLeftIcon /> Vissza az Előjegyzéshez
             </button>
           </div>
@@ -1971,15 +1971,15 @@ export default function Home() {
         
         {!printingLabQuote && (
           <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm no-print">
-            <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-3 flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                 <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain" />
+            <div className="max-w-[1600px] mx-auto px-3 md:px-6 pt-2 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                 <img src="/logo.png" alt="Medical-Aqua" className="h-9 object-contain" />
                  <div>
-                   <h1 className="text-xl font-bold tracking-tight text-slate-900">Laboratórium</h1>
-                   <p className="text-emerald-600 font-medium text-[11px] tracking-widest uppercase">Kalkulátor és Ajánlatok</p>
+                   <h1 className="text-lg font-bold tracking-tight text-slate-900">Laboratórium</h1>
+                   <p className="text-emerald-600 font-medium text-[10px] tracking-widest uppercase">Kalkulátor és Ajánlatok</p>
                  </div>
               </div>
-              <button onClick={() => setShowLabCalculator(false)} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold shadow-sm hover:bg-black transition-all active:scale-95 flex items-center gap-2">
+              <button onClick={() => setShowLabCalculator(false)} className="px-4 py-2 bg-slate-900 text-white rounded-lg font-bold text-sm shadow-sm hover:bg-black transition-all active:scale-95 flex items-center gap-1.5">
                 <ChevronLeftIcon /> Vissza az Előjegyzéshez
               </button>
             </div>

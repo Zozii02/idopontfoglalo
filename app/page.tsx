@@ -2538,8 +2538,53 @@ export default function Home() {
     return { date, freeCount, total: dayNormalAppointments.length };
   }).filter(day => day.total > 0);
 
+  if (printingDate) {
+    const dayAppointments = groupedByDate[printingDate]?.sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot)) || [];
+    return (
+      <div className="bg-white text-black min-h-screen p-8 font-sans print-mode">
+        <div className="mb-6 pb-4 border-b-2 border-black flex justify-between items-end">
+          <div>
+            <h1 className="text-3xl font-extrabold text-black mb-1">{printingDate}</h1>
+            <h2 className="text-xl font-bold text-slate-700">{activeTab} - Napi előjegyzési lista</h2>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-bold text-slate-600">Készült: {new Date().toLocaleDateString('hu-HU')}</p>
+          </div>
+        </div>
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b-2 border-black">
+              <th className="py-3 px-2 font-bold text-sm text-black">Időpont</th>
+              <th className="py-3 px-2 font-bold text-sm text-black">Páciens neve</th>
+              <th className="py-3 px-2 font-bold text-sm text-black">Szül. idő</th>
+              <th className="py-3 px-2 font-bold text-sm text-black">TAJ szám</th>
+              <th className="py-3 px-2 font-bold text-sm text-black">Telefon</th>
+              <th className="py-3 px-2 font-bold text-sm text-black">Vizsgálat</th>
+              <th className="py-3 px-2 font-bold text-sm text-black">Megjegyzés</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-300">
+            {dayAppointments.filter((app: any) => !app.is_deleted).map((app: any) => (
+              <tr key={app.id} className="break-inside-avoid">
+                <td className="py-3 px-2 font-bold text-black w-[100px]">
+                  {app.time_slot === "VÁRÓLISTA" ? "VÁRÓLISTA" : app.time_slot.replace(" (Online)", "")}
+                </td>
+                <td className="py-3 px-2 font-bold text-black">{app.patient_name || "-"}</td>
+                <td className="py-3 px-2 text-black">{app.birth_date || "-"}</td>
+                <td className="py-3 px-2 font-mono text-black">{formatTAJ(app.taj_szam) || "-"}</td>
+                <td className="py-3 px-2 text-black">{formatPhone(app.phone_number) || "-"}</td>
+                <td className="py-3 px-2 text-black font-semibold">{app.examination_type || "-"}</td>
+                <td className="py-3 px-2 text-black italic">{app.notes || "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
   return (
-    <div className={`min-h-screen font-sans pb-10 bg-cover bg-center bg-fixed relative ${printingDate ? 'bg-white print-mode' : ''}`} style={{ backgroundImage: printingDate ? 'none' : `url('${BACKGROUND_IMAGE_URL}')` }}>
+    <div className={`min-h-screen font-sans pb-10 bg-cover bg-center bg-fixed relative`} style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
       {customModalUI}
       {patientHistoryModalUI}
       {priceModalUI}
@@ -2922,6 +2967,7 @@ export default function Home() {
                 
                 const percent = activeNormalSlots.length > 0 ? Math.round((bookedCount / activeNormalSlots.length) * 100) : 0;
                 const deptPrices = allPrices.filter(p => p.department === (dayAppointments[0]?.department || activeTab));
+                const examinationSuggestions = deptPrices.map(p => p.name);
                 const dailyRevenue = getDailyRevenue(activeNormalSlots, deptPrices);
                 const formattedRevenue = dailyRevenue > 0 ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyRevenue) : "0 Ft";
 
@@ -3184,6 +3230,7 @@ export default function Home() {
                                         onSave={(val) => updateAppointment(app.id, "examination_type", val)} 
                                         placeholder="Kattints ide..." 
                                         className={`font-semibold border text-sm shadow-sm transition-colors ${getExamColor(app.examination_type)}`} 
+                                        suggestions={examinationSuggestions}
                                       />
                                       {currentPrices.length > 0 && app.examination_type && (
                                          <div className="absolute -bottom-5 left-0 text-[9px] font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap shadow-sm border border-emerald-100">
@@ -3313,7 +3360,7 @@ export default function Home() {
 
                                     <div>
                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Vizsgálat</label>
-                                       <EditableCell value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} placeholder="Vizsgálat típusa..." className={`text-sm ${getExamColor(app.examination_type)}`} />
+                                       <EditableCell value={app.examination_type} onSave={(val) => updateAppointment(app.id, "examination_type", val)} placeholder="Vizsgálat típusa..." className={`text-sm ${getExamColor(app.examination_type)}`} suggestions={examinationSuggestions} />
                                     </div>
 
                                     <div>

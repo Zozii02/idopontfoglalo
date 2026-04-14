@@ -857,8 +857,18 @@ export default function Home() {
     if (userId && !needsProfileName) {
       loadInitialData(); 
 
+      // ÉLŐ SZINKRONIZÁCIÓ JAVÍTÁSA: Közvetlenül a payload-ot használjuk az állapot frissítésére, 
+      // nem hívunk új fetch-et ami felülírná a begépelt adatokat!
       const channel = supabase.channel('live-appointments')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => fetchAppointments())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setAppointments(prev => prev.find(a => a.id === payload.new.id) ? prev : [...prev, payload.new]);
+          } else if (payload.eventType === 'UPDATE') {
+            setAppointments(prev => prev.map(app => app.id === payload.new.id ? payload.new : app));
+          } else if (payload.eventType === 'DELETE') {
+            setAppointments(prev => prev.filter(app => app.id !== payload.old.id));
+          }
+        })
         .subscribe();
       
       const pricesChannel = supabase.channel('live-prices')
@@ -919,64 +929,75 @@ export default function Home() {
   const handleLogout = async () => await supabase.auth.signOut();
   const getDisplayName = () => userName || userEmail;
 
+  // JAVÍTOTT MENTÉSI METÓDUS
   const updateAppointment = async (id: number, field: string, newValue: string) => {
     if (!user) return;
     
+    // Az aktuális állapotból kérjük le a régi értéket az ellenőrzéshez
+    const oldApp = appointments.find((a: any) => a.id === id);
+    const oldValue = oldApp ? oldApp[field] : "";
+    
+    if (oldValue === newValue) return;
+
     const modifierName = getDisplayName();
     const now = new Date().toISOString();
-    let oldValue = "";
     
-    setAppointments(prev => {
-      const oldApp = prev.find((a: any) => a.id === id);
-      oldValue = oldApp ? oldApp[field] : "";
+    // Azonnali funkcionális állapotfrissítés, ami garantálja, hogy a listában azonnal ott az adat
+    setAppointments(prev => prev.map((app: any) => 
+      app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app
+    ));
+
+    const fieldNames: Record<string, string> = {
+      patient_name: "Páciens neve", taj_szam: "TAJ szám", phone_number: "Telefon", 
+      birth_date: "Születési idő",
+      status: "Státusz", examination_type: "Vizsgálat", notes: "Megjegyzés", location: "Helyszín"
+    };
+    const fieldLabel = fieldNames[field] || field;
+    
+    const oldDisp = oldValue ? oldValue : "(üres)";
+    const newDisp = newValue ? newValue : "(üres)";
+    const details = `${fieldLabel}: "${oldDisp}" ➔ "${newDisp}"`;
+
+    // Majd ezt követően aszinkron mentés az adatbázisba
+    const { error } = await supabase.from("appointments").update({ 
+      [field]: newValue, 
+      last_modified_by: modifierName, 
+      last_modified_at: now 
+    }).eq("id", id);
+
+    if (error) {
+       console.error("Adatbázis hiba", error);
+       showToast("Hiba történt mentés közben!", "error");
+       return;
+    }
+    
+    await logAction(id, "Módosítás", details);
+
+    // Betegtörzs logika
+    if (["patient_name", "taj_szam", "phone_number", "birth_date"].includes(field)) {
+      const currentName = field === "patient_name" ? newValue : (oldApp ? oldApp.patient_name : "");
+      const currentTaj = field === "taj_szam" ? newValue : (oldApp ? oldApp.taj_szam : "");
+      const currentPhone = field === "phone_number" ? newValue : (oldApp ? oldApp.phone_number : "");
+      const currentBirthDate = field === "birth_date" ? newValue : (oldApp ? oldApp.birth_date : "");
       
-      if (oldValue !== newValue) {
-        return prev.map((app: any) => app.id === id ? { ...app, [field]: newValue, last_modified_by: modifierName, last_modified_at: now } : app);
-      }
-      return prev;
-    });
-
-    if (oldValue !== newValue) {
-      const fieldNames: Record<string, string> = {
-        patient_name: "Páciens neve", taj_szam: "TAJ szám", phone_number: "Telefon", 
-        birth_date: "Születési idő",
-        status: "Státusz", examination_type: "Vizsgálat", notes: "Megjegyzés", location: "Helyszín"
-      };
-      const fieldLabel = fieldNames[field] || field;
-      
-      const oldDisp = oldValue ? oldValue : "(üres)";
-      const newDisp = newValue ? newValue : "(üres)";
-      const details = `${fieldLabel}: "${oldDisp}" ➔ "${newDisp}"`;
-
-      await supabase.from("appointments").update({ [field]: newValue, last_modified_by: modifierName, last_modified_at: now }).eq("id", id);
-      await logAction(id, "Módosítás", details);
-
-      if (["patient_name", "taj_szam", "phone_number", "birth_date"].includes(field)) {
-        const oldApp = appointments.find((a: any) => a.id === id);
-        const currentName = field === "patient_name" ? newValue : (oldApp ? oldApp.patient_name : "");
-        const currentTaj = field === "taj_szam" ? newValue : (oldApp ? oldApp.taj_szam : "");
-        const currentPhone = field === "phone_number" ? newValue : (oldApp ? oldApp.phone_number : "");
-        const currentBirthDate = field === "birth_date" ? newValue : (oldApp ? oldApp.birth_date : "");
+      if (currentName && currentName.trim().length >= 3) {
+        const { data: existingPatients } = await supabase.from('patients').select('id').eq('name', currentName.trim());
         
-        if (currentName && currentName.trim().length >= 3) {
-          const { data: existingPatients } = await supabase.from('patients').select('id').eq('name', currentName.trim());
-          
-          if (existingPatients && existingPatients.length > 0) {
-             await supabase.from('patients').update({
-                taj_szam: currentTaj || null,
-                phone_number: currentPhone || null,
-                birth_date: currentBirthDate || null,
-                last_visit: now
-             }).eq('id', existingPatients[0].id);
-          } else {
-             await supabase.from('patients').insert([{
-                name: currentName.trim(),
-                taj_szam: currentTaj || null,
-                phone_number: currentPhone || null,
-                birth_date: currentBirthDate || null,
-                last_visit: now
-             }]);
-          }
+        if (existingPatients && existingPatients.length > 0) {
+           await supabase.from('patients').update({
+              taj_szam: currentTaj || null,
+              phone_number: currentPhone || null,
+              birth_date: currentBirthDate || null,
+              last_visit: now
+           }).eq('id', existingPatients[0].id);
+        } else {
+           await supabase.from('patients').insert([{
+              name: currentName.trim(),
+              taj_szam: currentTaj || null,
+              phone_number: currentPhone || null,
+              birth_date: currentBirthDate || null,
+              last_visit: now
+           }]);
         }
       }
     }
@@ -2018,7 +2039,7 @@ export default function Home() {
                 <table className="w-full text-left border-collapse text-[10px]">
                   <thead>
                     <tr className="border-b border-slate-300">
-                      <th className="py-1 px-1 font-bold text-slate-600">Vizsg��lat megnevezése</th>
+                      <th className="py-1 px-1 font-bold text-slate-600">Vizsgálat megnevezése</th>
                       <th className="py-1 px-1 font-bold text-slate-600 text-right">Díj (HUF)</th>
                     </tr>
                   </thead>

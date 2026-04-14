@@ -16,11 +16,11 @@ export function ModernStatusSelect({ value, onChange, disabled }: { value: strin
   const currentStyle = statusColors[value] || statusColors["Előjegyzett"];
 
   return (
-    <div className="relative inline-block w-full max-w-[115px]">
+    <div className="relative inline-block w-full max-w-[110px]">
       <select 
         value={value || "Előjegyzett"} 
         onChange={(e) => onChange(e.target.value)}
-        className={`appearance-none w-full text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 pr-4 rounded-md outline-none cursor-pointer border shadow-sm transition-all focus:ring-1 focus:ring-offset-1 ${currentStyle}`}
+        className={`appearance-none w-full text-[9px] uppercase font-bold tracking-wider px-1.5 py-1 pr-4 rounded-md outline-none cursor-pointer border shadow-sm transition-all focus:ring-1 focus:ring-offset-1 ${currentStyle}`}
       >
         <option value="Előjegyzett">Előjegyzett</option>
         <option value="Megérkezett">Megérkezett</option>

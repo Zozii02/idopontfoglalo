@@ -50,28 +50,28 @@ export function ModernDatePicker({ selectedDate, onChange }: { selectedDate: str
     <div className="relative w-full" ref={containerRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between bg-white/80 border border-white/60 px-2 py-1.5 rounded-xl text-xs focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm"
+        className="w-full flex items-center justify-between bg-white/80 border border-white/60 px-2 py-2 rounded-lg text-xs focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none font-semibold text-slate-800 transition-all shadow-sm"
       >
-        <span className="flex items-center gap-2">
-          <span className="text-slate-400"><CalendarIcon size={16} /></span>
+        <span className="flex items-center gap-1.5">
+          <span className="text-slate-400"><CalendarIcon size={14} /></span>
           {displayDate}
         </span>
         <span className="text-slate-400"><ChevronDownIcon /></span>
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-56 bg-white/95 backdrop-blur-xl border border-slate-200 shadow-2xl rounded-2xl z-[999] p-2.5 animate-in fade-in zoom-in-95 duration-200">
-          <div className="flex justify-between items-center mb-3">
-            <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"><ChevronLeftIcon /></button>
-            <div className="font-bold text-slate-800 text-sm">{viewDate.getFullYear()}. {monthNames[viewDate.getMonth()]}</div>
-            <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"><ChevronRightIcon /></button>
+        <div className="absolute top-full left-0 mt-1.5 w-52 bg-white/95 backdrop-blur-xl border border-slate-200 shadow-2xl rounded-xl z-[999] p-2 animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex justify-between items-center mb-2">
+            <button onClick={handlePrevMonth} className="p-1 rounded-md hover:bg-slate-100 text-slate-600 transition-colors"><ChevronLeftIcon /></button>
+            <div className="font-bold text-slate-800 text-xs">{viewDate.getFullYear()}. {monthNames[viewDate.getMonth()]}</div>
+            <button onClick={handleNextMonth} className="p-1 rounded-md hover:bg-slate-100 text-slate-600 transition-colors"><ChevronRightIcon /></button>
           </div>
           
-          <div className="grid grid-cols-7 gap-1 text-center mb-1">
-            {dayNames.map(d => <div key={d} className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{d}</div>)}
+          <div className="grid grid-cols-7 gap-0.5 text-center mb-0.5">
+            {dayNames.map(d => <div key={d} className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">{d}</div>)}
           </div>
           
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-0.5">
             {emptyDays.map((_, i) => <div key={`empty-${i}`} className="p-1"></div>)}
             {days.map(day => {
               const currentDateStr = `${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
@@ -81,7 +81,7 @@ export function ModernDatePicker({ selectedDate, onChange }: { selectedDate: str
                 <button 
                   key={day} 
                   onClick={() => selectDay(day)}
-                  className={`p-1.5 w-full text-xs font-bold rounded-lg transition-all flex items-center justify-center aspect-square
+                  className={`p-1 w-full text-xs font-bold rounded-md transition-all flex items-center justify-center aspect-square
                     ${isSelected ? 'bg-red-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100'}
                   `}
                 >

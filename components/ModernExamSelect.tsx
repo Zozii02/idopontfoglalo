@@ -33,7 +33,7 @@ export function ModernExamSelect({
       <select
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
-        className={`appearance-none w-full text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 pr-4 rounded-md outline-none cursor-pointer border shadow-sm transition-all focus:ring-1 focus:ring-offset-1 truncate ${currentStyle}`}
+        className={`appearance-none w-full text-[9px] uppercase font-bold tracking-wider px-1.5 py-1 pr-4 rounded-md outline-none cursor-pointer border shadow-sm transition-all focus:ring-1 focus:ring-offset-1 truncate ${currentStyle}`}
       >
         <option value="">— Nincs kiválasztva —</option>
         {options.map((opt) => (

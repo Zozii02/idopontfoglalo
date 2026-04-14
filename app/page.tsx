@@ -2596,53 +2596,53 @@ export default function Home() {
       {!printingDate && <div className="absolute inset-0 bg-slate-100/70 backdrop-blur-2xl z-0 pointer-events-none no-print"></div>}
 
       <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-white/50 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] relative no-print">
-        <div className="max-w-[1600px] mx-auto px-2 sm:px-4 md:px-8 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-4 w-full md:w-auto">
-             <img src="/logo.png" alt="Medical-Aqua" className="h-10 object-contain select-none pointer-events-none drop-shadow-sm" />
+        <div className="max-w-[1600px] mx-auto px-2 sm:px-4 md:px-6 py-2 flex flex-col md:flex-row justify-between items-center gap-3">
+          <div className="flex items-center gap-3 w-full md:w-auto">
+             <img src="/logo.png" alt="Medical-Aqua" className="h-9 object-contain select-none pointer-events-none drop-shadow-sm" />
              <div className="hidden sm:block">
-               <h1 className="text-xl font-bold tracking-tight text-slate-900">Medical-Aqua</h1>
-               <p className="text-red-600 font-medium text-[11px] tracking-widest uppercase drop-shadow-sm">Előjegyzési Rendszer</p>
+               <h1 className="text-lg font-bold tracking-tight text-slate-900">Medical-Aqua</h1>
+               <p className="text-red-600 font-medium text-[10px] tracking-widest uppercase drop-shadow-sm">Előjegyzési Rendszer</p>
              </div>
           </div>
           
           <div className="flex-1 max-w-lg w-full relative group">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-500 transition-colors"><SearchIcon size={18} /></div>
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-red-500 transition-colors"><SearchIcon size={16} /></div>
             <input 
               ref={searchInputRef}
               type="text" 
               placeholder="Keresés név, TAJ, telefon vagy szül. idő... (Ctrl+K)" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white/80 border border-white/60 py-2 pl-10 pr-4 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 font-semibold text-slate-800 transition-all placeholder:font-medium placeholder:text-slate-400"
+              className="w-full bg-white/80 border border-white/60 py-1.5 pl-9 pr-3 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 font-semibold text-slate-800 transition-all placeholder:font-medium placeholder:text-slate-400"
             />
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4 w-full md:w-auto justify-center md:justify-end flex-wrap mt-2 md:mt-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 w-full md:w-auto justify-center md:justify-end flex-wrap mt-1 md:mt-0">
             
-            <button onClick={() => { setShowPatients(true); setShowStats(false); setShowLabCalculator(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-full text-xs font-bold transition-all shadow-sm">
-              <UsersIcon size={16} />
+            <button onClick={() => { setShowPatients(true); setShowStats(false); setShowLabCalculator(false); }} className="flex items-center gap-1 px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-full text-[11px] font-bold transition-all shadow-sm">
+              <UsersIcon size={14} />
               <span className="hidden xl:inline">Páciensek</span>
             </button>
 
-            <button onClick={() => { setShowStats(true); setShowLabCalculator(false); setShowPatients(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-full text-xs font-bold transition-all shadow-sm">
-              <ChartPieIcon size={16} />
+            <button onClick={() => { setShowStats(true); setShowLabCalculator(false); setShowPatients(false); }} className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-full text-[11px] font-bold transition-all shadow-sm">
+              <ChartPieIcon size={14} />
               <span className="hidden xl:inline">Statisztika</span>
             </button>
 
-            <button onClick={() => { setShowLabCalculator(true); setShowStats(false); setShowPatients(false); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold transition-all shadow-sm">
-              <CalculatorIcon size={16} />
+            <button onClick={() => { setShowLabCalculator(true); setShowStats(false); setShowPatients(false); }} className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-bold transition-all shadow-sm">
+              <CalculatorIcon size={14} />
               <span className="hidden sm:inline">Labor kalkulátor</span>
             </button>
 
-            <button onClick={() => setIsBugModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-full text-xs font-bold transition-all shadow-sm">
-              <FeedbackIcon size={16} />
+            <button onClick={() => setIsBugModalOpen(true)} className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-full text-[11px] font-bold transition-all shadow-sm">
+              <FeedbackIcon size={14} />
               <span className="hidden lg:inline">Hibabejelentő</span>
             </button>
 
             <div className="relative" ref={notifRef}>
-              <button onClick={toggleNotif} className="relative p-2 text-slate-500 hover:text-red-600 transition-colors ml-1 cursor-pointer">
+              <button onClick={toggleNotif} className="relative p-1.5 text-slate-500 hover:text-red-600 transition-colors cursor-pointer">
                 <BellIcon />
-                {unreadCount > 0 && <span className="absolute top-0 right-0 translate-x-1 -translate-y-1 bg-red-500 text-white text-[10px] font-extrabold w-4 h-4 flex items-center justify-center rounded-full border-2 border-white">{unreadCount}</span>}
+                {unreadCount > 0 && <span className="absolute top-0 right-0 translate-x-1 -translate-y-1 bg-red-500 text-white text-[9px] font-extrabold w-3.5 h-3.5 flex items-center justify-center rounded-full border-2 border-white">{unreadCount}</span>}
               </button>
               {isNotifOpen && (
                  <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-top-right">
@@ -2678,8 +2678,8 @@ export default function Home() {
               )}
             </div>
 
-            <div className="relative ml-1" ref={onlineRef}>
-              <button onClick={() => setIsOnlineDropdownOpen(!isOnlineDropdownOpen)} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold transition-all shadow-sm">
+            <div className="relative" ref={onlineRef}>
+              <button onClick={() => setIsOnlineDropdownOpen(!isOnlineDropdownOpen)} className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-bold transition-all shadow-sm">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.8)]"></div>
                 <span className="hidden xl:inline">{onlineUsers.length} online</span>
               </button>
@@ -2706,32 +2706,32 @@ export default function Home() {
               )}
             </div>
 
-            <div className="flex items-center gap-2 text-slate-800 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/60 shadow-sm z-10 relative ml-1">
-              <UserIcon /><span className="font-semibold text-sm hidden md:inline">{getDisplayName()}</span>
+            <div className="flex items-center gap-1.5 text-slate-800 bg-white/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/60 shadow-sm z-10 relative">
+              <UserIcon /><span className="font-semibold text-xs hidden md:inline">{getDisplayName()}</span>
             </div>
-            <button onClick={handleLogout} className="text-slate-500 hover:text-red-600 transition-colors p-2 z-10 relative cursor-pointer" title="Kijelentkezés"><LogoutIcon /></button>
+            <button onClick={handleLogout} className="text-slate-500 hover:text-red-600 transition-colors p-1.5 z-10 relative cursor-pointer" title="Kijelentkezés"><LogoutIcon /></button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-[1600px] mx-auto px-4 md:px-8 pt-8 relative z-10 min-h-[80vh]">
+      <div className="max-w-[1600px] mx-auto px-3 md:px-6 pt-6 relative z-10 min-h-[80vh]">
         
         {!printingDate && debouncedSearchTerm === "" && (
-          <div className="relative z-30 bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-6 mb-6 no-print">
-            <div className="flex flex-col xl:flex-row gap-8 items-start xl:items-center justify-between">
+          <div className="relative z-30 bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-4 sm:p-5 mb-5 no-print">
+            <div className="flex flex-col xl:flex-row gap-5 items-start xl:items-center justify-between">
               
-              <div className="w-full xl:w-[45%] flex flex-col gap-4">
+              <div className="w-full xl:w-[45%] flex flex-col gap-3">
                 
-                <div className="flex bg-slate-100/80 p-1.5 rounded-2xl w-full sm:w-max shadow-inner border border-slate-200/60 mb-2">
+                <div className="flex bg-slate-100/80 p-1 rounded-xl w-full sm:w-max shadow-inner border border-slate-200/60 mb-1">
                   <button
                     onClick={() => setIsArchiveView(false)}
-                    className={`flex-1 sm:px-5 py-2 rounded-xl text-xs font-extrabold transition-all duration-300 ${!isArchiveView ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'}`}
+                    className={`flex-1 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${!isArchiveView ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'}`}
                   >
                     Aktuális
                   </button>
                   <button
                     onClick={() => setIsArchiveView(true)}
-                    className={`flex-1 sm:px-5 py-2 rounded-xl text-xs font-extrabold transition-all duration-300 ${isArchiveView ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'}`}
+                    className={`flex-1 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 ${isArchiveView ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'}`}
                   >
                     Archívum
                   </button>
@@ -2739,16 +2739,16 @@ export default function Home() {
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-slate-800">
-                    <div className="bg-red-100 text-red-600 p-2 rounded-xl shadow-sm"><ActivityIcon size={18} /></div>
-                    <span className="font-extrabold text-lg">Szakrendelés</span>
+                    <div className="bg-red-100 text-red-600 p-1.5 rounded-lg shadow-sm"><ActivityIcon size={16} /></div>
+                    <span className="font-bold text-base">Szakrendelés</span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5">
                     {activeTab && (
-                      <button onClick={openPriceModal} className="text-xs font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-xl transition-all shadow-sm flex items-center gap-1.5 active:scale-95">
+                      <button onClick={openPriceModal} className="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1.5 rounded-lg transition-all shadow-sm flex items-center gap-1 active:scale-95">
                         <TagIcon /> Árlista
                       </button>
                     )}
-                    <button onClick={() => setIsDeptModalOpen(true)} className="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-2 rounded-xl transition-all shadow-sm active:scale-95">
+                    <button onClick={() => setIsDeptModalOpen(true)} className="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-2.5 py-1.5 rounded-lg transition-all shadow-sm active:scale-95">
                       Kezelés
                     </button>
                   </div>
@@ -2757,39 +2757,39 @@ export default function Home() {
                 <div className="relative z-50 w-full" ref={deptDropdownRef}>
                   <button 
                     onClick={() => setIsDeptDropdownOpen(!isDeptDropdownOpen)}
-                    className={`w-full bg-white border-2 text-left px-5 py-4 rounded-2xl flex justify-between items-center transition-all shadow-sm group cursor-pointer ${isDeptDropdownOpen ? 'border-red-400 ring-4 ring-red-50' : 'border-slate-100 hover:border-red-200'}`}
+                    className={`w-full bg-white border-2 text-left px-4 py-3 rounded-xl flex justify-between items-center transition-all shadow-sm group cursor-pointer ${isDeptDropdownOpen ? 'border-red-400 ring-4 ring-red-50' : 'border-slate-100 hover:border-red-200'}`}
                   >
                     <div className="truncate pr-4">
                       <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-0.5">Kiválasztott szakrendelés</span>
-                      <span className="block text-lg font-extrabold text-slate-800 group-hover:text-red-600 transition-colors truncate">
+                      <span className="block text-base font-bold text-slate-800 group-hover:text-red-600 transition-colors truncate">
                         {activeTab || "Válassz szakrendelést..."}
                       </span>
                     </div>
-                    <div className={`p-2 rounded-full transition-transform duration-300 shrink-0 ${isDeptDropdownOpen ? 'rotate-180 bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500 group-hover:bg-red-50 group-hover:text-red-500'}`}>
-                      <ChevronDownIcon size={20} />
+                    <div className={`p-1.5 rounded-full transition-transform duration-300 shrink-0 ${isDeptDropdownOpen ? 'rotate-180 bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500 group-hover:bg-red-50 group-hover:text-red-500'}`}>
+                      <ChevronDownIcon size={18} />
                     </div>
                   </button>
 
-                  <div className={`absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] border border-slate-100 overflow-hidden transition-all duration-300 origin-top ${isDeptDropdownOpen ? 'opacity-100 scale-y-100 visible' : 'opacity-0 scale-y-95 invisible'}`}>
-                    <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                  <div className={`absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] border border-slate-100 overflow-hidden transition-all duration-300 origin-top ${isDeptDropdownOpen ? 'opacity-100 scale-y-100 visible' : 'opacity-0 scale-y-95 invisible'}`}>
+                    <div className="p-2.5 border-b border-slate-100 bg-slate-50/50">
                       <div className="relative">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon size={16} /></div>
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><SearchIcon size={14} /></div>
                         <input 
                           type="text" 
                           placeholder="Keresés a szakrendelések között..." 
                           value={departmentSearch}
                           onChange={(e) => setDepartmentSearch(e.target.value)}
-                          className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 font-semibold text-slate-800 outline-none transition-all"
+                          className="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 font-semibold text-slate-800 outline-none transition-all"
                         />
                       </div>
                     </div>
-                    <div className="max-h-[320px] overflow-y-auto custom-scrollbar p-2 grid grid-cols-1 sm:grid-cols-2 gap-1 bg-white">
+                    <div className="max-h-[280px] overflow-y-auto custom-scrollbar p-1.5 grid grid-cols-1 sm:grid-cols-2 gap-0.5 bg-white">
                       {filteredCategories.length > 0 ? (
                          filteredCategories.map(c => (
                            <button
                              key={c}
                              onClick={() => { setActiveTab(c); setIsDeptDropdownOpen(false); setDepartmentSearch(""); }}
-                             className={`text-left px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-between group cursor-pointer ${activeTab === c ? 'bg-red-50 text-red-700 shadow-sm' : 'hover:bg-slate-50 text-slate-700'}`}
+                             className={`text-left px-3 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-between group cursor-pointer ${activeTab === c ? 'bg-red-50 text-red-700 shadow-sm' : 'hover:bg-slate-50 text-slate-700'}`}
                            >
                              <span className="truncate pr-2">{c}</span>
                              {activeTab === c && <CheckCircleIcon size={16} />}
@@ -2802,71 +2802,71 @@ export default function Home() {
                   </div>
                 </div>
 
-                <label className="flex items-center gap-3 cursor-pointer group w-max mt-1">
+                <label className="flex items-center gap-2.5 cursor-pointer group w-max mt-0.5">
                   <div className="relative">
                     <input type="checkbox" className="sr-only" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
-                    <div className={`block w-10 h-6 rounded-full transition-colors duration-300 border ${showDeleted ? "bg-slate-800 border-slate-800" : "bg-slate-200 border-slate-300 group-hover:border-slate-400"}`}></div>
-                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${showDeleted ? "translate-x-4" : "translate-x-0"}`}></div>
+                    <div className={`block w-9 h-5 rounded-full transition-colors duration-300 border ${showDeleted ? "bg-slate-800 border-slate-800" : "bg-slate-200 border-slate-300 group-hover:border-slate-400"}`}></div>
+                    <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${showDeleted ? "translate-x-4" : "translate-x-0"}`}></div>
                   </div>
-                  <span className={`font-semibold text-sm transition-colors duration-300 ${showDeleted ? "text-slate-800" : "text-slate-500 group-hover:text-slate-700"}`}>Törölt sorok mutatása</span>
+                  <span className={`font-medium text-xs transition-colors duration-300 ${showDeleted ? "text-slate-800" : "text-slate-500 group-hover:text-slate-700"}`}>Törölt sorok mutatása</span>
                 </label>
               </div>
 
-              <div className="w-px h-[180px] bg-slate-200/60 hidden xl:block mx-4"></div>
+              <div className="w-px h-[160px] bg-slate-200/60 hidden xl:block mx-2"></div>
 
               <div className={`w-full xl:w-auto flex-1 relative z-0 transition-opacity duration-300 ${isArchiveView ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
-                 <div className="flex items-center gap-2.5 mb-4 text-slate-800 font-extrabold text-lg">
-                    <div className="bg-red-100 text-red-600 p-1.5 rounded-lg shadow-sm"><CalendarPlusIcon size={18} /></div>
+                 <div className="flex items-center gap-2 mb-3 text-slate-800 font-bold text-base">
+                    <div className="bg-red-100 text-red-600 p-1.5 rounded-lg shadow-sm"><CalendarPlusIcon size={16} /></div>
                     <span>Napi előjegyzési lista létrehozása</span>
                  </div>
                  
-                 <div className="flex flex-col gap-3 w-full">
-                    <div className="flex flex-wrap items-end gap-3">
-                      <div className="w-full sm:w-auto sm:flex-1 md:w-[220px] md:flex-none">
-                        <div className="flex justify-between items-center mb-1.5">
+                 <div className="flex flex-col gap-2.5 w-full">
+                    <div className="flex flex-wrap items-end gap-2.5">
+                      <div className="w-full sm:w-auto sm:flex-1 md:w-[200px] md:flex-none">
+                        <div className="flex justify-between items-center mb-1">
                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Dátum</label>
                            <div className="flex gap-1">
-                             <button onClick={() => setSelectedDate(getTodayDateStr())} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded transition-colors">MA</button>
-                             <button onClick={() => setSelectedDate(getTomorrowDateStr())} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded transition-colors">HOLNAP</button>
+                             <button onClick={() => setSelectedDate(getTodayDateStr())} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors">MA</button>
+                             <button onClick={() => setSelectedDate(getTomorrowDateStr())} className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors">HOLNAP</button>
                            </div>
                         </div>
                         <ModernDatePicker selectedDate={selectedDate} onChange={setSelectedDate} />
                       </div>
 
-                      <div className="w-[calc(50%-0.375rem)] sm:w-20 md:w-24">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Kezdés</label>
-                        <input type="time" value={genStart} onChange={(e) => setGenStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none font-bold text-slate-800 transition-all shadow-sm" />
+                      <div className="w-[calc(50%-0.375rem)] sm:w-20 md:w-22">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Kezdés</label>
+                        <input type="time" value={genStart} onChange={(e) => setGenStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2 rounded-lg text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none font-bold text-slate-800 transition-all shadow-sm" />
                       </div>
-                      <div className="w-[calc(50%-0.375rem)] sm:w-20 md:w-24">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Befejezés</label>
-                        <input type="time" value={genEnd} onChange={(e) => setGenEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none font-bold text-slate-800 transition-all shadow-sm" />
+                      <div className="w-[calc(50%-0.375rem)] sm:w-20 md:w-22">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Befejezés</label>
+                        <input type="time" value={genEnd} onChange={(e) => setGenEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2 rounded-lg text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none font-bold text-slate-800 transition-all shadow-sm" />
                       </div>
-                      <div className="w-full sm:w-16 md:w-20">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Perc</label>
-                        <input type="number" value={genDuration} onChange={(e) => setGenDuration(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none font-bold text-slate-800 transition-all shadow-sm" min="1" />
+                      <div className="w-full sm:w-14 md:w-18">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Perc</label>
+                        <input type="number" value={genDuration} onChange={(e) => setGenDuration(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2 rounded-lg text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none font-bold text-slate-800 transition-all shadow-sm" min="1" />
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-end gap-3 mt-1">
-                      <div className="w-[calc(50%-0.375rem)] sm:w-28">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet kezdete</label>
-                        <input type="time" value={genBreakStart} onChange={(e) => setGenBreakStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none font-bold text-slate-800 transition-all shadow-sm" />
+                    <div className="flex flex-wrap items-end gap-2.5">
+                      <div className="w-[calc(50%-0.375rem)] sm:w-26">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Szünet kezdete</label>
+                        <input type="time" value={genBreakStart} onChange={(e) => setGenBreakStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2 rounded-lg text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none font-bold text-slate-800 transition-all shadow-sm" />
                       </div>
-                      <div className="w-[calc(50%-0.375rem)] sm:w-28">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Szünet vége</label>
-                        <input type="time" value={genBreakEnd} onChange={(e) => setGenBreakEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none font-bold text-slate-800 transition-all shadow-sm" />
-                      </div>
-                      
-                      <div className="w-[calc(50%-0.375rem)] sm:w-28">
-                        <label className="block text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1.5">Online kezdete</label>
-                        <input type="time" value={genOnlineStart} onChange={(e) => setGenOnlineStart(e.target.value)} className="w-full bg-blue-50/50 border border-blue-200 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none font-bold text-blue-900 transition-all shadow-sm" />
-                      </div>
-                      <div className="w-[calc(50%-0.375rem)] sm:w-28">
-                        <label className="block text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1.5">Online vége</label>
-                        <input type="time" value={genOnlineEnd} onChange={(e) => setGenOnlineEnd(e.target.value)} className="w-full bg-blue-50/50 border border-blue-200 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none font-bold text-blue-900 transition-all shadow-sm" />
+                      <div className="w-[calc(50%-0.375rem)] sm:w-26">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Szünet vége</label>
+                        <input type="time" value={genBreakEnd} onChange={(e) => setGenBreakEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2 rounded-lg text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none font-bold text-slate-800 transition-all shadow-sm" />
                       </div>
                       
-                      <button onClick={generateDailySlots} className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-500 text-white px-8 py-2.5 rounded-xl hover:from-red-700 hover:to-red-600 transition-all active:scale-95 font-bold shadow-md shadow-red-500/20 sm:ml-auto">
+                      <div className="w-[calc(50%-0.375rem)] sm:w-26">
+                        <label className="block text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Online kezdete</label>
+                        <input type="time" value={genOnlineStart} onChange={(e) => setGenOnlineStart(e.target.value)} className="w-full bg-blue-50/50 border border-blue-200 p-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none font-bold text-blue-900 transition-all shadow-sm" />
+                      </div>
+                      <div className="w-[calc(50%-0.375rem)] sm:w-26">
+                        <label className="block text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Online vége</label>
+                        <input type="time" value={genOnlineEnd} onChange={(e) => setGenOnlineEnd(e.target.value)} className="w-full bg-blue-50/50 border border-blue-200 p-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none font-bold text-blue-900 transition-all shadow-sm" />
+                      </div>
+                      
+                      <button onClick={generateDailySlots} className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-500 text-white px-6 py-2 rounded-lg hover:from-red-700 hover:to-red-600 transition-all active:scale-95 font-bold text-sm shadow-md shadow-red-500/20 sm:ml-auto">
                         Lista Generálása
                       </button>
                     </div>
@@ -2877,10 +2877,10 @@ export default function Home() {
         )}
 
         {!printingDate && debouncedSearchTerm !== "" && (
-          <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-2xl mb-6 shadow-sm flex items-center gap-3 no-print">
-            <SearchIcon size={18} />
-            <span className="font-bold">Keresési eredmények a következőre: "{debouncedSearchTerm}"</span>
-            <span className="ml-auto bg-blue-200 text-blue-900 px-3 py-1 rounded-full text-xs font-extrabold">{filteredAppointments.length} találat</span>
+          <div className="bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded-xl mb-5 shadow-sm flex items-center gap-2.5 no-print">
+            <SearchIcon size={16} />
+            <span className="font-bold text-sm">Keresési eredmények a következőre: "{debouncedSearchTerm}"</span>
+            <span className="ml-auto bg-blue-200 text-blue-900 px-2.5 py-0.5 rounded-full text-xs font-bold">{filteredAppointments.length} találat</span>
           </div>
         )}
 
@@ -2909,19 +2909,19 @@ export default function Home() {
         ) : (
           <>
             {!printingDate && debouncedSearchTerm === "" && freeSlotsSummary.length > 0 && (
-              <div className="mb-8 no-print">
-                <div className="flex items-center gap-2 mb-3 text-slate-700 font-bold uppercase tracking-widest text-xs ml-1">
-                  <CalendarIcon size={16} /> <span>Naptár Áttekintés - Kattints a dátumra</span>
+              <div className="mb-6 no-print">
+                <div className="flex items-center gap-2 mb-2 text-slate-700 font-bold uppercase tracking-widest text-[10px] ml-1">
+                  <CalendarIcon size={14} /> <span>Naptár Áttekintés - Kattints a dátumra</span>
                 </div>
-                <div className="flex gap-3 overflow-x-auto pb-3 custom-scrollbar scroll-smooth">
+                <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar scroll-smooth">
                   
                   {!isArchiveView && (
                     <button
                       onClick={scrollToToday}
-                      className="flex-shrink-0 flex items-center justify-center gap-2 min-w-[130px] p-3 rounded-2xl border bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 transition-all shadow-sm"
+                      className="flex-shrink-0 flex items-center justify-center gap-1.5 min-w-[110px] p-2.5 rounded-xl border bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 transition-all shadow-sm"
                     >
-                      <CalendarIcon size={20} />
-                      <span className="font-extrabold text-sm">Ugrás Mára</span>
+                      <CalendarIcon size={16} />
+                      <span className="font-bold text-xs">Ugrás Mára</span>
                     </button>
                   )}
 
@@ -2929,11 +2929,11 @@ export default function Home() {
                     <button
                       key={day.date}
                       onClick={() => document.getElementById(`date-${day.date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                      className={`flex-shrink-0 min-w-[130px] p-3 rounded-2xl border transition-all text-left group backdrop-blur-md cursor-pointer
+                      className={`flex-shrink-0 min-w-[110px] p-2.5 rounded-xl border transition-all text-left group backdrop-blur-md cursor-pointer
                         ${day.freeCount > 0 ? 'bg-white/90 border-white shadow-sm hover:shadow-md hover:border-emerald-200' : 'bg-slate-100/80 border-white/50 opacity-80 hover:bg-white/90'}`}
                     >
-                      <div className="text-slate-800 font-extrabold text-sm mb-1">{formatShortDate(day.date)}</div>
-                      <div className={`text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-lg w-max transition-colors
+                      <div className="text-slate-800 font-bold text-sm mb-0.5">{formatShortDate(day.date)}</div>
+                      <div className={`text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded-md w-max transition-colors
                         ${day.freeCount > 0 ? 'bg-emerald-100 text-emerald-800 group-hover:bg-emerald-200' : 'bg-slate-200 text-slate-700'}`}>
                         {day.freeCount > 0 ? `${day.freeCount} szabad hely` : 'Megtelt'}
                       </div>
@@ -2944,9 +2944,9 @@ export default function Home() {
             )}
 
             {sortedDates.length === 0 ? (
-              <div className="bg-white/80 backdrop-blur-xl p-12 md:p-20 text-center rounded-3xl shadow-sm border border-white/60 flex flex-col items-center no-print relative z-0">
-                <div className="text-slate-300 mb-4"><CalendarIcon size={64} /></div>
-                <h3 className="text-xl font-bold text-slate-800 mb-2">
+              <div className="bg-white/80 backdrop-blur-xl p-10 md:p-16 text-center rounded-2xl shadow-sm border border-white/60 flex flex-col items-center no-print relative z-0">
+                <div className="text-slate-300 mb-3"><CalendarIcon size={48} /></div>
+                <h3 className="text-lg font-bold text-slate-800 mb-1.5">
                   {debouncedSearchTerm ? "Nincs találat" : isArchiveView ? "Az archívum üres" : "Még nincsenek aktuális időpontok"}
                 </h3>
                 <p className="text-slate-600 text-sm font-medium">
@@ -2973,17 +2973,17 @@ export default function Home() {
                 const formattedRevenue = dailyRevenue > 0 ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyRevenue) : "0 Ft";
 
                 return (
-                  <div id={`date-${date}`} key={date} className={`mb-10 rounded-3xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] scroll-mt-[100px] print-container relative z-0 flex flex-col ${printingDate ? 'bg-white' : 'bg-white/80 backdrop-blur-xl border border-white/60'}`}>
+                  <div id={`date-${date}`} key={date} className={`mb-8 rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] scroll-mt-[100px] print-container relative z-0 flex flex-col ${printingDate ? 'bg-white' : 'bg-white/80 backdrop-blur-xl border border-white/60'}`}>
                     
-                    <div className={`p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-slate-100 rounded-t-3xl'}`}>
+                    <div className={`p-4 flex flex-col xl:flex-row xl:items-center justify-between gap-3 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-slate-100 rounded-t-2xl'}`}>
                       
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-3 text-slate-900">
-                            <CalendarIcon size={20} />
-                            <h2 className="text-xl font-bold flex items-baseline gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-2 text-slate-900">
+                            <CalendarIcon size={18} />
+                            <h2 className="text-lg font-bold flex items-baseline gap-2">
                               {date} 
-                              <span className="text-sm font-semibold text-slate-500 capitalize">
+                              <span className="text-sm font-medium text-slate-500 capitalize">
                                 {new Intl.DateTimeFormat('hu-HU', { weekday: 'long' }).format(new Date(date))}
                               </span>
                               {debouncedSearchTerm !== "" && <span className="text-sm font-medium text-slate-500 ml-2">({dayAppointments[0].department})</span>}
@@ -3007,8 +3007,8 @@ export default function Home() {
                         </div>
                         
                         {!printingDate && debouncedSearchTerm === "" && (
-                          <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-100">
-                            <div className="flex flex-col gap-1 w-32 sm:w-40">
+                          <div className="flex items-center gap-3 bg-white px-2.5 py-1.5 rounded-lg shadow-sm border border-slate-100">
+                            <div className="flex flex-col gap-0.5 w-28 sm:w-36">
                               <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                                 <span>Telítettség</span>
                                 <span className={percent === 100 ? "text-emerald-600" : ""}>{percent}%</span>
@@ -3026,16 +3026,16 @@ export default function Home() {
                         )}
                       </div>
 
-                      <div className="flex items-center flex-wrap gap-2">
+                      <div className="flex items-center flex-wrap gap-1.5">
                         {debouncedSearchTerm === "" && (
                           <>
-                            <span className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200">Összes: {activeNormalSlots.length}</span>
-                            <span className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200">Szabad: {freeCount}</span>
-                            <span className="bg-red-100 text-red-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-200">Foglalt: {bookedCount}</span>
+                            <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded-md text-[11px] font-bold border border-slate-200">Összes: {activeNormalSlots.length}</span>
+                            <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md text-[11px] font-bold border border-emerald-200">Szabad: {freeCount}</span>
+                            <span className="bg-red-100 text-red-800 px-2 py-1 rounded-md text-[11px] font-bold border border-red-200">Foglalt: {bookedCount}</span>
                             
                             {!printingDate && !isArchiveView && (
-                              <button onClick={() => addToWaitingList(date)} className="bg-orange-100 hover:bg-orange-200 text-orange-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-orange-300 transition-colors flex items-center gap-1 cursor-pointer">
-                                <PlusIcon size={14} /> Várólista
+                              <button onClick={() => addToWaitingList(date)} className="bg-orange-100 hover:bg-orange-200 text-orange-800 px-2 py-1 rounded-md text-[11px] font-bold border border-orange-300 transition-colors flex items-center gap-1 cursor-pointer">
+                                <PlusIcon size={12} /> Várólista
                               </button>
                             )}
                           </>
@@ -3043,25 +3043,25 @@ export default function Home() {
                         
                         {!printingDate && debouncedSearchTerm === "" && (
                           <>
-                            <div className="w-px h-6 bg-slate-300 mx-1 hidden md:block"></div>
+                            <div className="w-px h-5 bg-slate-300 mx-0.5 hidden md:block"></div>
                             
                             {!isArchiveView && (
-                              <button onClick={() => clearEmptySlots(date)} title="Üres sorok takarítása" className="bg-white hover:bg-amber-50 text-slate-700 p-1.5 rounded-xl transition-all shadow-sm border border-slate-200 cursor-pointer hover:text-amber-600 hover:border-amber-200">
+                              <button onClick={() => clearEmptySlots(date)} title="Üres sorok takarítása" className="bg-white hover:bg-amber-50 text-slate-700 p-1 rounded-lg transition-all shadow-sm border border-slate-200 cursor-pointer hover:text-amber-600 hover:border-amber-200">
                                 <EraserIcon />
                               </button>
                             )}
                             
-                            <button onClick={() => exportToCSV(date)} className="bg-white hover:bg-blue-50 text-slate-700 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border border-slate-200 cursor-pointer hover:border-blue-200 hover:text-blue-600">
-                              <DownloadIcon /> <span className="hidden sm:inline">Excel Export</span><span className="sm:hidden">Excel</span>
+                            <button onClick={() => exportToCSV(date)} className="bg-white hover:bg-blue-50 text-slate-700 px-2 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 shadow-sm border border-slate-200 cursor-pointer hover:border-blue-200 hover:text-blue-600">
+                              <DownloadIcon /> <span className="hidden sm:inline">Excel</span>
                             </button>
                             
-                            <button onClick={() => handlePrintDay(date)} className="bg-slate-800 text-white px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-black transition-all flex items-center gap-1.5 shadow-sm cursor-pointer">
+                            <button onClick={() => handlePrintDay(date)} className="bg-slate-800 text-white px-2 py-1 rounded-lg text-[11px] font-bold hover:bg-black transition-all flex items-center gap-1 shadow-sm cursor-pointer">
                               <PrintIcon /> <span className="hidden sm:inline">Nyomtatás</span>
                             </button>
                             
                             {!isArchiveView && (
-                              <button onClick={() => deleteEntireDay(date)} className="bg-red-50 text-red-600 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition-all flex items-center gap-1.5 shadow-sm border border-red-200 cursor-pointer">
-                                <TrashIcon /> <span className="hidden sm:inline">Nap törlése</span>
+                              <button onClick={() => deleteEntireDay(date)} className="bg-red-50 text-red-600 px-2 py-1 rounded-lg text-[11px] font-bold hover:bg-red-600 hover:text-white transition-all flex items-center gap-1 shadow-sm border border-red-200 cursor-pointer">
+                                <TrashIcon /> <span className="hidden sm:inline">Törlés</span>
                               </button>
                             )}
                           </>
@@ -3072,30 +3072,30 @@ export default function Home() {
                     <div className={`overflow-x-auto custom-scrollbar flex-1 ${printingDate ? 'overflow-visible' : ''}`}>
                       <table className="w-full table-fixed text-left border-collapse print-table hidden lg:table print:table">
                         <colgroup>
-                          <col className="w-[100px]" /> {/* Időpont */}
-                          <col className="w-[18%]" />   {/* Páciens neve */}
-                          <col className="w-[10%]" />   {/* Szül. idő */}
+                          <col className="w-[80px]" />  {/* Időpont */}
+                          <col className="w-[17%]" />   {/* Páciens neve */}
+                          <col className="w-[9%]" />    {/* Szül. idő */}
                           <col className="w-[10%]" />   {/* TAJ szám */}
-                          <col className="w-[11%]" />   {/* Telefon */}
+                          <col className="w-[10%]" />   {/* Telefon */}
                           {!printingDate && <col className="w-[10%]" />}  {/* Státusz */}
-                          <col className="w-[14%]" />   {/* Vizsgálat */}
+                          <col className="w-[13%]" />   {/* Vizsgálat */}
                           <col />                        {/* Megjegyzés - fills remaining */}
-                          {!printingDate && <col className="w-[80px]" />}  {/* Művelet */}
+                          {!printingDate && <col className="w-[70px]" />}  {/* Művelet */}
                         </colgroup>
                         <thead className="sticky top-0 z-20 shadow-sm bg-white">
                           <tr className="border-b border-slate-200/60 print-border">
-                            <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Időpont</th>
-                            <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Páciens neve</th>
+                            <th className="px-2 py-2 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Időpont</th>
+                            <th className="px-2 py-2 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Páciens neve</th>
                             
-                            <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Szül. idő</th>
-                            <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">TAJ szám</th>
+                            <th className="px-2 py-2 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Szül. idő</th>
+                            <th className="px-2 py-2 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">TAJ szám</th>
                             
-                            <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Telefon</th>
-                            {!printingDate && <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Státusz</th>}
+                            <th className="px-2 py-2 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Telefon</th>
+                            {!printingDate && <th className="px-2 py-2 font-bold text-slate-500 text-[10px] uppercase tracking-widest whitespace-nowrap">Státusz</th>}
                             
-                            <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Vizsgálat</th>
-                            <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Megjegyzés</th>
-                            {!printingDate && <th className="px-2.5 py-2.5 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap">Művelet</th>}
+                            <th className="px-2 py-2 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Vizsgálat</th>
+                            <th className="px-2 py-2 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Megjegyzés</th>
+                            {!printingDate && <th className="px-2 py-2 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap">Művelet</th>}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100/50 relative z-0 bg-white/50 backdrop-blur-sm">
@@ -3129,32 +3129,32 @@ export default function Home() {
                             return (
                               <tr key={app.id} className={`transition-colors group relative ${printingDate ? '' : rowStyle}`}>
                                 
-                                <td className="px-2.5 py-2 align-middle whitespace-nowrap">
+                                <td className="px-2 py-1.5 align-middle whitespace-nowrap">
                                   <div className="flex flex-col gap-0.5">
                                     {isWaitingList ? (
-                                      <span className="font-extrabold text-orange-600 text-sm flex items-center gap-1"><ClockIcon size={14}/> VÁRÓLISTA</span>
+                                      <span className="font-extrabold text-orange-600 text-xs flex items-center gap-1"><ClockIcon size={12}/> VÁRÓLISTA</span>
                                     ) : (
-                                      <div className="flex items-center gap-1.5">
+                                      <div className="flex items-center gap-1">
                                         <span className={`font-bold text-sm ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{displayTime}</span>
                                         {isOnlineSlot && !printingDate && !isDel && (
-                                          <span className="bg-blue-100 text-blue-700 text-[8px] font-extrabold uppercase px-1 py-0.5 rounded border border-blue-200" title="Online előjegyzési sáv">Online</span>
+                                          <span className="bg-blue-100 text-blue-700 text-[7px] font-extrabold uppercase px-1 py-0.5 rounded border border-blue-200" title="Online előjegyzési sáv">Online</span>
                                         )}
                                       </div>
                                    )}
-                                    {!printingDate && !isDel && !isWaitingList && <span className={`text-[8px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded text-center w-full
+                                    {!printingDate && !isDel && !isWaitingList && <span className={`text-[7px] uppercase tracking-wider font-bold px-1 py-0.5 rounded text-center w-full
                                       ${isBooked ? 'bg-red-200 text-red-800 border border-red-300' : 'bg-emerald-200 text-emerald-800 border border-emerald-300'}`}>
                                       {isBooked ? 'Foglalt' : 'Szabad'}
                                     </span>}
                                   </div>
                                 </td>
 
-                                <td className="px-2.5 py-2 align-middle">
+                                <td className="px-2 py-1.5 align-middle">
                                   {printingDate ? (
                                     <div className="font-bold text-black text-sm truncate" title={app.patient_name}>{app.patient_name}</div>
                                   ) : isDel ? (
                                     <div className="font-semibold text-slate-500 line-through truncate" title={app.patient_name || ""}>{app.patient_name || "-"}</div>
                                   ) : (
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1">
                                       <div className="flex-1 min-w-0">
                                         <PatientAutocomplete
                                           value={app.patient_name}
@@ -3165,7 +3165,7 @@ export default function Home() {
                                         />
                                       </div>
                                       {canShowHistory && (
-                                        <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-1.5 bg-white text-purple-600 border border-purple-200 hover:bg-purple-100 hover:border-purple-300 rounded-lg shadow-sm transition-all flex-shrink-0" title="Karton">
+                                        <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-1 bg-white text-purple-600 border border-purple-200 hover:bg-purple-100 hover:border-purple-300 rounded-md shadow-sm transition-all flex-shrink-0" title="Karton">
                                            <HistoryIcon />
                                         </button>
                                       )}
@@ -3173,7 +3173,7 @@ export default function Home() {
                                   )}
                                 </td>
                                 
-                                <td className="px-2.5 py-2 align-middle">
+                                <td className="px-2 py-1.5 align-middle">
                                   {printingDate ? (
                                     <div className="text-black text-sm">{app.birth_date}</div>
                                   ) : isDel ? (
@@ -3188,7 +3188,7 @@ export default function Home() {
                                   )}
                                 </td>
 
-                                <td className="px-2.5 py-2 align-middle">
+                                <td className="px-2 py-1.5 align-middle">
                                   {printingDate ? (
                                     <div className="font-mono text-black text-sm">{formatTAJ(app.taj_szam)}</div>
                                   ) : isDel ? (
@@ -3203,7 +3203,7 @@ export default function Home() {
                                   )}
                                 </td>
 
-                                <td className="px-2.5 py-2 align-middle">
+                                <td className="px-2 py-1.5 align-middle">
                                   {printingDate ? (
                                     <div className="text-black text-sm">{formatPhone(app.phone_number)}</div>
                                   ) : isDel ? (
@@ -3219,7 +3219,7 @@ export default function Home() {
                                 </td>
 
                                 {!printingDate && (
-                                  <td className="px-2.5 py-2 align-middle">
+                                  <td className="px-2 py-1.5 align-middle">
                                     {isDel ? (
                                       <div className="text-slate-500 text-sm">{app.status || "-"}</div>
                                     ) : (
@@ -3232,7 +3232,7 @@ export default function Home() {
                                   </td>
                                 )}
 
-                                <td className="px-2.5 py-2 align-middle">
+                                <td className="px-2 py-1.5 align-middle">
                                   {printingDate ? (
                                     <div className="text-black text-sm font-semibold truncate" title={app.examination_type}>{app.examination_type}</div>
                                   ) : isDel ? (
@@ -3246,7 +3246,7 @@ export default function Home() {
                                   )}
                                 </td>
 
-                                <td className="px-2.5 py-2 align-middle">
+                                <td className="px-2 py-1.5 align-middle">
                                   {printingDate ? (
                                     <div className="text-black text-sm italic truncate" title={app.notes}>{app.notes}</div>
                                   ) : isDel ? (
@@ -3262,17 +3262,17 @@ export default function Home() {
                                 </td>
 
                                 {!printingDate && (
-                                  <td className="px-2.5 py-2 align-middle text-center no-print whitespace-nowrap">
-                                    <div className="flex items-center justify-center gap-1">
-                                      <button onClick={() => openAppInfoModal(app)} className="text-slate-400 hover:text-blue-600 hover:bg-blue-100 p-1.5 rounded-lg transition-all" title="Napló">
+                                  <td className="px-2 py-1.5 align-middle text-center no-print whitespace-nowrap">
+                                    <div className="flex items-center justify-center gap-0.5">
+                                      <button onClick={() => openAppInfoModal(app)} className="text-slate-400 hover:text-blue-600 hover:bg-blue-100 p-1 rounded-md transition-all" title="Napló">
                                         <InfoIcon />
                                       </button>
                                       {isDel ? (
-                                        <button onClick={() => restoreAppointment(app.id)} className="text-emerald-500 hover:text-emerald-700 hover:bg-emerald-100 p-1.5 rounded-lg transition-all" title="Visszaállítás">
+                                        <button onClick={() => restoreAppointment(app.id)} className="text-emerald-500 hover:text-emerald-700 hover:bg-emerald-100 p-1 rounded-md transition-all" title="Visszaállítás">
                                           <RestoreIcon />
                                         </button>
                                       ) : (
-                                        <button onClick={() => confirmDeleteApp(app.id)} className="text-red-400 hover:text-red-600 hover:bg-red-100 p-1.5 rounded-lg transition-all" title="Törlés">
+                                        <button onClick={() => confirmDeleteApp(app.id)} className="text-red-400 hover:text-red-600 hover:bg-red-100 p-1 rounded-md transition-all" title="Törlés">
                                           <TrashIcon />
                                         </button>
                                       )}
@@ -3287,7 +3287,7 @@ export default function Home() {
                       </table>
 
                       {/* MOBIL NÉZET */}
-                      <div className="lg:hidden flex flex-col gap-3 p-3">
+                      <div className="lg:hidden flex flex-col gap-2.5 p-2.5">
                          {dayAppointments.map((app: any) => {
                             if (printingDate) return null;
                             const isDel = app.is_deleted === true;
@@ -3307,66 +3307,66 @@ export default function Home() {
                             const rowBg = isDel ? "bg-slate-100/50" : isWaitingList ? "bg-orange-50/50" : isBooked ? "bg-white" : "bg-emerald-50/50";
 
                             return (
-                              <div key={app.id} className={`${rowBg} ${statusBorder} rounded-2xl p-4 shadow-sm border border-slate-100 relative`}>
-                                 {isDel && <div className="absolute inset-0 bg-slate-200/50 backdrop-blur-[1px] z-10 rounded-2xl flex items-center justify-center">
-                                    <button onClick={() => restoreAppointment(app.id)} className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold shadow-md flex items-center gap-2">
+                              <div key={app.id} className={`${rowBg} ${statusBorder} rounded-xl p-3 shadow-sm border border-slate-100 relative`}>
+                                 {isDel && <div className="absolute inset-0 bg-slate-200/50 backdrop-blur-[1px] z-10 rounded-xl flex items-center justify-center">
+                                    <button onClick={() => restoreAppointment(app.id)} className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-bold text-sm shadow-md flex items-center gap-1.5">
                                       <RestoreIcon /> Visszaállítás
                                     </button>
                                  </div>}
 
-                                 <div className="flex justify-between items-start mb-3 border-b border-slate-100 pb-3">
-                                    <div className="flex flex-col gap-1">
-                                      <span className={`text-lg font-extrabold ${isWaitingList ? 'text-orange-600' : 'text-slate-900'}`}>{isWaitingList ? 'VÁRÓLISTA' : displayTime}</span>
-                                      {!isWaitingList && <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-lg w-max ${isBooked ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{isBooked ? 'Foglalt' : 'Szabad'}</span>}
+                                 <div className="flex justify-between items-start mb-2 border-b border-slate-100 pb-2">
+                                    <div className="flex flex-col gap-0.5">
+                                      <span className={`text-base font-bold ${isWaitingList ? 'text-orange-600' : 'text-slate-900'}`}>{isWaitingList ? 'VÁRÓLISTA' : displayTime}</span>
+                                      {!isWaitingList && <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-md w-max ${isBooked ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{isBooked ? 'Foglalt' : 'Szabad'}</span>}
                                     </div>
-                                    <div className="flex gap-2">
-                                       <button onClick={() => openAppInfoModal(app)} className="p-2 bg-slate-100 text-slate-500 rounded-xl" title="Napló"><InfoIcon /></button>
-                                       {!isDel && <button onClick={() => confirmDeleteApp(app.id)} className="p-2 bg-red-50 text-red-500 rounded-xl" title="Törlés"><TrashIcon /></button>}
+                                    <div className="flex gap-1.5">
+                                       <button onClick={() => openAppInfoModal(app)} className="p-1.5 bg-slate-100 text-slate-500 rounded-lg" title="Napló"><InfoIcon /></button>
+                                       {!isDel && <button onClick={() => confirmDeleteApp(app.id)} className="p-1.5 bg-red-50 text-red-500 rounded-lg" title="Törlés"><TrashIcon /></button>}
                                     </div>
                                  </div>
 
-                                 <div className="space-y-3">
+                                 <div className="space-y-2.5">
                                     <div>
-                                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Páciens neve</label>
-                                       <div className="flex gap-2">
+                                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 block">Páciens neve</label>
+                                       <div className="flex gap-1.5">
                                          <PatientAutocomplete value={app.patient_name} onSave={(val) => updateAppointment(app.id, "patient_name", val)} onSelectPatient={(patient) => handleSelectPatient(app.id, patient)} searchPatients={searchPatients} placeholder="Páciens neve..." />
                                          {canShowHistory && (
-                                           <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-2.5 bg-purple-50 text-purple-600 rounded-xl border border-purple-200" title="Karton">
+                                           <button onClick={() => openPatientHistory(app.patient_name, app.taj_szam)} className="p-2 bg-purple-50 text-purple-600 rounded-lg border border-purple-200" title="Karton">
                                               <HistoryIcon />
                                            </button>
                                          )}
                                        </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-2 gap-2.5">
                                        <div>
-                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Születési idő</label>
+                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 block">Születési idő</label>
                                          <EditableCell value={app.birth_date} onSave={(val) => updateAppointment(app.id, "birth_date", val)} placeholder="ÉÉÉÉ.HH.NN" className="bg-slate-50 text-sm" />
                                        </div>
                                        <div>
-                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">TAJ Szám</label>
+                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 block">TAJ Szám</label>
                                          <EditableCell value={formatTAJ(app.taj_szam)} onSave={(val) => updateAppointment(app.id, "taj_szam", val)} placeholder="000 000 000" className="bg-slate-50 font-mono text-sm" />
                                        </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-2 gap-2.5">
                                        <div>
-                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Telefon</label>
+                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 block">Telefon</label>
                                          <EditableCell value={formatPhone(app.phone_number)} onSave={(val) => updateAppointment(app.id, "phone_number", val)} placeholder="06 30 000 0000" className="bg-slate-50 text-sm" />
                                        </div>
                                        <div>
-                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Státusz</label>
+                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 block">Státusz</label>
                                          <ModernStatusSelect value={app.status || "Előjegyzett"} onChange={(val) => updateAppointment(app.id, "status", val)} disabled={!isBooked && !isWaitingList} />
                                        </div>
                                     </div>
 
                                     <div>
-                                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Vizsgálat</label>
+                                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 block">Vizsgálat</label>
                                        <ModernExamSelect value={app.examination_type} onChange={(val) => updateAppointment(app.id, "examination_type", val)} options={examinationSuggestions} />
                                     </div>
 
                                     <div>
-                                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Megjegyzés</label>
+                                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 block">Megjegyzés</label>
                                        <EditableCell value={app.notes} onSave={(val) => updateAppointment(app.id, "notes", val)} placeholder="Ide írhatsz..." className="bg-slate-50 italic text-sm" />
                                     </div>
                                  </div>
@@ -3378,8 +3378,8 @@ export default function Home() {
                     </div>
                     
                     {!printingDate && debouncedSearchTerm === "" && !isArchiveView && (
-                      <div className="bg-slate-50/80 p-4 border-t border-slate-200/60 rounded-b-3xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                         <div className="text-slate-500 font-bold text-xs flex items-center gap-2"><PlusIcon size={16} /> Új időpont hozzáadása ehhez a naphoz:</div>
+                      <div className="bg-slate-50/80 p-3 border-t border-slate-200/60 rounded-b-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
+                         <div className="text-slate-500 font-bold text-xs flex items-center gap-1.5"><PlusIcon size={14} /> Új időpont hozzáadása ehhez a naphoz:</div>
                          <div className="flex gap-2 w-full sm:w-auto">
                             <input 
                               type="text" 
@@ -3387,11 +3387,11 @@ export default function Home() {
                               value={dayNewTimeSlots[date] || ""} 
                               onChange={(e) => setDayNewTimeSlots(prev => ({...prev, [date]: e.target.value}))}
                               onKeyDown={(e) => e.key === "Enter" && addDaySingleAppointment(date)}
-                              className="flex-1 sm:w-32 bg-white border border-slate-200 text-sm font-bold text-slate-800 px-3 py-2 rounded-xl outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 shadow-sm"
+                              className="flex-1 sm:w-28 bg-white border border-slate-200 text-sm font-bold text-slate-800 px-2.5 py-1.5 rounded-lg outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 shadow-sm"
                             />
                             <button 
                               onClick={() => addDaySingleAppointment(date)}
-                              className="bg-slate-800 text-white px-5 py-2 rounded-xl hover:bg-black transition-all font-bold text-xs shadow-sm active:scale-95"
+                              className="bg-slate-800 text-white px-4 py-1.5 rounded-lg hover:bg-black transition-all font-bold text-xs shadow-sm active:scale-95"
                             >
                               Hozzáadás
                             </button>
@@ -3408,7 +3408,7 @@ export default function Home() {
 
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-6 right-6 z-50 p-4 rounded-full bg-slate-900 text-white shadow-[0_10px_30px_rgba(0,0,0,0.3)] hover:bg-black transition-all duration-300 transform no-print ${showScrollTop && !toast.visible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-16 opacity-0 scale-50 pointer-events-none'}`}
+        className={`fixed bottom-5 right-5 z-50 p-3 rounded-full bg-slate-900 text-white shadow-[0_10px_30px_rgba(0,0,0,0.3)] hover:bg-black transition-all duration-300 transform no-print ${showScrollTop && !toast.visible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-16 opacity-0 scale-50 pointer-events-none'}`}
         title="Ugrás a tetejére"
       >
         <ArrowUpIcon />

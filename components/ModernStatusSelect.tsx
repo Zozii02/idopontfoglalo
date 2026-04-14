@@ -20,7 +20,7 @@ export function ModernStatusSelect({ value, onChange, disabled }: { value: strin
       <select 
         value={value || "Előjegyzett"} 
         onChange={(e) => onChange(e.target.value)}
-        className={`appearance-none w-full text-[10px] uppercase font-bold tracking-widest px-3 py-2 pr-8 rounded-lg outline-none cursor-pointer border shadow-sm transition-all focus:ring-2 focus:ring-offset-1 ${currentStyle}`}
+        className={`appearance-none w-full text-[10px] uppercase font-bold tracking-widest px-2 py-1 pr-7 rounded-md outline-none cursor-pointer border shadow-sm transition-all focus:ring-2 focus:ring-offset-1 ${currentStyle}`}
       >
         <option value="Előjegyzett">Előjegyzett</option>
         <option value="Megérkezett">Megérkezett</option>

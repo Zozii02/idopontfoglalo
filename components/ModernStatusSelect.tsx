@@ -16,7 +16,7 @@ export function ModernStatusSelect({ value, onChange, disabled }: { value: strin
   const currentStyle = statusColors[value] || statusColors["Előjegyzett"];
 
   return (
-    <div className="relative inline-block w-full max-w-[110px]">
+    <div className="relative inline-block w-full max-w-[130px]">
       <select 
         value={value || "Előjegyzett"} 
         onChange={(e) => onChange(e.target.value)}

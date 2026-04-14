@@ -29,11 +29,11 @@ export function ModernExamSelect({
   const currentStyle = getColor(value);
 
   return (
-    <div className="relative inline-block w-[160px]">
+    <div className="relative w-full">
       <select
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
-        className={`appearance-none w-full text-[10px] uppercase font-bold tracking-widest px-3 py-2 pr-8 rounded-lg outline-none cursor-pointer border shadow-sm transition-all focus:ring-2 focus:ring-offset-1 ${currentStyle}`}
+        className={`appearance-none w-full uppercase font-bold tracking-widest px-3 py-2 pr-8 rounded-lg outline-none cursor-pointer border shadow-sm transition-all focus:ring-2 focus:ring-offset-1 ${currentStyle}`}
       >
         <option value="">— Nincs kiválasztva —</option>
         {options.map((opt) => (

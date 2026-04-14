@@ -16,11 +16,11 @@ export function ModernStatusSelect({ value, onChange, disabled }: { value: strin
   const currentStyle = statusColors[value] || statusColors["Előjegyzett"];
 
   return (
-    <div className="relative inline-block w-full max-w-[130px]">
+    <div className="relative inline-block w-full max-w-[105px]">
       <select 
         value={value || "Előjegyzett"} 
         onChange={(e) => onChange(e.target.value)}
-        className={`appearance-none w-full text-[9px] uppercase font-bold tracking-wider px-1.5 py-1 pr-4 rounded-md outline-none cursor-pointer border shadow-sm transition-all focus:ring-1 focus:ring-offset-1 ${currentStyle}`}
+        className={`appearance-none w-full text-[8px] uppercase font-bold tracking-wider px-1 py-0.5 pr-3 rounded-md outline-none cursor-pointer border shadow-sm transition-all focus:ring-1 focus:ring-offset-1 ${currentStyle}`}
       >
         <option value="Előjegyzett">Előjegyzett</option>
         <option value="Megérkezett">Megérkezett</option>
@@ -28,7 +28,7 @@ export function ModernStatusSelect({ value, onChange, disabled }: { value: strin
         <option value="Befejezve">Befejezve</option>
         <option value="Nem jelent meg">Nem jelent meg</option>
       </select>
-      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-current opacity-60">
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-0.5 text-current opacity-60">
         <ChevronDownIcon />
       </div>
     </div>

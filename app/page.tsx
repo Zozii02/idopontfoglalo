@@ -2542,11 +2542,11 @@ export default function Home() {
   if (printingDate) {
     const dayAppointments = groupedByDate[printingDate]?.sort((a: any, b: any) => a.time_slot.localeCompare(b.time_slot)) || [];
     return (
-      <div className="bg-white text-black min-h-screen p-8 font-sans print-mode">
-        <div className="mb-6 pb-4 border-b-2 border-black flex justify-between items-end">
+      <div className="bg-white text-black min-h-screen p-4 font-sans print-mode">
+        <div className="mb-3 pb-2 border-b-2 border-black flex justify-between items-end">
           <div>
-            <h1 className="text-3xl font-extrabold text-black mb-1">{printingDate}</h1>
-            <h2 className="text-xl font-bold text-slate-700">{activeTab} - Napi előjegyzési lista</h2>
+            <h1 className="text-xl font-extrabold text-black mb-1">{printingDate}</h1>
+            <h2 className="text-sm font-bold text-slate-700">{activeTab} - Napi előjegyzési lista</h2>
           </div>
           <div className="text-right">
             <p className="text-sm font-bold text-slate-600">Készült: {new Date().toLocaleDateString('hu-HU')}</p>
@@ -2564,27 +2564,27 @@ export default function Home() {
           </colgroup>
           <thead>
             <tr className="border-b-2 border-black">
-              <th className="py-3 px-2 font-bold text-sm text-black">Időpont</th>
-              <th className="py-3 px-2 font-bold text-sm text-black">Páciens neve</th>
-              <th className="py-3 px-2 font-bold text-sm text-black">Szül. idő</th>
-              <th className="py-3 px-2 font-bold text-sm text-black">TAJ szám</th>
-              <th className="py-3 px-2 font-bold text-sm text-black">Telefon</th>
-              <th className="py-3 px-2 font-bold text-sm text-black">Vizsgálat</th>
-              <th className="py-3 px-2 font-bold text-sm text-black">Megjegyzés</th>
+              <th className="py-1.5 px-1.5 font-bold text-xs text-black">Időpont</th>
+              <th className="py-1.5 px-1.5 font-bold text-xs text-black">Páciens neve</th>
+              <th className="py-1.5 px-1.5 font-bold text-xs text-black">Szül. idő</th>
+              <th className="py-1.5 px-1.5 font-bold text-xs text-black">TAJ szám</th>
+              <th className="py-1.5 px-1.5 font-bold text-xs text-black">Telefon</th>
+              <th className="py-1.5 px-1.5 font-bold text-xs text-black">Vizsgálat</th>
+              <th className="py-1.5 px-1.5 font-bold text-xs text-black">Megjegyzés</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-300">
             {dayAppointments.filter((app: any) => !app.is_deleted).map((app: any) => (
               <tr key={app.id} className="break-inside-avoid">
-                <td className="py-3 px-2 font-bold text-black">
+                <td className="py-1 px-1.5 font-semibold text-black">
                   {app.time_slot === "VÁRÓLISTA" ? "VÁRÓLISTA" : app.time_slot.replace(" (Online)", "")}
                 </td>
-                <td className="py-3 px-2 font-bold text-black">{app.patient_name || "-"}</td>
-                <td className="py-3 px-2 text-black">{app.birth_date || "-"}</td>
-                <td className="py-3 px-2 font-mono text-black">{formatTAJ(app.taj_szam) || "-"}</td>
-                <td className="py-3 px-2 text-black">{formatPhone(app.phone_number) || "-"}</td>
-                <td className="py-3 px-2 text-black font-semibold">{app.examination_type || "-"}</td>
-                <td className="py-3 px-2 text-black italic">{app.notes || "-"}</td>
+                <td className="py-1 px-1.5 font-semibold text-black">{app.patient_name || "-"}</td>
+                <td className="py-1 px-1.5 text-black">{app.birth_date || "-"}</td>
+                <td className="py-1 px-1.5 font-mono text-black">{formatTAJ(app.taj_szam) || "-"}</td>
+                <td className="py-1 px-1.5 text-black">{formatPhone(app.phone_number) || "-"}</td>
+                <td className="py-1 px-1.5 text-black font-semibold">{app.examination_type || "-"}</td>
+                <td className="py-1 px-1.5 text-black italic">{app.notes || "-"}</td>
               </tr>
             ))}
           </tbody>

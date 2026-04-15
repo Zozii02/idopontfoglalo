@@ -3015,7 +3015,7 @@ export default function Home() {
                       const displayDate = formatShortDate(dateKey); 
                       const labsForDay = groupedSavedLabs[dateKey];
                       
-                      const dailyTotal = labsForDay.reduce((sum: number, calc: any) => sum + (calc.total_price || 0), 0);
+                      const dailyTotal = labsForDay.reduce((sum: number, calc: any) => sum + (calc.megerkezett ? (calc.total_price || 0) : 0), 0);
                       const formattedDailyTotal = new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyTotal);
                       
                       return (

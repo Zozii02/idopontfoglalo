@@ -906,6 +906,7 @@ export default function Home() {
         else if (ins) updatedWeeks[i] = { ...week, id: ins.id };
       }
     }
+    // Update local state with any newly assigned IDs from successful inserts
     setScheduleWeeks(updatedWeeks);
     setScheduleSaving(false);
     if (allOk) showToast('Beosztás mentve!');
@@ -2048,7 +2049,7 @@ export default function Home() {
       { label: 'Lila', value: '#ede9fe' },
     ];
 
-    const genId = () => Math.random().toString(36).substring(2, 9);
+    const genId = () => `${Date.now().toString(36)}${Math.random().toString(36).substring(2, 9)}`;
 
     const prevMonth = () => {
       if (scheduleMonth === 1) { setScheduleYear(y => y - 1); setScheduleMonth(12); }
@@ -2341,7 +2342,7 @@ export default function Home() {
                                               }));
                                             }
                                           }}
-                                          placeholder="Cimke"
+                                          placeholder="Címke"
                                           className="w-full bg-transparent text-[10px] font-semibold text-slate-500 focus:outline-none focus:bg-white rounded px-0.5 py-0.5 min-w-0"
                                         />
                                         <button

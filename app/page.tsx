@@ -2266,7 +2266,7 @@ export default function Home() {
                     {/* Week title bar */}
                     <div className="flex items-center justify-between px-4 py-2 bg-slate-50 border-b border-slate-200">
                       <span className="font-extrabold text-slate-800 text-sm">
-                        {firstDayNum}–{lastDayNum}. &nbsp;
+                        {firstDayNum ?? '–'}–{lastDayNum ?? '–'}. &nbsp;
                         <span className="text-xs font-medium text-slate-500">{scheduleYear}. {monthNames[scheduleMonth - 1]}</span>
                       </span>
                       <button

@@ -2279,10 +2279,10 @@ export default function Home() {
 
                     {/* Schedule table */}
                     <div className="overflow-x-auto">
-                      <table className="border-collapse w-full text-xs" style={{ minWidth: '680px' }}>
+                      <table className="border-collapse w-full text-xs" style={{ minWidth: '780px' }}>
                         <thead>
                           <tr className="border-b border-slate-200">
-                            <th className="w-[90px] min-w-[70px] px-2 py-1.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wide border-r border-slate-200 bg-slate-50"></th>
+                            <th className="w-[160px] min-w-[140px] px-2 py-1.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wide border-r border-slate-200 bg-slate-50"></th>
                             {weekDays.map(({ dayOfWeek, dayNum }) => {
                               const isInMonth = dayNum !== null;
                               return (

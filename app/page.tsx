@@ -2297,11 +2297,11 @@ export default function Home() {
                        <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Dátum</label>
                        <ModernDatePicker selectedDate={labGenDate} onChange={setLabGenDate} />
                     </div>
-                    <div className="w-[calc(50%-0.5rem)] sm:w-24">
+                    <div className="w-[calc(50%-0.5rem)] sm:w-28">
                        <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Kezdés</label>
                        <input type="time" value={labGenStart} onChange={(e) => setLabGenStart(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm outline-none font-bold text-slate-800" />
                     </div>
-                    <div className="w-[calc(50%-0.5rem)] sm:w-24">
+                    <div className="w-[calc(50%-0.5rem)] sm:w-28">
                        <label className="block text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Befejezés</label>
                        <input type="time" value={labGenEnd} onChange={(e) => setLabGenEnd(e.target.value)} className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-sm outline-none font-bold text-slate-800" />
                     </div>
@@ -2842,11 +2842,11 @@ export default function Home() {
                         <ModernDatePicker selectedDate={selectedDate} onChange={setSelectedDate} />
                       </div>
 
-                      <div className="w-[calc(50%-0.375rem)] sm:w-20 md:w-22">
+                      <div className="w-[calc(50%-0.375rem)] sm:w-28">
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Kezdés</label>
                         <input type="time" value={genStart} onChange={(e) => setGenStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2 rounded-lg text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none font-bold text-slate-800 transition-all shadow-sm" />
                       </div>
-                      <div className="w-[calc(50%-0.375rem)] sm:w-20 md:w-22">
+                      <div className="w-[calc(50%-0.375rem)] sm:w-28">
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Befejezés</label>
                         <input type="time" value={genEnd} onChange={(e) => setGenEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2 rounded-lg text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none font-bold text-slate-800 transition-all shadow-sm" />
                       </div>
@@ -2857,20 +2857,20 @@ export default function Home() {
                     </div>
 
                     <div className="flex flex-wrap items-end gap-2.5">
-                      <div className="w-[calc(50%-0.375rem)] sm:w-26">
+                      <div className="w-[calc(50%-0.375rem)] sm:w-28">
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Szünet kezdete</label>
                         <input type="time" value={genBreakStart} onChange={(e) => setGenBreakStart(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2 rounded-lg text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none font-bold text-slate-800 transition-all shadow-sm" />
                       </div>
-                      <div className="w-[calc(50%-0.375rem)] sm:w-26">
+                      <div className="w-[calc(50%-0.375rem)] sm:w-28">
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Szünet vége</label>
                         <input type="time" value={genBreakEnd} onChange={(e) => setGenBreakEnd(e.target.value)} className="w-full bg-white/80 border border-white/60 p-2 rounded-lg text-sm focus:ring-2 focus:ring-red-100 focus:border-red-400 outline-none font-bold text-slate-800 transition-all shadow-sm" />
                       </div>
                       
-                      <div className="w-[calc(50%-0.375rem)] sm:w-26">
+                      <div className="w-[calc(50%-0.375rem)] sm:w-28">
                         <label className="block text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Online kezdete</label>
                         <input type="time" value={genOnlineStart} onChange={(e) => setGenOnlineStart(e.target.value)} className="w-full bg-blue-50/50 border border-blue-200 p-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none font-bold text-blue-900 transition-all shadow-sm" />
                       </div>
-                      <div className="w-[calc(50%-0.375rem)] sm:w-26">
+                      <div className="w-[calc(50%-0.375rem)] sm:w-28">
                         <label className="block text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">Online vége</label>
                         <input type="time" value={genOnlineEnd} onChange={(e) => setGenOnlineEnd(e.target.value)} className="w-full bg-blue-50/50 border border-blue-200 p-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none font-bold text-blue-900 transition-all shadow-sm" />
                       </div>

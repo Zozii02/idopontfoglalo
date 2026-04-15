@@ -26,7 +26,7 @@ body {
 }
 
 /* Prevent iOS Safari from auto-zooming on input/select focus */
-input:not([type="checkbox"]):not([type="radio"]),
+input:not([type="checkbox"]):not([type="radio"]):not([type="time"]):not([type="number"]),
 textarea {
   font-size: max(16px, 1em);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
 
 import { 
@@ -82,10 +82,14 @@ export default function Home() {
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleYear, setScheduleYear] = useState(new Date().getFullYear());
   const [scheduleMonth, setScheduleMonth] = useState(new Date().getMonth() + 1);
-  const [scheduleData, setScheduleData] = useState<any[]>([]);
-  const [scheduleEmployees, setScheduleEmployees] = useState<string[]>([]);
+  const [scheduleWeeks, setScheduleWeeks] = useState<any[]>([]);
+  const [scheduleSaving, setScheduleSaving] = useState(false);
   const [scheduleLoading, setScheduleLoading] = useState(false);
-  const [colorPickerCell, setColorPickerCell] = useState<{emp: string, day: number} | null>(null);
+  const [schedCellEditKey, setSchedCellEditKey] = useState<string | null>(null);
+  const [schedCellEditValue, setSchedCellEditValue] = useState('');
+  const [schedColorPickerKey, setSchedColorPickerKey] = useState<string | null>(null);
+  const [showAddWeekForm, setShowAddWeekForm] = useState(false);
+  const [addWeekStartDay, setAddWeekStartDay] = useState('');
   const [isArchiveView, setIsArchiveView] = useState(false);
 
   const [patientsList, setPatientsList] = useState<any[]>([]);
@@ -706,7 +710,7 @@ export default function Home() {
         closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); 
         closeAppInfoModal(); setIsNotifOpen(false); setIsDeptModalOpen(false);
         setIsBugModalOpen(false); setIsDeptDropdownOpen(false); setIsOnlineDropdownOpen(false);
-        setShowSchedule(false); setColorPickerCell(null);
+        setShowSchedule(false); setSchedColorPickerKey(null); setSchedCellEditKey(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -854,58 +858,63 @@ export default function Home() {
     }
   }, [showPatients]);
 
-  const fetchScheduleData = async (year: number, month: number) => {
+  const fetchScheduleWeeks = async (year: number, month: number) => {
     setScheduleLoading(true);
     const { data, error } = await supabase
-      .from('schedules')
+      .from('schedule_planner')
       .select('*')
       .eq('year', year)
-      .eq('month', month);
+      .eq('month', month)
+      .order('week_start_day');
     if (!error && data) {
-      setScheduleData(data);
-      const ordered: string[] = [];
-      data.forEach((r: any) => { if (!ordered.includes(r.employee_name)) ordered.push(r.employee_name); });
-      if (ordered.length > 0) setScheduleEmployees(ordered);
+      setScheduleWeeks(data.map((r: any) => ({
+        ...r,
+        data: r.data || { sections: [] },
+        notes: r.notes || '',
+        summary: r.summary || [],
+      })));
+    } else {
+      setScheduleWeeks([]);
     }
     setScheduleLoading(false);
   };
 
-  const saveScheduleData = async (year: number, month: number, employees: string[], data: any[]) => {
+  const saveScheduleWeeks = async () => {
+    setScheduleSaving(true);
     const displayName = getDisplayName() || 'Ismeretlen';
     const now = new Date().toISOString();
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const rows: any[] = [];
-    for (const emp of employees) {
-      for (let d = 1; d <= daysInMonth; d++) {
-        const cell = data.find((r: any) => r.employee_name === emp && r.day === d);
-        const shiftValue = cell?.shift_value || '';
-        const bgColor = cell?.background_color || null;
-        const dayDate = new Date(year, month - 1, d);
-        const dayIndex = dayDate.getDay();
-        const dayNames = ['Vasárnap','Hétfő','Kedd','Szerda','Csütörtök','Péntek','Szombat'];
-        rows.push({
-          year, month, day: d,
-          day_name: dayNames[dayIndex],
-          employee_name: emp,
-          shift_value: shiftValue,
-          background_color: bgColor,
-          created_by: displayName,
-          updated_at: now,
-        });
+    let allOk = true;
+    const updatedWeeks = [...scheduleWeeks];
+    for (let i = 0; i < updatedWeeks.length; i++) {
+      const week = updatedWeeks[i];
+      const payload = {
+        year: week.year,
+        month: week.month,
+        week_start_day: week.week_start_day,
+        data: week.data,
+        notes: week.notes || '',
+        summary: week.summary || [],
+        created_by: displayName,
+        updated_at: now,
+      };
+      if (week.id) {
+        const { error } = await supabase.from('schedule_planner').update(payload).eq('id', week.id);
+        if (error) allOk = false;
+      } else {
+        const { data: ins, error } = await supabase.from('schedule_planner').insert(payload).select().single();
+        if (error) allOk = false;
+        else if (ins) updatedWeeks[i] = { ...week, id: ins.id };
       }
     }
-    // Delete existing data for this month, then re-insert
-    await supabase.from('schedules').delete().eq('year', year).eq('month', month);
-    if (rows.length > 0) {
-      const { error } = await supabase.from('schedules').insert(rows);
-      if (error) showAlert('Hiba', 'Nem sikerült menteni a beosztást: ' + error.message);
-      else showToast('Beosztás mentve!');
-    }
+    setScheduleWeeks(updatedWeeks);
+    setScheduleSaving(false);
+    if (allOk) showToast('Beosztás mentve!');
+    else showAlert('Hiba', 'Néhány adat mentése nem sikerült.');
   };
 
   useEffect(() => {
     if (showSchedule) {
-      fetchScheduleData(scheduleYear, scheduleMonth);
+      fetchScheduleWeeks(scheduleYear, scheduleMonth);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showSchedule, scheduleYear, scheduleMonth]);
@@ -2008,49 +2017,38 @@ export default function Home() {
 
   // --- HAVI BEOSZTÁS NÉZET ---
   if (showSchedule) {
-    const daysInMonth = new Date(scheduleYear, scheduleMonth, 0).getDate();
     const monthNames = ['Január','Február','Március','Április','Május','Június','Július','Augusztus','Szeptember','Október','November','December'];
-    const shortDayNames = ['V','H','K','Sze','Cs','P','Szo'];
-    const SCHEDULE_COLORS = [
-      { label: 'Fehér', value: null },
-      { label: 'Kék', value: '#cfe2f3' },
-      { label: 'Sárga', value: '#fff2cc' },
-      { label: 'Piros', value: '#ea9999' },
-      { label: 'Zöld', value: '#ecf7f1' },
-      { label: 'Rózsaszín', value: '#fff2f2' },
+    const DAY_NAMES_SHORT = ['H','K','Sze','Cs','P','Szo','V'];
+    const daysInMonth = new Date(scheduleYear, scheduleMonth, 0).getDate();
+
+    const SECTION_HEADER_COLORS = [
+      'bg-blue-50 text-blue-900',
+      'bg-green-50 text-green-900',
+      'bg-purple-50 text-purple-900',
+      'bg-amber-50 text-amber-900',
+      'bg-rose-50 text-rose-900',
+      'bg-cyan-50 text-cyan-900',
     ];
 
-    const getCellData = (emp: string, day: number) => scheduleData.find(r => r.employee_name === emp && r.day === day);
+    const TEXT_COLORS = [
+      { label: 'Fekete', value: '#000000' },
+      { label: 'Piros', value: '#dc2626' },
+      { label: 'Zöld', value: '#16a34a' },
+      { label: 'Kék', value: '#2563eb' },
+      { label: 'Lila', value: '#7c3aed' },
+    ];
 
-    const updateCell = (emp: string, day: number, field: 'shift_value' | 'background_color', value: string | null) => {
-      setScheduleData(prev => {
-        const existing = prev.find(r => r.employee_name === emp && r.day === day);
-        if (existing) {
-          return prev.map(r => r.employee_name === emp && r.day === day ? { ...r, [field]: value } : r);
-        } else {
-          const dayDate = new Date(scheduleYear, scheduleMonth - 1, day);
-          const dayNames = ['Vasárnap','Hétfő','Kedd','Szerda','Csütörtök','Péntek','Szombat'];
-          return [...prev, { employee_name: emp, day, year: scheduleYear, month: scheduleMonth, day_name: dayNames[dayDate.getDay()], shift_value: field === 'shift_value' ? value : '', background_color: field === 'background_color' ? value : null }];
-        }
-      });
-    };
+    const BG_COLORS = [
+      { label: 'Nincs', value: null },
+      { label: 'Kék', value: '#dbeafe' },
+      { label: 'Sárga', value: '#fef9c3' },
+      { label: 'Piros', value: '#fee2e2' },
+      { label: 'Zöld', value: '#dcfce7' },
+      { label: 'Rózsaszín', value: '#fce7f3' },
+      { label: 'Lila', value: '#ede9fe' },
+    ];
 
-    const addEmployee = () => {
-      const name = `Dolgozó ${scheduleEmployees.length + 1}`;
-      setScheduleEmployees(prev => [...prev, name]);
-    };
-
-    const removeEmployee = (emp: string) => {
-      setScheduleEmployees(prev => prev.filter(e => e !== emp));
-      setScheduleData(prev => prev.filter(r => r.employee_name !== emp));
-    };
-
-    const renameEmployee = (oldName: string, newName: string) => {
-      if (!newName.trim() || newName === oldName) return;
-      if (scheduleEmployees.includes(newName)) return;
-      setScheduleEmployees(prev => prev.map(e => e === oldName ? newName : e));
-      setScheduleData(prev => prev.map(r => r.employee_name === oldName ? { ...r, employee_name: newName } : r));
-    };
+    const genId = () => Math.random().toString(36).substring(2, 9);
 
     const prevMonth = () => {
       if (scheduleMonth === 1) { setScheduleYear(y => y - 1); setScheduleMonth(12); }
@@ -2061,8 +2059,112 @@ export default function Home() {
       else setScheduleMonth(m => m + 1);
     };
 
+    const makeCellKey = (wi: number, si: number, ri: number, d: number) => `${wi}-${si}-${ri}-${d}`;
+
+    const updateCellField = (weekIdx: number, sectionIdx: number, rowIdx: number, dayOfWeek: number, update: Record<string, string | boolean | null>) => {
+      setScheduleWeeks(prev => prev.map((w, wi) => {
+        if (wi !== weekIdx) return w;
+        const sections = w.data.sections.map((s: any, si: number) => {
+          if (si !== sectionIdx) return s;
+          const rows = s.rows.map((r: any, ri: number) => {
+            if (ri !== rowIdx) return r;
+            const cells = { ...r.cells };
+            const key = String(dayOfWeek);
+            cells[key] = { ...(cells[key] || {}), ...update };
+            return { ...r, cells };
+          });
+          return { ...s, rows };
+        });
+        return { ...w, data: { ...w.data, sections } };
+      }));
+    };
+
+    const commitCellEdit = (weekIdx: number, sectionIdx: number, rowIdx: number, dayOfWeek: number) => {
+      updateCellField(weekIdx, sectionIdx, rowIdx, dayOfWeek, { content: schedCellEditValue });
+      setSchedCellEditKey(null);
+    };
+
+    const addWeek = () => {
+      const startDay = parseInt(addWeekStartDay);
+      if (isNaN(startDay) || startDay < 1 || startDay > daysInMonth) {
+        showAlert('Hiba', 'Érvényes napot adj meg (1–' + daysInMonth + ')!');
+        return;
+      }
+      if (scheduleWeeks.some(w => w.week_start_day === startDay)) {
+        showAlert('Hiba', 'Ez a hét már létezik!');
+        return;
+      }
+      const newWeek = {
+        year: scheduleYear,
+        month: scheduleMonth,
+        week_start_day: startDay,
+        data: {
+          sections: [
+            { id: genId(), name: 'Eötvös 21', type: 'location', rows: [{ id: genId(), label: '', cells: {} }] },
+            { id: genId(), name: 'Recepció', type: 'reception', rows: [
+              { id: genId(), label: '08-16:', cells: {} },
+              { id: genId(), label: '16-20:', cells: {} },
+            ]},
+            { id: genId(), name: 'Árpád 12', type: 'location', rows: [{ id: genId(), label: '', cells: {} }] },
+          ],
+        },
+        notes: '',
+        summary: [],
+      };
+      setScheduleWeeks(prev => [...prev, newWeek].sort((a, b) => a.week_start_day - b.week_start_day));
+      setAddWeekStartDay('');
+      setShowAddWeekForm(false);
+    };
+
+    const removeWeek = async (weekIdx: number) => {
+      const week = scheduleWeeks[weekIdx];
+      if (week.id) {
+        await supabase.from('schedule_planner').delete().eq('id', week.id);
+      }
+      setScheduleWeeks(prev => prev.filter((_, i) => i !== weekIdx));
+    };
+
+    const addSection = (weekIdx: number) => {
+      const count = scheduleWeeks[weekIdx].data.sections.length + 1;
+      setScheduleWeeks(prev => prev.map((w, wi) => {
+        if (wi !== weekIdx) return w;
+        const newSec = { id: genId(), name: `Helyszín ${count}`, type: 'location', rows: [{ id: genId(), label: '', cells: {} }] };
+        return { ...w, data: { ...w.data, sections: [...w.data.sections, newSec] } };
+      }));
+    };
+
+    const removeSection = (weekIdx: number, sectionIdx: number) => {
+      setScheduleWeeks(prev => prev.map((w, wi) => {
+        if (wi !== weekIdx) return w;
+        const sections = w.data.sections.filter((_: any, si: number) => si !== sectionIdx);
+        return { ...w, data: { ...w.data, sections } };
+      }));
+    };
+
+    const addRow = (weekIdx: number, sectionIdx: number) => {
+      setScheduleWeeks(prev => prev.map((w, wi) => {
+        if (wi !== weekIdx) return w;
+        const sections = w.data.sections.map((s: any, si: number) => {
+          if (si !== sectionIdx) return s;
+          return { ...s, rows: [...s.rows, { id: genId(), label: '', cells: {} }] };
+        });
+        return { ...w, data: { ...w.data, sections } };
+      }));
+    };
+
+    const removeRow = (weekIdx: number, sectionIdx: number, rowIdx: number) => {
+      setScheduleWeeks(prev => prev.map((w, wi) => {
+        if (wi !== weekIdx) return w;
+        const sections = w.data.sections.map((s: any, si: number) => {
+          if (si !== sectionIdx) return s;
+          return { ...s, rows: s.rows.filter((_: any, ri: number) => ri !== rowIdx) };
+        });
+        return { ...w, data: { ...w.data, sections } };
+      }));
+    };
+
     return (
-      <div className="min-h-screen bg-slate-50 font-sans relative" onClick={() => setColorPickerCell(null)}>
+      <div className="min-h-screen bg-slate-50 font-sans relative" onClick={() => { setSchedColorPickerKey(null); }}>
         {customModalUI}
         {toastUI}
 
@@ -2084,121 +2186,345 @@ export default function Home() {
 
         <div className="max-w-[1600px] mx-auto px-4 md:px-6 pt-6 pb-10">
           {/* Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div className="flex items-center gap-2">
               <button onClick={prevMonth} className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-all"><ChevronLeftIcon /></button>
               <span className="text-base font-extrabold text-slate-900 min-w-[160px] text-center">{scheduleYear}. {monthNames[scheduleMonth - 1]}</span>
               <button onClick={nextMonth} className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-all"><ChevronRightIcon /></button>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={addEmployee} className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-xl text-xs font-bold transition-all shadow-sm">
-                <PlusIcon size={14} /> Dolgozó
-              </button>
-              <button onClick={() => saveScheduleData(scheduleYear, scheduleMonth, scheduleEmployees, scheduleData)} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95">
-                <CheckCircleIcon /> Mentés
+              {showAddWeekForm ? (
+                <div className="flex items-center gap-1.5 bg-white border border-orange-200 rounded-xl px-2 py-1 shadow-sm">
+                  <span className="text-xs font-medium text-slate-600 hidden sm:inline">Hétfő napja:</span>
+                  <input
+                    type="number" min="1" max={daysInMonth}
+                    value={addWeekStartDay}
+                    onChange={e => setAddWeekStartDay(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') addWeek(); if (e.key === 'Escape') setShowAddWeekForm(false); }}
+                    className="w-14 border border-slate-200 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    placeholder="pl. 13"
+                    autoFocus
+                  />
+                  <button onClick={addWeek} className="px-2 py-0.5 bg-orange-500 text-white rounded text-xs font-bold hover:bg-orange-600">OK</button>
+                  <button onClick={() => setShowAddWeekForm(false)} className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded text-xs font-bold hover:bg-slate-300">×</button>
+                </div>
+              ) : (
+                <button onClick={() => setShowAddWeekForm(true)} className="flex items-center gap-1 px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-xl text-xs font-bold transition-all shadow-sm">
+                  <PlusIcon /> Új hét
+                </button>
+              )}
+              <button
+                onClick={saveScheduleWeeks}
+                disabled={scheduleSaving}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 disabled:opacity-60"
+              >
+                <CheckCircleIcon /> {scheduleSaving ? 'Mentés...' : 'Mentés'}
               </button>
             </div>
           </div>
 
-          {/* Table */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            {scheduleLoading ? (
-              <div className="flex flex-col justify-center items-center py-20 opacity-50 animate-pulse">
-                <RefreshIcon />
-                <p className="mt-4 font-bold text-slate-500">Beosztás betöltése...</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto custom-scrollbar">
-                <table className="border-collapse text-[11px]" style={{ minWidth: `${200 + daysInMonth * 46}px` }}>
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="sticky left-0 z-10 bg-slate-50 px-3 py-2 text-left font-bold text-slate-600 text-[10px] uppercase tracking-widest border-r border-slate-200 min-w-[150px]">Dolgozó</th>
-                      {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
-                        const dayDate = new Date(scheduleYear, scheduleMonth - 1, d);
-                        const dow = dayDate.getDay();
-                        const isWeekend = dow === 0 || dow === 6;
-                        return (
-                          <th key={d} className={`px-0.5 py-1 text-center font-bold text-slate-600 border-r border-slate-100 min-w-[40px] ${isWeekend ? 'bg-amber-50' : ''}`}>
-                            <div className="text-[11px]">{d}</div>
-                            <div className="text-[9px] text-slate-400 font-medium">{shortDayNames[dow]}</div>
-                          </th>
-                        );
-                      })}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {scheduleEmployees.length === 0 ? (
-                      <tr>
-                        <td colSpan={daysInMonth + 1} className="text-center py-16 text-slate-400 font-medium">
-                          Nincs még dolgozó. Kattints a &quot;+ Dolgozó&quot; gombra!
-                        </td>
-                      </tr>
-                    ) : scheduleEmployees.map((emp) => (
-                      <tr key={emp} className="border-b border-slate-100 hover:bg-orange-50/20 transition-colors group">
-                        <td className="sticky left-0 z-10 bg-white group-hover:bg-orange-50/20 border-r border-slate-200 px-2 py-1">
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="text"
-                              key={emp}
-                              defaultValue={emp}
-                              onBlur={e => renameEmployee(emp, e.target.value)}
-                              className="flex-1 bg-transparent text-slate-900 font-semibold text-[11px] focus:outline-none focus:bg-orange-50 rounded px-1 py-0.5 min-w-0"
-                            />
-                            <button onClick={() => removeEmployee(emp)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-0.5 rounded shrink-0" title="Törlés">
-                              <TrashIcon />
-                            </button>
-                          </div>
-                        </td>
-                        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
-                          const dayDate = new Date(scheduleYear, scheduleMonth - 1, d);
-                          const dow = dayDate.getDay();
-                          const isWeekend = dow === 0 || dow === 6;
-                          const cell = getCellData(emp, d);
-                          const bgColor = cell?.background_color;
-                          const isPickerOpen = colorPickerCell?.emp === emp && colorPickerCell?.day === d;
-                          return (
-                            <td
-                              key={d}
-                              className={`border-r border-slate-100 p-0 relative ${isWeekend && !bgColor ? 'bg-amber-50/60' : ''}`}
-                              style={bgColor ? { backgroundColor: bgColor } : undefined}
-                              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setColorPickerCell({ emp, day: d }); }}
-                            >
+          {/* Loading / empty state */}
+          {scheduleLoading ? (
+            <div className="flex flex-col justify-center items-center py-20 opacity-50 animate-pulse">
+              <RefreshIcon />
+              <p className="mt-4 font-bold text-slate-500">Beosztás betöltése...</p>
+            </div>
+          ) : scheduleWeeks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+              <CalendarPlusIcon size={40} />
+              <p className="mt-4 font-bold text-lg">Nincsenek hetek erre a hónapra.</p>
+              <p className="text-sm mt-1">Kattints az &quot;Új hét&quot; gombra a kezdéshez!</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {scheduleWeeks.map((week, weekIdx) => {
+                const weekDays = Array.from({ length: 7 }, (_, i) => {
+                  const dayNum = week.week_start_day + i;
+                  return { dayOfWeek: i + 1, dayNum, isInMonth: dayNum >= 1 && dayNum <= daysInMonth };
+                });
+                return (
+                  <div key={`${week.year}-${week.month}-${week.week_start_day}`} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    {/* Week title bar */}
+                    <div className="flex items-center justify-between px-4 py-2 bg-slate-50 border-b border-slate-200">
+                      <span className="font-extrabold text-slate-800 text-sm">
+                        {week.week_start_day}–{Math.min(week.week_start_day + 6, daysInMonth)}. hét &nbsp;
+                        <span className="text-xs font-medium text-slate-500">{scheduleYear}. {monthNames[scheduleMonth - 1]}</span>
+                      </span>
+                      <button
+                        onClick={() => removeWeek(weekIdx)}
+                        className="flex items-center gap-1 text-red-400 hover:text-red-600 text-xs font-medium transition-colors px-2 py-1 rounded hover:bg-red-50"
+                      >
+                        <TrashIcon size={12} /> Hét törlése
+                      </button>
+                    </div>
+
+                    {/* Schedule table */}
+                    <div className="overflow-x-auto">
+                      <table className="border-collapse w-full text-xs" style={{ minWidth: '680px' }}>
+                        <thead>
+                          <tr className="border-b border-slate-200">
+                            <th className="w-[90px] min-w-[70px] px-2 py-1.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wide border-r border-slate-200 bg-slate-50"></th>
+                            {weekDays.map(({ dayOfWeek, dayNum, isInMonth }) => (
+                              <th
+                                key={dayOfWeek}
+                                className={`px-1 py-1.5 text-center font-bold border-r border-slate-100 min-w-[80px] ${dayOfWeek >= 6 ? 'bg-amber-50 text-amber-700' : isInMonth ? 'bg-slate-50 text-slate-700' : 'bg-slate-100 text-slate-400'}`}
+                              >
+                                <div className="text-[11px]">{DAY_NAMES_SHORT[dayOfWeek - 1]}</div>
+                                <div className={`text-[10px] font-semibold ${isInMonth ? '' : 'opacity-40'}`}>{isInMonth ? `${dayNum}.` : '–'}</div>
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {week.data.sections.map((section: any, sectionIdx: number) => {
+                            const headerColor = SECTION_HEADER_COLORS[sectionIdx % SECTION_HEADER_COLORS.length];
+                            return (
+                              <React.Fragment key={`sec-${sectionIdx}`}>
+                                {/* Section header */}
+                                <tr key={`sec-hdr-${sectionIdx}`} className="group/sec">
+                                  <td colSpan={8} className={`px-3 py-1 border-b border-slate-200 border-t border-t-slate-200 ${headerColor}`}>
+                                    <div className="flex items-center justify-between gap-2">
+                                      <input
+                                        type="text"
+                                        defaultValue={section.name}
+                                        onBlur={e => {
+                                          const val = e.target.value.trim() || section.name;
+                                          if (val !== section.name) {
+                                            setScheduleWeeks(prev => prev.map((w, wi) => {
+                                              if (wi !== weekIdx) return w;
+                                              const sections = w.data.sections.map((s: any, si: number) => si === sectionIdx ? { ...s, name: val } : s);
+                                              return { ...w, data: { ...w.data, sections } };
+                                            }));
+                                          }
+                                        }}
+                                        className="bg-transparent font-bold text-xs focus:outline-none focus:underline min-w-0 flex-1 cursor-text"
+                                      />
+                                      <div className="flex items-center gap-1 opacity-0 group-hover/sec:opacity-100 transition-opacity shrink-0">
+                                        <button
+                                          onClick={() => addRow(weekIdx, sectionIdx)}
+                                          className="flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded hover:bg-black/10 transition-colors"
+                                          title="Sor hozzáadása"
+                                        >
+                                          <PlusIcon /> Sor
+                                        </button>
+                                        <button
+                                          onClick={() => removeSection(weekIdx, sectionIdx)}
+                                          className="text-[10px] font-bold text-red-500 hover:text-red-700 px-1 py-0.5 rounded hover:bg-black/10 transition-colors"
+                                          title="Szekció törlése"
+                                        >
+                                          <TrashIcon size={11} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                                {/* Section rows */}
+                                {section.rows.map((row: any, rowIdx: number) => (
+                                  <tr key={row.id} className="group/row border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                                    {/* Row label */}
+                                    <td className="px-1.5 py-0.5 border-r border-slate-200 align-top">
+                                      <div className="flex items-center gap-0.5">
+                                        <input
+                                          type="text"
+                                          defaultValue={row.label}
+                                          onBlur={e => {
+                                            const val = e.target.value;
+                                            if (val !== row.label) {
+                                              setScheduleWeeks(prev => prev.map((w, wi) => {
+                                                if (wi !== weekIdx) return w;
+                                                const sections = w.data.sections.map((s: any, si: number) => {
+                                                  if (si !== sectionIdx) return s;
+                                                  const rows = s.rows.map((r: any, ri: number) => ri === rowIdx ? { ...r, label: val } : r);
+                                                  return { ...s, rows };
+                                                });
+                                                return { ...w, data: { ...w.data, sections } };
+                                              }));
+                                            }
+                                          }}
+                                          placeholder="Cimke"
+                                          className="w-full bg-transparent text-[10px] font-semibold text-slate-500 focus:outline-none focus:bg-white rounded px-0.5 py-0.5 min-w-0"
+                                        />
+                                        <button
+                                          onClick={() => removeRow(weekIdx, sectionIdx, rowIdx)}
+                                          className="opacity-0 group-hover/row:opacity-100 text-red-400 hover:text-red-600 transition-all shrink-0"
+                                          title="Sor törlése"
+                                        >
+                                          <TrashIcon size={10} />
+                                        </button>
+                                      </div>
+                                    </td>
+                                    {/* Day cells */}
+                                    {weekDays.map(({ dayOfWeek, isInMonth }) => {
+                                      const cellKey = makeCellKey(weekIdx, sectionIdx, rowIdx, dayOfWeek);
+                                      const cellData = row.cells[String(dayOfWeek)] || {};
+                                      const isEditing = schedCellEditKey === cellKey;
+                                      const isColorOpen = schedColorPickerKey === cellKey;
+                                      const isWeekend = dayOfWeek >= 6;
+                                      return (
+                                        <td
+                                          key={dayOfWeek}
+                                          className={`border-r border-slate-100 p-0 relative align-top min-w-[80px] ${isWeekend && !cellData.backgroundColor ? 'bg-amber-50/50' : ''} ${!isInMonth ? 'opacity-20 pointer-events-none bg-slate-50' : ''}`}
+                                          style={cellData.backgroundColor ? { backgroundColor: cellData.backgroundColor } : undefined}
+                                          onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setSchedColorPickerKey(isColorOpen ? null : cellKey); }}
+                                        >
+                                          {isEditing ? (
+                                            <textarea
+                                              autoFocus
+                                              value={schedCellEditValue}
+                                              onChange={e => setSchedCellEditValue(e.target.value)}
+                                              onBlur={() => commitCellEdit(weekIdx, sectionIdx, rowIdx, dayOfWeek)}
+                                              onKeyDown={e => {
+                                                if (e.key === 'Escape') setSchedCellEditKey(null);
+                                                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitCellEdit(weekIdx, sectionIdx, rowIdx, dayOfWeek); }
+                                              }}
+                                              rows={2}
+                                              className="w-full p-1 text-[11px] bg-white border border-orange-300 rounded focus:outline-none resize-none"
+                                              style={{ color: cellData.textColor || '#000', fontWeight: cellData.bold ? 'bold' : 'normal' }}
+                                            />
+                                          ) : (
+                                            <div
+                                              className="px-1 py-1 text-[11px] min-h-[28px] cursor-text whitespace-pre-wrap leading-snug relative group/cell"
+                                              style={{ color: cellData.textColor || undefined, fontWeight: cellData.bold ? 'bold' : undefined }}
+                                              onClick={() => { setSchedCellEditKey(cellKey); setSchedCellEditValue(cellData.content || ''); }}
+                                            >
+                                              {cellData.content || <span className="text-slate-200 select-none text-[10px]">—</span>}
+                                              {/* Formatting toolbar (hover) */}
+                                              <div className="absolute top-0 right-0 opacity-0 group-hover/cell:opacity-100 transition-opacity bg-white border border-slate-200 rounded shadow-sm flex items-center gap-0.5 px-1 py-0.5 z-20 pointer-events-none group-hover/cell:pointer-events-auto">
+                                                <button
+                                                  onClick={e => { e.stopPropagation(); updateCellField(weekIdx, sectionIdx, rowIdx, dayOfWeek, { bold: !cellData.bold }); }}
+                                                  className={`text-[11px] font-black px-1 rounded hover:bg-slate-100 leading-none ${cellData.bold ? 'text-orange-600' : 'text-slate-600'}`}
+                                                  title="Félkövér"
+                                                >B</button>
+                                                {TEXT_COLORS.map(tc => (
+                                                  <button
+                                                    key={tc.value}
+                                                    onClick={e => { e.stopPropagation(); updateCellField(weekIdx, sectionIdx, rowIdx, dayOfWeek, { textColor: tc.value }); }}
+                                                    className="w-3 h-3 rounded-full border border-slate-300 shrink-0 hover:scale-125 transition-transform"
+                                                    style={{ backgroundColor: tc.value }}
+                                                    title={tc.label}
+                                                  />
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                          {/* Background color picker */}
+                                          {isColorOpen && (
+                                            <div
+                                              className="absolute top-full left-0 z-50 bg-white rounded-xl shadow-lg border border-slate-200 p-2 flex flex-col gap-0.5 min-w-[110px]"
+                                              onClick={e => e.stopPropagation()}
+                                            >
+                                              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Háttérszín</p>
+                                              {BG_COLORS.map(c => (
+                                                <button
+                                                  key={c.label}
+                                                  onClick={() => { updateCellField(weekIdx, sectionIdx, rowIdx, dayOfWeek, { backgroundColor: c.value }); setSchedColorPickerKey(null); }}
+                                                  className="flex items-center gap-2 px-1.5 py-0.5 rounded hover:bg-slate-100 text-left text-[10px] font-medium text-slate-700 transition-colors"
+                                                >
+                                                  <span className="w-3.5 h-3.5 rounded border border-slate-200 shrink-0 inline-block" style={{ backgroundColor: c.value || '#ffffff' }} />
+                                                  {c.label}
+                                                </button>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                ))}
+                              </React.Fragment>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Week footer */}
+                    <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 space-y-2">
+                      {/* Notes */}
+                      <div className="flex items-start gap-2">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide shrink-0 pt-1">Megjegyzés:</span>
+                        <textarea
+                          value={week.notes || ''}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setScheduleWeeks(prev => prev.map((w, wi) => wi === weekIdx ? { ...w, notes: val } : w));
+                          }}
+                          placeholder="Pl. Ildikó nincs, Éva nincs..."
+                          className="flex-1 text-xs text-slate-700 bg-white border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-orange-200 resize-none"
+                          rows={1}
+                        />
+                      </div>
+                      {/* Summary */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Összesítő:</span>
+                          <button
+                            onClick={() => setScheduleWeeks(prev => prev.map((w, wi) => wi === weekIdx ? { ...w, summary: [...(w.summary || []), { employee: '', hours: '' }] } : w))}
+                            className="text-[10px] text-orange-600 hover:text-orange-800 font-bold"
+                          >+ Dolgozó</button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {(week.summary || []).map((entry: any, ei: number) => (
+                            <div key={ei} className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-0.5">
                               <input
                                 type="text"
-                                value={cell?.shift_value || ''}
-                                onChange={e => updateCell(emp, d, 'shift_value', e.target.value)}
-                                className="w-full h-full px-1 py-1.5 text-center text-[11px] font-semibold bg-transparent focus:outline-none focus:ring-1 focus:ring-orange-300 focus:bg-white/80 rounded transition-all min-w-[38px]"
+                                value={entry.employee}
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  setScheduleWeeks(prev => prev.map((w, wi) => {
+                                    if (wi !== weekIdx) return w;
+                                    const summary = w.summary.map((s: any, si: number) => si === ei ? { ...s, employee: val } : s);
+                                    return { ...w, summary };
+                                  }));
+                                }}
+                                placeholder="Név"
+                                className="text-[11px] font-semibold text-slate-800 bg-transparent focus:outline-none w-20"
                               />
-                              {isPickerOpen && (
-                                <div
-                                  className="absolute top-full left-0 z-50 bg-white rounded-xl shadow-lg border border-slate-200 p-2 flex flex-col gap-1 min-w-[120px]"
-                                  onClick={e => e.stopPropagation()}
-                                >
-                                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Háttérszín</p>
-                                  {SCHEDULE_COLORS.map(c => (
-                                    <button
-                                      key={c.label}
-                                      onClick={() => { updateCell(emp, d, 'background_color', c.value); setColorPickerCell(null); }}
-                                      className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-100 text-left text-[10px] font-medium text-slate-700 transition-colors"
-                                    >
-                                      <span className="w-4 h-4 rounded border border-slate-200 shrink-0 inline-block" style={{ backgroundColor: c.value || '#ffffff' }} />
-                                      {c.label}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+                              <span className="text-slate-400 text-[10px]">:</span>
+                              <input
+                                type="text"
+                                value={entry.hours}
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  setScheduleWeeks(prev => prev.map((w, wi) => {
+                                    if (wi !== weekIdx) return w;
+                                    const summary = w.summary.map((s: any, si: number) => si === ei ? { ...s, hours: val } : s);
+                                    return { ...w, summary };
+                                  }));
+                                }}
+                                placeholder="40/36"
+                                className="text-[11px] font-medium text-slate-600 bg-transparent focus:outline-none w-14"
+                              />
+                              <button
+                                onClick={() => setScheduleWeeks(prev => prev.map((w, wi) => {
+                                  if (wi !== weekIdx) return w;
+                                  return { ...w, summary: w.summary.filter((_: any, si: number) => si !== ei) };
+                                }))}
+                                className="text-red-400 hover:text-red-600"
+                              >
+                                <TrashIcon size={10} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Add section button */}
+                      <div className="flex justify-end pt-1">
+                        <button
+                          onClick={() => addSection(weekIdx)}
+                          className="flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-orange-50 text-orange-600 border border-orange-200 rounded-xl text-[11px] font-bold transition-all shadow-sm"
+                        >
+                          <PlusIcon /> Helyszín hozzáadása
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-          <p className="text-[10px] text-slate-400 mt-3 text-center">Jobb klikk egy cellára a háttérszín módosításához · Alt+B a gyors megnyitáshoz</p>
+          <p className="text-[10px] text-slate-400 mt-4 text-center">Kattintás a szerkesztéshez · Jobb klikk a háttérszínhez · Alt+B a gyors megnyitáshoz</p>
         </div>
       </div>
     );

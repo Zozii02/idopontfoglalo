@@ -863,12 +863,9 @@ export default function Home() {
       .eq('month', month);
     if (!error && data) {
       setScheduleData(data);
-      const empSet = new Set<string>(data.map((r: any) => r.employee_name));
-      if (empSet.size > 0) {
-        const ordered: string[] = [];
-        data.forEach((r: any) => { if (!ordered.includes(r.employee_name)) ordered.push(r.employee_name); });
-        setScheduleEmployees(ordered);
-      }
+      const ordered: string[] = [];
+      data.forEach((r: any) => { if (!ordered.includes(r.employee_name)) ordered.push(r.employee_name); });
+      if (ordered.length > 0) setScheduleEmployees(ordered);
     }
     setScheduleLoading(false);
   };
@@ -910,6 +907,7 @@ export default function Home() {
     if (showSchedule) {
       fetchScheduleData(scheduleYear, scheduleMonth);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showSchedule, scheduleYear, scheduleMonth]);
 
   const loadInitialData = async () => {
@@ -2008,7 +2006,7 @@ export default function Home() {
     );
   }
 
-  // --- LABOR KALKULÁTOR / NYOMTATÁSI NÉZET ---
+  // --- HAVI BEOSZTÁS NÉZET ---
   if (showSchedule) {
     const daysInMonth = new Date(scheduleYear, scheduleMonth, 0).getDate();
     const monthNames = ['Január','Február','Március','Április','Május','Június','Július','Augusztus','Szeptember','Október','November','December'];
@@ -2049,6 +2047,7 @@ export default function Home() {
 
     const renameEmployee = (oldName: string, newName: string) => {
       if (!newName.trim() || newName === oldName) return;
+      if (scheduleEmployees.includes(newName)) return;
       setScheduleEmployees(prev => prev.map(e => e === oldName ? newName : e));
       setScheduleData(prev => prev.map(r => r.employee_name === oldName ? { ...r, employee_name: newName } : r));
     };
@@ -2140,6 +2139,7 @@ export default function Home() {
                           <div className="flex items-center gap-1">
                             <input
                               type="text"
+                              key={emp}
                               defaultValue={emp}
                               onBlur={e => renameEmployee(emp, e.target.value)}
                               className="flex-1 bg-transparent text-slate-900 font-semibold text-[11px] focus:outline-none focus:bg-orange-50 rounded px-1 py-0.5 min-w-0"
@@ -2168,7 +2168,6 @@ export default function Home() {
                                 value={cell?.shift_value || ''}
                                 onChange={e => updateCell(emp, d, 'shift_value', e.target.value)}
                                 className="w-full h-full px-1 py-1.5 text-center text-[11px] font-semibold bg-transparent focus:outline-none focus:ring-1 focus:ring-orange-300 focus:bg-white/80 rounded transition-all min-w-[38px]"
-                                style={{ background: 'transparent' }}
                               />
                               {isPickerOpen && (
                                 <div

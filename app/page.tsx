@@ -79,6 +79,13 @@ export default function Home() {
   const [showLabCalculator, setShowLabCalculator] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showPatients, setShowPatients] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [scheduleYear, setScheduleYear] = useState(new Date().getFullYear());
+  const [scheduleMonth, setScheduleMonth] = useState(new Date().getMonth() + 1);
+  const [scheduleData, setScheduleData] = useState<any[]>([]);
+  const [scheduleEmployees, setScheduleEmployees] = useState<string[]>([]);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [colorPickerCell, setColorPickerCell] = useState<{emp: string, day: number} | null>(null);
   const [isArchiveView, setIsArchiveView] = useState(false);
 
   const [patientsList, setPatientsList] = useState<any[]>([]);
@@ -684,18 +691,22 @@ export default function Home() {
         e.preventDefault(); searchInputRef.current?.focus(); 
       }
       if (e.altKey && e.key.toLowerCase() === 'l') { 
-        e.preventDefault(); setShowLabCalculator(true); setShowStats(false); setShowPatients(false);
+        e.preventDefault(); setShowLabCalculator(true); setShowStats(false); setShowPatients(false); setShowSchedule(false);
       }
       if (e.altKey && e.key.toLowerCase() === 's') { 
-        e.preventDefault(); setShowStats(true); setShowLabCalculator(false); setShowPatients(false);
+        e.preventDefault(); setShowStats(true); setShowLabCalculator(false); setShowPatients(false); setShowSchedule(false);
       }
       if (e.altKey && e.key.toLowerCase() === 'p') { 
-        e.preventDefault(); setShowPatients(true); setShowStats(false); setShowLabCalculator(false);
+        e.preventDefault(); setShowPatients(true); setShowStats(false); setShowLabCalculator(false); setShowSchedule(false);
+      }
+      if (e.altKey && e.key.toLowerCase() === 'b') { 
+        e.preventDefault(); setShowSchedule(true); setShowStats(false); setShowLabCalculator(false); setShowPatients(false);
       }
       if (e.key === 'Escape') { 
         closeModal(); closeHistoryModal(); setIsPriceModalOpen(false); 
         closeAppInfoModal(); setIsNotifOpen(false); setIsDeptModalOpen(false);
         setIsBugModalOpen(false); setIsDeptDropdownOpen(false); setIsOnlineDropdownOpen(false);
+        setShowSchedule(false); setColorPickerCell(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -842,6 +853,62 @@ export default function Home() {
       fetchPatientsList();
     }
   }, [showPatients]);
+
+  const fetchScheduleData = async (year: number, month: number) => {
+    setScheduleLoading(true);
+    const { data, error } = await supabase
+      .from('schedules')
+      .select('*')
+      .eq('year', year)
+      .eq('month', month);
+    if (!error && data) {
+      setScheduleData(data);
+      const ordered: string[] = [];
+      data.forEach((r: any) => { if (!ordered.includes(r.employee_name)) ordered.push(r.employee_name); });
+      if (ordered.length > 0) setScheduleEmployees(ordered);
+    }
+    setScheduleLoading(false);
+  };
+
+  const saveScheduleData = async (year: number, month: number, employees: string[], data: any[]) => {
+    const displayName = getDisplayName() || 'Ismeretlen';
+    const now = new Date().toISOString();
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const rows: any[] = [];
+    for (const emp of employees) {
+      for (let d = 1; d <= daysInMonth; d++) {
+        const cell = data.find((r: any) => r.employee_name === emp && r.day === d);
+        const shiftValue = cell?.shift_value || '';
+        const bgColor = cell?.background_color || null;
+        const dayDate = new Date(year, month - 1, d);
+        const dayIndex = dayDate.getDay();
+        const dayNames = ['Vasárnap','Hétfő','Kedd','Szerda','Csütörtök','Péntek','Szombat'];
+        rows.push({
+          year, month, day: d,
+          day_name: dayNames[dayIndex],
+          employee_name: emp,
+          shift_value: shiftValue,
+          background_color: bgColor,
+          created_by: displayName,
+          updated_at: now,
+        });
+      }
+    }
+    // Delete existing data for this month, then re-insert
+    await supabase.from('schedules').delete().eq('year', year).eq('month', month);
+    if (rows.length > 0) {
+      const { error } = await supabase.from('schedules').insert(rows);
+      if (error) showAlert('Hiba', 'Nem sikerült menteni a beosztást: ' + error.message);
+      else showToast('Beosztás mentve!');
+    }
+  };
+
+  useEffect(() => {
+    if (showSchedule) {
+      fetchScheduleData(scheduleYear, scheduleMonth);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showSchedule, scheduleYear, scheduleMonth]);
 
   const loadInitialData = async () => {
     setIsInitialLoading(true);
@@ -1939,6 +2006,204 @@ export default function Home() {
     );
   }
 
+  // --- HAVI BEOSZTÁS NÉZET ---
+  if (showSchedule) {
+    const daysInMonth = new Date(scheduleYear, scheduleMonth, 0).getDate();
+    const monthNames = ['Január','Február','Március','Április','Május','Június','Július','Augusztus','Szeptember','Október','November','December'];
+    const shortDayNames = ['V','H','K','Sze','Cs','P','Szo'];
+    const SCHEDULE_COLORS = [
+      { label: 'Fehér', value: null },
+      { label: 'Kék', value: '#cfe2f3' },
+      { label: 'Sárga', value: '#fff2cc' },
+      { label: 'Piros', value: '#ea9999' },
+      { label: 'Zöld', value: '#ecf7f1' },
+      { label: 'Rózsaszín', value: '#fff2f2' },
+    ];
+
+    const getCellData = (emp: string, day: number) => scheduleData.find(r => r.employee_name === emp && r.day === day);
+
+    const updateCell = (emp: string, day: number, field: 'shift_value' | 'background_color', value: string | null) => {
+      setScheduleData(prev => {
+        const existing = prev.find(r => r.employee_name === emp && r.day === day);
+        if (existing) {
+          return prev.map(r => r.employee_name === emp && r.day === day ? { ...r, [field]: value } : r);
+        } else {
+          const dayDate = new Date(scheduleYear, scheduleMonth - 1, day);
+          const dayNames = ['Vasárnap','Hétfő','Kedd','Szerda','Csütörtök','Péntek','Szombat'];
+          return [...prev, { employee_name: emp, day, year: scheduleYear, month: scheduleMonth, day_name: dayNames[dayDate.getDay()], shift_value: field === 'shift_value' ? value : '', background_color: field === 'background_color' ? value : null }];
+        }
+      });
+    };
+
+    const addEmployee = () => {
+      const name = `Dolgozó ${scheduleEmployees.length + 1}`;
+      setScheduleEmployees(prev => [...prev, name]);
+    };
+
+    const removeEmployee = (emp: string) => {
+      setScheduleEmployees(prev => prev.filter(e => e !== emp));
+      setScheduleData(prev => prev.filter(r => r.employee_name !== emp));
+    };
+
+    const renameEmployee = (oldName: string, newName: string) => {
+      if (!newName.trim() || newName === oldName) return;
+      if (scheduleEmployees.includes(newName)) return;
+      setScheduleEmployees(prev => prev.map(e => e === oldName ? newName : e));
+      setScheduleData(prev => prev.map(r => r.employee_name === oldName ? { ...r, employee_name: newName } : r));
+    };
+
+    const prevMonth = () => {
+      if (scheduleMonth === 1) { setScheduleYear(y => y - 1); setScheduleMonth(12); }
+      else setScheduleMonth(m => m - 1);
+    };
+    const nextMonth = () => {
+      if (scheduleMonth === 12) { setScheduleYear(y => y + 1); setScheduleMonth(1); }
+      else setScheduleMonth(m => m + 1);
+    };
+
+    return (
+      <div className="min-h-screen bg-slate-50 font-sans relative" onClick={() => setColorPickerCell(null)}>
+        {customModalUI}
+        {toastUI}
+
+        {/* Header */}
+        <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm">
+          <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-2 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="Medical-Aqua" className="h-9 object-contain" />
+              <div>
+                <h1 className="text-lg font-bold tracking-tight text-slate-900">Havi Beosztás</h1>
+                <p className="text-orange-600 font-medium text-[10px] tracking-widest uppercase">Munkarend tervező</p>
+              </div>
+            </div>
+            <button onClick={() => setShowSchedule(false)} className="px-4 py-2 bg-slate-900 text-white rounded-lg font-bold text-sm shadow-sm hover:bg-black transition-all active:scale-95 flex items-center gap-1.5">
+              <ChevronLeftIcon /> Vissza az Előjegyzéshez
+            </button>
+          </div>
+        </div>
+
+        <div className="max-w-[1600px] mx-auto px-4 md:px-6 pt-6 pb-10">
+          {/* Controls */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2">
+              <button onClick={prevMonth} className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-all"><ChevronLeftIcon /></button>
+              <span className="text-base font-extrabold text-slate-900 min-w-[160px] text-center">{scheduleYear}. {monthNames[scheduleMonth - 1]}</span>
+              <button onClick={nextMonth} className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-all"><ChevronRightIcon /></button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={addEmployee} className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-xl text-xs font-bold transition-all shadow-sm">
+                <PlusIcon size={14} /> Dolgozó
+              </button>
+              <button onClick={() => saveScheduleData(scheduleYear, scheduleMonth, scheduleEmployees, scheduleData)} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95">
+                <CheckCircleIcon /> Mentés
+              </button>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            {scheduleLoading ? (
+              <div className="flex flex-col justify-center items-center py-20 opacity-50 animate-pulse">
+                <RefreshIcon />
+                <p className="mt-4 font-bold text-slate-500">Beosztás betöltése...</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="border-collapse text-[11px]" style={{ minWidth: `${200 + daysInMonth * 46}px` }}>
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="sticky left-0 z-10 bg-slate-50 px-3 py-2 text-left font-bold text-slate-600 text-[10px] uppercase tracking-widest border-r border-slate-200 min-w-[150px]">Dolgozó</th>
+                      {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
+                        const dayDate = new Date(scheduleYear, scheduleMonth - 1, d);
+                        const dow = dayDate.getDay();
+                        const isWeekend = dow === 0 || dow === 6;
+                        return (
+                          <th key={d} className={`px-0.5 py-1 text-center font-bold text-slate-600 border-r border-slate-100 min-w-[40px] ${isWeekend ? 'bg-amber-50' : ''}`}>
+                            <div className="text-[11px]">{d}</div>
+                            <div className="text-[9px] text-slate-400 font-medium">{shortDayNames[dow]}</div>
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scheduleEmployees.length === 0 ? (
+                      <tr>
+                        <td colSpan={daysInMonth + 1} className="text-center py-16 text-slate-400 font-medium">
+                          Nincs még dolgozó. Kattints a &quot;+ Dolgozó&quot; gombra!
+                        </td>
+                      </tr>
+                    ) : scheduleEmployees.map((emp) => (
+                      <tr key={emp} className="border-b border-slate-100 hover:bg-orange-50/20 transition-colors group">
+                        <td className="sticky left-0 z-10 bg-white group-hover:bg-orange-50/20 border-r border-slate-200 px-2 py-1">
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="text"
+                              key={emp}
+                              defaultValue={emp}
+                              onBlur={e => renameEmployee(emp, e.target.value)}
+                              className="flex-1 bg-transparent text-slate-900 font-semibold text-[11px] focus:outline-none focus:bg-orange-50 rounded px-1 py-0.5 min-w-0"
+                            />
+                            <button onClick={() => removeEmployee(emp)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-0.5 rounded shrink-0" title="Törlés">
+                              <TrashIcon />
+                            </button>
+                          </div>
+                        </td>
+                        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
+                          const dayDate = new Date(scheduleYear, scheduleMonth - 1, d);
+                          const dow = dayDate.getDay();
+                          const isWeekend = dow === 0 || dow === 6;
+                          const cell = getCellData(emp, d);
+                          const bgColor = cell?.background_color;
+                          const isPickerOpen = colorPickerCell?.emp === emp && colorPickerCell?.day === d;
+                          return (
+                            <td
+                              key={d}
+                              className={`border-r border-slate-100 p-0 relative ${isWeekend && !bgColor ? 'bg-amber-50/60' : ''}`}
+                              style={bgColor ? { backgroundColor: bgColor } : undefined}
+                              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setColorPickerCell({ emp, day: d }); }}
+                            >
+                              <input
+                                type="text"
+                                value={cell?.shift_value || ''}
+                                onChange={e => updateCell(emp, d, 'shift_value', e.target.value)}
+                                className="w-full h-full px-1 py-1.5 text-center text-[11px] font-semibold bg-transparent focus:outline-none focus:ring-1 focus:ring-orange-300 focus:bg-white/80 rounded transition-all min-w-[38px]"
+                              />
+                              {isPickerOpen && (
+                                <div
+                                  className="absolute top-full left-0 z-50 bg-white rounded-xl shadow-lg border border-slate-200 p-2 flex flex-col gap-1 min-w-[120px]"
+                                  onClick={e => e.stopPropagation()}
+                                >
+                                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Háttérszín</p>
+                                  {SCHEDULE_COLORS.map(c => (
+                                    <button
+                                      key={c.label}
+                                      onClick={() => { updateCell(emp, d, 'background_color', c.value); setColorPickerCell(null); }}
+                                      className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-100 text-left text-[10px] font-medium text-slate-700 transition-colors"
+                                    >
+                                      <span className="w-4 h-4 rounded border border-slate-200 shrink-0 inline-block" style={{ backgroundColor: c.value || '#ffffff' }} />
+                                      {c.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <p className="text-[10px] text-slate-400 mt-3 text-center">Jobb klikk egy cellára a háttérszín módosításához · Alt+B a gyors megnyitáshoz</p>
+        </div>
+      </div>
+    );
+  }
+
   // --- LABOR KALKULÁTOR / NYOMTATÁSI NÉZET ---
   if (showLabCalculator) {
     const selectedItems = getSelectedLabItemsData();
@@ -2628,19 +2893,24 @@ export default function Home() {
 
           <div className="flex items-center gap-1.5 sm:gap-2 w-full md:w-auto justify-center md:justify-end flex-wrap mt-1 md:mt-0">
             
-            <button onClick={() => { setShowPatients(true); setShowStats(false); setShowLabCalculator(false); }} className="flex items-center gap-1 px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-full text-[11px] font-bold transition-all shadow-sm">
+            <button onClick={() => { setShowPatients(true); setShowStats(false); setShowLabCalculator(false); setShowSchedule(false); }} className="flex items-center gap-1 px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-full text-[11px] font-bold transition-all shadow-sm">
               <UsersIcon size={14} />
               <span className="hidden xl:inline">Páciensek</span>
             </button>
 
-            <button onClick={() => { setShowStats(true); setShowLabCalculator(false); setShowPatients(false); }} className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-full text-[11px] font-bold transition-all shadow-sm">
+            <button onClick={() => { setShowStats(true); setShowLabCalculator(false); setShowPatients(false); setShowSchedule(false); }} className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-full text-[11px] font-bold transition-all shadow-sm">
               <ChartPieIcon size={14} />
               <span className="hidden xl:inline">Statisztika</span>
             </button>
 
-            <button onClick={() => { setShowLabCalculator(true); setShowStats(false); setShowPatients(false); }} className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-bold transition-all shadow-sm">
+            <button onClick={() => { setShowLabCalculator(true); setShowStats(false); setShowPatients(false); setShowSchedule(false); }} className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-bold transition-all shadow-sm">
               <CalculatorIcon size={14} />
               <span className="hidden sm:inline">Labor kalkulátor</span>
+            </button>
+
+            <button onClick={() => { setShowSchedule(true); setShowStats(false); setShowLabCalculator(false); setShowPatients(false); }} className="flex items-center gap-1 px-2.5 py-1 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-full text-[11px] font-bold transition-all shadow-sm">
+              <CalendarPlusIcon size={14} />
+              <span className="hidden xl:inline">Beosztás</span>
             </button>
 
             <button onClick={() => setIsBugModalOpen(true)} className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-full text-[11px] font-bold transition-all shadow-sm">

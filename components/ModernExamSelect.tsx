@@ -29,7 +29,7 @@ export function ModernExamSelect({
   const currentStyle = getColor(value);
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full max-w-[120px]">
       <select
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}

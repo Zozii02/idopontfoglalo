@@ -88,8 +88,6 @@ export default function Home() {
   const [schedCellEditKey, setSchedCellEditKey] = useState<string | null>(null);
   const [schedCellEditValue, setSchedCellEditValue] = useState('');
   const [schedColorPickerKey, setSchedColorPickerKey] = useState<string | null>(null);
-  const [showAddWeekForm, setShowAddWeekForm] = useState(false);
-  const [addWeekStartDay, setAddWeekStartDay] = useState('');
   const [isArchiveView, setIsArchiveView] = useState(false);
 
   const [patientsList, setPatientsList] = useState<any[]>([]);
@@ -858,24 +856,92 @@ export default function Home() {
     }
   }, [showPatients]);
 
+  const generateWeeksForMonth = (year: number, month: number): { weekStartDay: number; days: { dayNum: number | null; dayOfWeek: number }[] }[] => {
+    const firstDay = new Date(year, month - 1, 1);
+    const lastDay = new Date(year, month, 0);
+    const daysInMonth = lastDay.getDate();
+
+    let firstDayOfWeek = firstDay.getDay(); // 0=Sun, 1=Mon, ...
+    firstDayOfWeek = firstDayOfWeek === 0 ? 7 : firstDayOfWeek; // Sunday → 7 (Mon-based)
+
+    const weeks: { weekStartDay: number; days: { dayNum: number | null; dayOfWeek: number }[] }[] = [];
+    let currentDay = 1;
+
+    // First week: may be partial at the start
+    const firstWeek: { dayNum: number | null; dayOfWeek: number }[] = [];
+    for (let dow = 1; dow <= 7; dow++) {
+      if (dow < firstDayOfWeek) {
+        firstWeek.push({ dayNum: null, dayOfWeek: dow });
+      } else {
+        firstWeek.push({ dayNum: currentDay, dayOfWeek: dow });
+        currentDay++;
+      }
+    }
+    weeks.push({ weekStartDay: 1, days: firstWeek });
+
+    // Remaining weeks
+    while (currentDay <= daysInMonth) {
+      const week: { dayNum: number | null; dayOfWeek: number }[] = [];
+      const weekStart = currentDay;
+      for (let dow = 1; dow <= 7; dow++) {
+        if (currentDay <= daysInMonth) {
+          week.push({ dayNum: currentDay, dayOfWeek: dow });
+          currentDay++;
+        } else {
+          week.push({ dayNum: null, dayOfWeek: dow });
+        }
+      }
+      weeks.push({ weekStartDay: weekStart, days: week });
+    }
+
+    return weeks;
+  };
+
   const fetchScheduleWeeks = async (year: number, month: number) => {
     setScheduleLoading(true);
+
+    // Auto-generate all weeks for the month based on the calendar
+    const generatedWeeks = generateWeeksForMonth(year, month);
+
     const { data, error } = await supabase
       .from('schedule_planner')
       .select('*')
       .eq('year', year)
       .eq('month', month)
       .order('week_start_day');
+
+    // Build a lookup map of saved data by week_start_day
+    const savedByStartDay: Record<number, any> = {};
     if (!error && data) {
-      setScheduleWeeks(data.map((r: any) => ({
-        ...r,
-        data: r.data || { sections: [] },
-        notes: r.notes || '',
-        summary: r.summary || [],
-      })));
-    } else {
-      setScheduleWeeks([]);
+      data.forEach((r: any) => {
+        savedByStartDay[r.week_start_day] = r;
+      });
     }
+
+    // Merge generated weeks with saved DB data
+    const mergedWeeks = generatedWeeks.map(gw => {
+      const saved = savedByStartDay[gw.weekStartDay];
+      if (saved) {
+        return {
+          ...saved,
+          data: saved.data || { sections: [] },
+          notes: saved.notes || '',
+          summary: saved.summary || [],
+          days: gw.days,
+        };
+      }
+      return {
+        year,
+        month,
+        week_start_day: gw.weekStartDay,
+        days: gw.days,
+        data: { sections: [] },
+        notes: '',
+        summary: [],
+      };
+    });
+
+    setScheduleWeeks(mergedWeeks);
     setScheduleLoading(false);
   };
 
@@ -887,6 +953,9 @@ export default function Home() {
     const updatedWeeks = [...scheduleWeeks];
     for (let i = 0; i < updatedWeeks.length; i++) {
       const week = updatedWeeks[i];
+      // Skip weeks with no content (no sections, no notes, no summary)
+      const hasContent = (week.data?.sections?.length > 0) || (week.notes && week.notes.trim() !== '') || (week.summary?.length > 0);
+      if (!hasContent && !week.id) continue;
       const payload = {
         year: week.year,
         month: week.month,
@@ -2085,44 +2154,19 @@ export default function Home() {
       setSchedCellEditKey(null);
     };
 
-    const addWeek = () => {
-      const startDay = parseInt(addWeekStartDay);
-      if (isNaN(startDay) || startDay < 1 || startDay > daysInMonth) {
-        showAlert('Hiba', 'Érvényes napot adj meg (1–' + daysInMonth + ')!');
-        return;
-      }
-      if (scheduleWeeks.some(w => w.week_start_day === startDay)) {
-        showAlert('Hiba', 'Ez a hét már létezik!');
-        return;
-      }
-      const newWeek = {
-        year: scheduleYear,
-        month: scheduleMonth,
-        week_start_day: startDay,
-        data: {
-          sections: [
-            { id: genId(), name: 'Eötvös 21', type: 'location', rows: [{ id: genId(), label: '', cells: {} }] },
-            { id: genId(), name: 'Recepció', type: 'reception', rows: [
-              { id: genId(), label: '08-16:', cells: {} },
-              { id: genId(), label: '16-20:', cells: {} },
-            ]},
-            { id: genId(), name: 'Árpád 12', type: 'location', rows: [{ id: genId(), label: '', cells: {} }] },
-          ],
-        },
-        notes: '',
-        summary: [],
-      };
-      setScheduleWeeks(prev => [...prev, newWeek].sort((a, b) => a.week_start_day - b.week_start_day));
-      setAddWeekStartDay('');
-      setShowAddWeekForm(false);
-    };
-
     const removeWeek = async (weekIdx: number) => {
       const week = scheduleWeeks[weekIdx];
+      // Delete saved data from DB if it exists, then reset the week to empty (keeping the auto-generated structure)
       if (week.id) {
         await supabase.from('schedule_planner').delete().eq('id', week.id);
       }
-      setScheduleWeeks(prev => prev.filter((_, i) => i !== weekIdx));
+      setScheduleWeeks(prev => prev.map((w, i) => i === weekIdx ? {
+        ...w,
+        id: undefined,
+        data: { sections: [] },
+        notes: '',
+        summary: [],
+      } : w));
     };
 
     const addSection = (weekIdx: number) => {
@@ -2194,26 +2238,6 @@ export default function Home() {
               <button onClick={nextMonth} className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-all"><ChevronRightIcon /></button>
             </div>
             <div className="flex items-center gap-2">
-              {showAddWeekForm ? (
-                <div className="flex items-center gap-1.5 bg-white border border-orange-200 rounded-xl px-2 py-1 shadow-sm">
-                  <span className="text-xs font-medium text-slate-600 hidden sm:inline">Hétfő napja:</span>
-                  <input
-                    type="number" min="1" max={daysInMonth}
-                    value={addWeekStartDay}
-                    onChange={e => setAddWeekStartDay(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') addWeek(); if (e.key === 'Escape') setShowAddWeekForm(false); }}
-                    className="w-14 border border-slate-200 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange-300"
-                    placeholder="pl. 13"
-                    autoFocus
-                  />
-                  <button onClick={addWeek} className="px-2 py-0.5 bg-orange-500 text-white rounded text-xs font-bold hover:bg-orange-600">OK</button>
-                  <button onClick={() => setShowAddWeekForm(false)} className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded text-xs font-bold hover:bg-slate-300">×</button>
-                </div>
-              ) : (
-                <button onClick={() => setShowAddWeekForm(true)} className="flex items-center gap-1 px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-xl text-xs font-bold transition-all shadow-sm">
-                  <PlusIcon /> Új hét
-                </button>
-              )}
               <button
                 onClick={saveScheduleWeeks}
                 disabled={scheduleSaving}
@@ -2230,32 +2254,26 @@ export default function Home() {
               <RefreshIcon />
               <p className="mt-4 font-bold text-slate-500">Beosztás betöltése...</p>
             </div>
-          ) : scheduleWeeks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <CalendarPlusIcon size={40} />
-              <p className="mt-4 font-bold text-lg">Nincsenek hetek erre a hónapra.</p>
-              <p className="text-sm mt-1">Kattints az &quot;Új hét&quot; gombra a kezdéshez!</p>
-            </div>
           ) : (
             <div className="space-y-6">
               {scheduleWeeks.map((week, weekIdx) => {
-                const weekDays = Array.from({ length: 7 }, (_, i) => {
-                  const dayNum = week.week_start_day + i;
-                  return { dayOfWeek: i + 1, dayNum, isInMonth: dayNum >= 1 && dayNum <= daysInMonth };
-                });
+                // Use the auto-generated days array: [{ dayNum: number|null, dayOfWeek: 1-7 }]
+                const weekDays: { dayNum: number | null; dayOfWeek: number }[] = week.days || [];
+                const firstDayNum = weekDays.find((d: any) => d.dayNum !== null)?.dayNum;
+                const lastDayNum = [...weekDays].reverse().find((d: any) => d.dayNum !== null)?.dayNum;
                 return (
                   <div key={`${week.year}-${week.month}-${week.week_start_day}`} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                     {/* Week title bar */}
                     <div className="flex items-center justify-between px-4 py-2 bg-slate-50 border-b border-slate-200">
                       <span className="font-extrabold text-slate-800 text-sm">
-                        {week.week_start_day}–{Math.min(week.week_start_day + 6, daysInMonth)}. hét &nbsp;
+                        {firstDayNum}–{lastDayNum}. &nbsp;
                         <span className="text-xs font-medium text-slate-500">{scheduleYear}. {monthNames[scheduleMonth - 1]}</span>
                       </span>
                       <button
                         onClick={() => removeWeek(weekIdx)}
                         className="flex items-center gap-1 text-red-400 hover:text-red-600 text-xs font-medium transition-colors px-2 py-1 rounded hover:bg-red-50"
                       >
-                        <TrashIcon size={12} /> Hét törlése
+                        <TrashIcon size={12} /> Adatok törlése
                       </button>
                     </div>
 
@@ -2265,15 +2283,18 @@ export default function Home() {
                         <thead>
                           <tr className="border-b border-slate-200">
                             <th className="w-[90px] min-w-[70px] px-2 py-1.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wide border-r border-slate-200 bg-slate-50"></th>
-                            {weekDays.map(({ dayOfWeek, dayNum, isInMonth }) => (
+                            {weekDays.map(({ dayOfWeek, dayNum }) => {
+                              const isInMonth = dayNum !== null;
+                              return (
                               <th
                                 key={dayOfWeek}
-                                className={`px-1 py-1.5 text-center font-bold border-r border-slate-100 min-w-[80px] ${dayOfWeek >= 6 ? 'bg-amber-50 text-amber-700' : isInMonth ? 'bg-slate-50 text-slate-700' : 'bg-slate-100 text-slate-400'}`}
+                                className={`px-1 py-1.5 text-center font-bold border-r border-slate-100 min-w-[80px] ${dayOfWeek >= 6 && isInMonth ? 'bg-amber-50 text-amber-700' : isInMonth ? 'bg-slate-50 text-slate-700' : 'bg-slate-100 text-slate-400'}`}
                               >
                                 <div className="text-[11px]">{DAY_NAMES_SHORT[dayOfWeek - 1]}</div>
                                 <div className={`text-[10px] font-semibold ${isInMonth ? '' : 'opacity-40'}`}>{isInMonth ? `${dayNum}.` : '–'}</div>
                               </th>
-                            ))}
+                              );
+                            })}
                           </tr>
                         </thead>
                         <tbody>
@@ -2355,7 +2376,8 @@ export default function Home() {
                                       </div>
                                     </td>
                                     {/* Day cells */}
-                                    {weekDays.map(({ dayOfWeek, isInMonth }) => {
+                                    {weekDays.map(({ dayOfWeek, dayNum }) => {
+                                      const isInMonth = dayNum !== null;
                                       const cellKey = makeCellKey(weekIdx, sectionIdx, rowIdx, dayOfWeek);
                                       const cellData = row.cells[String(dayOfWeek)] || {};
                                       const isEditing = schedCellEditKey === cellKey;
@@ -2364,8 +2386,8 @@ export default function Home() {
                                       return (
                                         <td
                                           key={dayOfWeek}
-                                          className={`border-r border-slate-100 p-0 relative align-top min-w-[80px] ${isWeekend && !cellData.backgroundColor ? 'bg-amber-50/50' : ''} ${!isInMonth ? 'opacity-20 pointer-events-none bg-slate-50' : ''}`}
-                                          style={cellData.backgroundColor ? { backgroundColor: cellData.backgroundColor } : undefined}
+                                          className={`border-r border-slate-100 p-0 relative align-top min-w-[80px] ${isWeekend && isInMonth && !cellData.backgroundColor ? 'bg-amber-50/50' : ''} ${!isInMonth ? 'opacity-20 pointer-events-none bg-slate-100' : ''}`}
+                                          style={isInMonth && cellData.backgroundColor ? { backgroundColor: cellData.backgroundColor } : undefined}
                                           onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setSchedColorPickerKey(isColorOpen ? null : cellKey); }}
                                         >
                                           {isEditing ? (

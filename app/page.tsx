@@ -2554,8 +2554,8 @@ export default function Home() {
         </div>
         <table className="w-full table-fixed text-left border-collapse">
           <colgroup>
-            <col className="w-[7%]" />    {/* Időpont */}
-            <col className="w-[17%]" />   {/* Páciens neve */}
+            <col className="w-[9%]" />    {/* Időpont */}
+            <col className="w-[15%]" />   {/* Páciens neve */}
             <col className="w-[9%]" />    {/* Szül. idő */}
             <col className="w-[10%]" />   {/* TAJ szám */}
             <col className="w-[10%]" />   {/* Telefon */}
@@ -3081,8 +3081,8 @@ export default function Home() {
                     <div className={`overflow-x-auto custom-scrollbar flex-1 ${printingDate ? 'overflow-visible' : ''}`}>
                       <table className="w-full table-fixed text-left border-collapse print-table hidden lg:table print:table">
                         <colgroup>
-                          <col className="w-[7%]" />    {/* Időpont */}
-                          <col className="w-[17%]" />   {/* Páciens neve */}
+                          <col className="w-[9%]" />    {/* Időpont */}
+                          <col className="w-[15%]" />   {/* Páciens neve */}
                           <col className="w-[9%]" />    {/* Szül. idő */}
                           <col className="w-[10%]" />   {/* TAJ szám */}
                           <col className="w-[10%]" />   {/* Telefon */}
@@ -3143,10 +3143,10 @@ export default function Home() {
                                     {isWaitingList ? (
                                       <span className="font-extrabold text-orange-600 text-xs flex items-center gap-1"><ClockIcon size={12}/> VÁRÓLISTA</span>
                                     ) : (
-                                      <div className="flex items-center gap-1">
+                                      <div className="flex flex-col items-start">
                                         <span className={`font-bold text-sm ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{displayTime}</span>
                                         {isOnlineSlot && !printingDate && !isDel && (
-                                          <span className="bg-blue-100 text-blue-700 text-[7px] font-extrabold uppercase px-1 py-0.5 rounded border border-blue-200" title="Online előjegyzési sáv">Online</span>
+                                          <span className="bg-blue-100 text-blue-700 text-[6px] font-extrabold uppercase px-0.5 py-0 rounded border border-blue-200 leading-tight mt-0.5" title="Online előjegyzési sáv">Online</span>
                                         )}
                                       </div>
                                    )}

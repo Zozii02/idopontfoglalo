@@ -515,8 +515,7 @@ export default function Home() {
            await supabase.from('lab_slots')
              .update({ is_booked: false, patient_name: null })
              .eq('slot_date', slotDate)
-             .like('slot_time', `${slotTime}%`)
-             .eq('is_booked', true);
+             .like('slot_time', `${slotTime}%`);
            
            fetchLabSlots();
         }

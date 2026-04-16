@@ -476,12 +476,13 @@ export default function Home() {
         if (calc.erkezesi_ido) {
            const dt = new Date(calc.erkezesi_ido);
            const slotDate = dt.toISOString().split('T')[0];
-           const slotTime = dt.toTimeString().split(' ')[0];
+           const isoTime = dt.toISOString().split('T')[1];
+           const slotTime = isoTime.substring(0, 5);
            
            await supabase.from('lab_slots')
              .update({ is_booked: false, patient_name: null })
              .eq('slot_date', slotDate)
-             .like('slot_time', `${slotTime.substring(0, 5)}%`)
+             .like('slot_time', `${slotTime}%`)
              .eq('patient_name', calc.patient_name);
            
            fetchLabSlots();

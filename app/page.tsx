@@ -100,6 +100,7 @@ export default function Home() {
   const [labSearchTerm, setLabSearchTerm] = useState("");
   const [includeBloodDrawFee, setIncludeBloodDrawFee] = useState(true);
   const [editingLabId, setEditingLabId] = useState<number | null>(null);
+  const [editingOriginalErkezesiIdo, setEditingOriginalErkezesiIdo] = useState<string | null>(null);
   
   const [labPatientName, setLabPatientName] = useState("");
   const [labMaidenName, setLabMaidenName] = useState("");
@@ -313,6 +314,18 @@ export default function Home() {
       console.error(error);
       showAlert("Hiba", "Nem sikerült elmenteni a kalkulációt az adatbázisba.");
     } else {
+      if (editingLabId) {
+        const oldErkezesi = editingOriginalErkezesiIdo;
+        if (oldErkezesi && oldErkezesi !== erkezesi_ido_val) {
+          const oldDt = new Date(oldErkezesi);
+          const oldSlotDate = oldDt.toISOString().split('T')[0];
+          const oldSlotTime = oldDt.toISOString().split('T')[1].substring(0, 5);
+          await supabase.from('lab_slots')
+            .update({ is_booked: false, patient_name: null })
+            .eq('slot_date', oldSlotDate)
+            .like('slot_time', `${oldSlotTime}%`);
+        }
+      }
       if (labSelectedSlotId) {
         await supabase.from('lab_slots').update({ is_booked: true, patient_name: labPatientName }).eq('id', labSelectedSlotId);
       }
@@ -322,6 +335,7 @@ export default function Home() {
       setLabSelectedSlotId(""); 
       setSelectedLabTests([]);
       setEditingLabId(null);
+      setEditingOriginalErkezesiIdo(null);
       setActiveLabTab('saved');
       fetchLabSlots();
       fetchSavedCalculations();
@@ -346,6 +360,20 @@ export default function Home() {
       });
     });
     setSelectedLabTests(matchedTestIds);
+    if (calc.erkezesi_ido) {
+      const dt = new Date(calc.erkezesi_ido);
+      const slotDate = dt.toISOString().split('T')[0];
+      const slotTime = dt.toISOString().split('T')[1].substring(0, 5);
+      const matchingSlot = labSlots.find(s => s.slot_date === slotDate && s.slot_time.startsWith(slotTime));
+      if (matchingSlot) {
+        setLabSelectedSlotId(matchingSlot.id.toString());
+      } else {
+        setLabSelectedSlotId("");
+      }
+    } else {
+      setLabSelectedSlotId("");
+    }
+    setEditingOriginalErkezesiIdo(calc.erkezesi_ido || null);
     setEditingLabId(calc.id);
     setActiveLabTab('new');
     

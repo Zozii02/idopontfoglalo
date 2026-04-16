@@ -509,14 +509,13 @@ export default function Home() {
            const dt = new Date(calc.erkezesi_ido);
            const slotDate = dt.toISOString().split('T')[0];
            const isoTime = dt.toISOString().split('T')[1];
-           const slotTimePrefixLength = 5;
-           const slotTime = isoTime.substring(0, slotTimePrefixLength);
-           
-           // A slot_date + slot_time kombináció egyedi slotot jelöl, ezért ez alapján szabadítjuk fel.
+           const slotTime = isoTime.substring(0, 8);
+            
+           // A slot_date + slot_time (HH:mm:ss) kombináció egyedi slotot jelöl, ezért ez alapján szabadítjuk fel.
            await supabase.from('lab_slots')
              .update({ is_booked: false, patient_name: null })
              .eq('slot_date', slotDate)
-             .like('slot_time', `${slotTime}%`);
+             .eq('slot_time', slotTime);
            
            fetchLabSlots();
         }

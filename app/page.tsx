@@ -322,12 +322,18 @@ export default function Home() {
         const oldErkezesi = editingOriginalErkezesiIdo;
         if (oldErkezesi && oldErkezesi !== erkezesi_ido_val) {
           const oldDt = new Date(oldErkezesi);
-          const oldSlotDate = oldDt.toISOString().split('T')[0];
-          const oldSlotTime = oldDt.toISOString().split('T')[1].substring(0, 5);
+          const oldYear = oldDt.getFullYear();
+          const oldMonth = String(oldDt.getMonth() + 1).padStart(2, '0');
+          const oldDay = String(oldDt.getDate()).padStart(2, '0');
+          const oldSlotDate = `${oldYear}-${oldMonth}-${oldDay}`;
+          const oldHours = String(oldDt.getHours()).padStart(2, '0');
+          const oldMinutes = String(oldDt.getMinutes()).padStart(2, '0');
+          const oldSeconds = String(oldDt.getSeconds()).padStart(2, '0');
+          const oldSlotTime = `${oldHours}:${oldMinutes}:${oldSeconds}`;
           await supabase.from('lab_slots')
             .update({ is_booked: false, patient_name: null })
             .eq('slot_date', oldSlotDate)
-            .like('slot_time', `${oldSlotTime}%`);
+            .eq('slot_time', oldSlotTime);
         }
       }
       if (labSelectedSlotId) {
@@ -507,9 +513,14 @@ export default function Home() {
         
         if (calc.erkezesi_ido) {
            const dt = new Date(calc.erkezesi_ido);
-           const slotDate = dt.toISOString().split('T')[0];
-           const isoTime = dt.toISOString().split('T')[1];
-           const slotTime = isoTime.substring(0, 8);
+           const year = dt.getFullYear();
+           const month = String(dt.getMonth() + 1).padStart(2, '0');
+           const day = String(dt.getDate()).padStart(2, '0');
+           const slotDate = `${year}-${month}-${day}`;
+           const hours = String(dt.getHours()).padStart(2, '0');
+           const minutes = String(dt.getMinutes()).padStart(2, '0');
+           const seconds = String(dt.getSeconds()).padStart(2, '0');
+           const slotTime = `${hours}:${minutes}:${seconds}`;
             
            // A slot_date + slot_time (HH:mm:ss) kombináció egyedi slotot jelöl, ezért ez alapján szabadítjuk fel.
            await supabase.from('lab_slots')

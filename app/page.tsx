@@ -285,6 +285,7 @@ export default function Home() {
           erkezesi_ido_val = dt.toISOString();
        }
     }
+    // Szerkesztésnél, ha nincs új slot kiválasztva, tartsuk meg az eredeti érkezési időt.
     if (editingLabId && !labSelectedSlotId && editingOriginalErkezesiIdo) {
       erkezesi_ido_val = editingOriginalErkezesiIdo;
     }

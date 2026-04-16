@@ -477,7 +477,8 @@ export default function Home() {
            const dt = new Date(calc.erkezesi_ido);
            const slotDate = dt.toISOString().split('T')[0];
            const isoTime = dt.toISOString().split('T')[1];
-           const slotTime = isoTime.substring(0, 5);
+           const slotTimePrefixLength = 5;
+           const slotTime = isoTime.substring(0, slotTimePrefixLength);
            
            await supabase.from('lab_slots')
              .update({ is_booked: false, patient_name: null })

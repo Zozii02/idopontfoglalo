@@ -285,6 +285,9 @@ export default function Home() {
           erkezesi_ido_val = dt.toISOString();
        }
     }
+    if (editingLabId && !labSelectedSlotId && editingOriginalErkezesiIdo) {
+      erkezesi_ido_val = editingOriginalErkezesiIdo;
+    }
 
     const payload = {
       patient_name: labPatientName,
@@ -512,7 +515,7 @@ export default function Home() {
              .update({ is_booked: false, patient_name: null })
              .eq('slot_date', slotDate)
              .like('slot_time', `${slotTime}%`)
-             .eq('patient_name', calc.patient_name);
+             .eq('is_booked', true);
            
            fetchLabSlots();
         }

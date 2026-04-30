@@ -3810,15 +3810,17 @@ export default function Home() {
                                     ) : (
                                       <div className="flex flex-col items-start">
                                         <span className={`font-bold text-sm ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{displayTime}</span>
-                                        {isOnlineSlot && !printingDate && !isDel && (
-                                          <span className="bg-blue-100 text-blue-700 text-[7px] font-extrabold uppercase px-1 py-0.5 rounded border border-blue-200 leading-tight mt-0.5" title="Online előjegyzési sáv">Online</span>
-                                        )}
                                       </div>
                                    )}
-                                    {!printingDate && !isDel && !isWaitingList && <span className={`text-[7px] uppercase tracking-wider font-bold px-1 py-0.5 rounded text-center w-full
-                                      ${isBooked ? 'bg-red-200 text-red-800 border border-red-300' : 'bg-emerald-200 text-emerald-800 border border-emerald-300'}`}>
-                                      {isBooked ? 'Foglalt' : 'Szabad'}
-                                    </span>}
+                                    {!printingDate && !isDel && !isWaitingList && (
+                                      isOnlineSlot ? (
+                                        <span className="bg-blue-100 text-blue-700 text-[10px] leading-none font-extrabold uppercase px-1 py-0.5 rounded border border-blue-200 text-center w-full" title="Online előjegyzési sáv">Online</span>
+                                      ) : (
+                                        <span className={`text-[10px] leading-none uppercase tracking-wider font-bold px-1 py-0.5 rounded text-center w-full ${isBooked ? 'bg-red-200 text-red-800 border border-red-300' : 'bg-emerald-200 text-emerald-800 border border-emerald-300'}`}>
+                                          {isBooked ? 'Foglalt' : 'Szabad'}
+                                        </span>
+                                      )
+                                    )}
                                   </div>
                                 </td>
 

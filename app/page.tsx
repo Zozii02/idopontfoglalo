@@ -1483,7 +1483,7 @@ export default function Home() {
 
   const customModalUI = (
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${modal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeModal}></div>
+      <div className="absolute inset-0 bg-slate-900/60" onClick={closeModal}></div>
       <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] p-6 md:p-8 w-full max-w-sm border border-slate-100 flex flex-col transform transition-all duration-300 ${modal.isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
         <div className="flex justify-center mb-5">
            {modal.type === 'alert' ? (
@@ -1507,7 +1507,7 @@ export default function Home() {
 
   const priceModalUI = (
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${isPriceModalOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsPriceModalOpen(false)}></div>
+      <div className="absolute inset-0 bg-slate-900/60" onClick={() => setIsPriceModalOpen(false)}></div>
       <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-2xl border border-slate-200 flex flex-col transform transition-all duration-300 max-h-[90vh] ${isPriceModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
         
         <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
@@ -1562,7 +1562,7 @@ export default function Home() {
 
   const deptModalUI = (
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${isDeptModalOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsDeptModalOpen(false)}></div>
+      <div className="absolute inset-0 bg-slate-900/60" onClick={() => setIsDeptModalOpen(false)}></div>
       <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-lg border border-slate-200 flex flex-col transform transition-all duration-300 max-h-[90vh] ${isDeptModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
         
         <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
@@ -1614,7 +1614,7 @@ export default function Home() {
 
   const bugModalUI = (
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${isBugModalOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !isSubmittingBug && setIsBugModalOpen(false)}></div>
+      <div className="absolute inset-0 bg-slate-900/60" onClick={() => !isSubmittingBug && setIsBugModalOpen(false)}></div>
       <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-lg border border-slate-200 flex flex-col transform transition-all duration-300 ${isBugModalOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
         
         <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50 rounded-t-3xl shrink-0">
@@ -1667,7 +1667,7 @@ export default function Home() {
 
   const patientHistoryModalUI = (
     <div className={`fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${historyModal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeHistoryModal}></div>
+      <div className="absolute inset-0 bg-slate-900/60" onClick={closeHistoryModal}></div>
       <div className={`relative bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] w-full max-w-2xl border border-slate-200 flex flex-col transform transition-all duration-300 max-h-[90vh] ${historyModal.isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
         
         <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-white/50 rounded-t-3xl shrink-0">
@@ -1721,7 +1721,7 @@ export default function Home() {
 
   const infoModalUI = (
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 no-print transition-all duration-300 ${appInfoModal.isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeAppInfoModal}></div>
+      <div className="absolute inset-0 bg-slate-900/60" onClick={closeAppInfoModal}></div>
       <div className={`relative bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] w-full max-w-lg border border-slate-100 flex flex-col transform transition-all duration-300 max-h-[90vh] ${appInfoModal.isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
         
         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl shrink-0">
@@ -1781,9 +1781,9 @@ export default function Home() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
+      <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
         {customModalUI}
-        <div className="absolute inset-0 bg-slate-100/60 backdrop-blur-2xl z-0 pointer-events-none"></div>
+        <div className="absolute inset-0 bg-slate-100/90 z-0 pointer-events-none"></div>
         <div className="relative z-10 bg-white/80 backdrop-blur-xl p-10 md:p-14 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] w-full max-w-md border border-white/50">
           <div className="flex justify-center mb-8"><img src="/logo.png" alt="Medical-Aqua Logo" className="h-28 object-contain select-none pointer-events-none drop-shadow-sm" /></div>
           
@@ -1816,9 +1816,9 @@ export default function Home() {
 
   if (needsProfileName) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center bg-fixed relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
+      <div className="min-h-screen flex items-center justify-center px-4 font-sans bg-cover bg-center relative" style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
         {customModalUI}
-        <div className="absolute inset-0 bg-slate-100/60 backdrop-blur-2xl z-0 pointer-events-none"></div>
+        <div className="absolute inset-0 bg-slate-100/90 z-0 pointer-events-none"></div>
         <div className="relative z-10 bg-white/80 backdrop-blur-xl p-10 md:p-14 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] w-full max-w-md border border-white/50 text-center">
           <div className="flex justify-center text-red-600 mb-6 drop-shadow-sm"><UserIcon /></div>
           <h2 className="text-2xl font-bold mb-2 text-slate-900">Üdvözlünk a rendszerben!</h2>
@@ -1883,7 +1883,7 @@ export default function Home() {
 
     return (
       <div className="min-h-screen bg-slate-50 font-sans relative pb-10">
-        <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm">
+        <div className="bg-white/95 sticky top-0 z-40 border-b border-slate-200 shadow-sm">
           <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-2 flex justify-between items-center">
             <div className="flex items-center gap-3">
                <img src="/logo.png" alt="Medical-Aqua" className="h-9 object-contain" />
@@ -2036,7 +2036,7 @@ export default function Home() {
         {patientHistoryModalUI}
         {customModalUI}
 
-        <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm">
+        <div className="bg-white/95 sticky top-0 z-40 border-b border-slate-200 shadow-sm">
           <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-2 flex justify-between items-center">
             <div className="flex items-center gap-3">
                <img src="/logo.png" alt="Medical-Aqua" className="h-9 object-contain" />
@@ -2258,7 +2258,7 @@ export default function Home() {
         {toastUI}
 
         {/* Header */}
-        <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm">
+        <div className="bg-white/95 sticky top-0 z-40 border-b border-slate-200 shadow-sm">
           <div className="max-w-[1600px] mx-auto px-3 md:px-6 py-2 flex justify-between items-center">
             <div className="flex items-center gap-3">
               <img src="/logo.png" alt="Medical-Aqua" className="h-9 object-contain" />
@@ -2628,7 +2628,7 @@ export default function Home() {
         {toastUI}
         
         {!printingLabQuote && (
-          <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-200 shadow-sm no-print">
+          <div className="bg-white/95 sticky top-0 z-40 border-b border-slate-200 shadow-sm no-print">
             <div className="max-w-[1600px] mx-auto px-3 md:px-6 pt-2 flex justify-between items-center">
               <div className="flex items-center gap-3">
                  <img src="/logo.png" alt="Medical-Aqua" className="h-9 object-contain" />
@@ -3063,7 +3063,7 @@ export default function Home() {
                       const formattedDailyTotal = new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyTotal);
                       
                       return (
-                        <div key={dateKey} className="bg-white/50 p-6 rounded-3xl border border-slate-200/60 shadow-sm backdrop-blur-md">
+                        <div key={dateKey} className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-sm">
                           <h3 className="font-extrabold text-slate-800 text-lg mb-4 flex items-center flex-wrap gap-2 border-b border-slate-200 pb-2 w-full sm:w-max pr-6">
                             <CalendarIcon /> {displayDate}
                             <span className="bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-widest">{labsForDay.length} db</span>
@@ -3252,7 +3252,7 @@ export default function Home() {
   }
 
   return (
-    <div className={`min-h-screen font-sans pb-10 bg-cover bg-center bg-fixed relative`} style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
+    <div className={`min-h-screen font-sans pb-10 bg-cover bg-center relative`} style={{ backgroundImage: `url('${BACKGROUND_IMAGE_URL}')` }}>
       {customModalUI}
       {patientHistoryModalUI}
       {priceModalUI}
@@ -3260,9 +3260,9 @@ export default function Home() {
       {deptModalUI}
       {bugModalUI}
       {toastUI}
-      {!printingDate && <div className="absolute inset-0 bg-slate-100/70 backdrop-blur-2xl z-0 pointer-events-none no-print"></div>}
+      {!printingDate && <div className="absolute inset-0 bg-slate-100/80 z-0 pointer-events-none no-print"></div>}
 
-      <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-white/50 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] relative no-print">
+      <div className="bg-white/95 sticky top-0 z-40 border-b border-slate-200 shadow-sm relative no-print">
         <div className="max-w-[1600px] mx-auto px-2 sm:px-4 md:px-6 py-2 flex flex-col md:flex-row justify-between items-center gap-3">
           <div className="flex items-center gap-3 w-full md:w-auto">
              <img src="/logo.png" alt="Medical-Aqua" className="h-9 object-contain select-none pointer-events-none drop-shadow-sm" />
@@ -3378,7 +3378,7 @@ export default function Home() {
               )}
             </div>
 
-            <div className="flex items-center gap-1.5 text-slate-800 bg-white/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/60 shadow-sm z-10 relative">
+            <div className="flex items-center gap-1.5 text-slate-800 bg-white/80 px-2.5 py-1 rounded-full border border-slate-200 shadow-sm z-10 relative">
               <UserIcon /><span className="font-semibold text-xs hidden md:inline">{getDisplayName()}</span>
             </div>
             <button onClick={handleLogout} className="text-slate-500 hover:text-red-600 transition-colors p-1.5 z-10 relative cursor-pointer" title="Kijelentkezés"><LogoutIcon /></button>
@@ -3389,7 +3389,7 @@ export default function Home() {
       <div className="max-w-[1600px] mx-auto px-3 md:px-6 pt-6 relative z-10 min-h-[80vh]">
         
         {!printingDate && debouncedSearchTerm === "" && (
-          <div className="relative z-30 bg-white/90 backdrop-blur-xl rounded-3xl shadow-sm border border-white/60 p-4 sm:p-5 mb-5 no-print">
+          <div className="relative z-30 bg-white/95 rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-5 mb-5 no-print">
             <div className="flex flex-col xl:flex-row gap-5 items-start xl:items-center justify-between">
               
               <div className="w-full xl:w-[45%] flex flex-col gap-3">
@@ -3559,7 +3559,7 @@ export default function Home() {
         {!printingDate && isInitialLoading ? (
           <div className="space-y-8 animate-pulse no-print relative z-10">
             {[1, 2].map((dayBlock) => (
-              <div key={dayBlock} className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-3xl p-5 shadow-sm">
+              <div key={dayBlock} className="bg-white/90 border border-slate-100 rounded-3xl p-5 shadow-sm">
                 <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100">
                   <div className="w-8 h-8 bg-slate-200/80 rounded-full"></div>
                   <div className="w-48 h-6 bg-slate-200/80 rounded-xl"></div>
@@ -3601,8 +3601,8 @@ export default function Home() {
                     <button
                       key={day.date}
                       onClick={() => document.getElementById(`date-${day.date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                      className={`flex-shrink-0 min-w-[110px] p-2.5 rounded-xl border transition-all text-left group backdrop-blur-md cursor-pointer
-                        ${day.freeCount > 0 ? 'bg-white/90 border-white shadow-sm hover:shadow-md hover:border-emerald-200' : 'bg-slate-100/80 border-white/50 opacity-80 hover:bg-white/90'}`}
+                      className={`flex-shrink-0 min-w-[110px] p-2.5 rounded-xl border transition-all text-left group cursor-pointer
+                        ${day.freeCount > 0 ? 'bg-white border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-200' : 'bg-slate-100/80 border-slate-200 opacity-80 hover:bg-white'}`}
                     >
                       <div className="text-slate-800 font-bold text-sm mb-0.5">{formatShortDate(day.date)}</div>
                       <div className={`text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded-md w-max transition-colors
@@ -3616,7 +3616,7 @@ export default function Home() {
             )}
 
             {sortedDates.length === 0 ? (
-              <div className="bg-white/80 backdrop-blur-xl p-10 md:p-16 text-center rounded-2xl shadow-sm border border-white/60 flex flex-col items-center no-print relative z-0">
+              <div className="bg-white/95 p-10 md:p-16 text-center rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center no-print relative z-0">
                 <div className="text-slate-300 mb-3"><CalendarIcon size={48} /></div>
                 <h3 className="text-lg font-bold text-slate-800 mb-1.5">
                   {debouncedSearchTerm ? "Nincs találat" : isArchiveView ? "Az archívum üres" : "Még nincsenek aktuális időpontok"}
@@ -3645,7 +3645,7 @@ export default function Home() {
                 const formattedRevenue = dailyRevenue > 0 ? new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', maximumFractionDigits: 0 }).format(dailyRevenue) : "0 Ft";
 
                 return (
-                  <div id={`date-${date}`} key={date} className={`mb-8 rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] scroll-mt-[100px] print-container relative z-0 flex flex-col ${printingDate ? 'bg-white' : 'bg-white/80 backdrop-blur-xl border border-white/60'}`}>
+                  <div id={`date-${date}`} key={date} className={`mb-8 rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] scroll-mt-[100px] print-container relative z-0 flex flex-col ${printingDate ? 'bg-white' : 'bg-white border border-slate-100'}`}>
                     
                     <div className={`p-4 flex flex-col xl:flex-row xl:items-center justify-between gap-3 print-header ${printingDate ? 'border-b-2 border-black pb-2 mb-2 px-0' : 'bg-white/50 border-b border-slate-100 rounded-t-2xl'}`}>
                       
@@ -3770,7 +3770,7 @@ export default function Home() {
                             {!printingDate && <th className="px-2 py-2 font-bold text-slate-500 text-[10px] uppercase tracking-widest text-center no-print whitespace-nowrap">Művelet</th>}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100/50 relative z-0 bg-white/50 backdrop-blur-sm">
+                        <tbody className="divide-y divide-slate-100/50 relative z-0 bg-white">
                           {dayAppointments.map((app: any) => {
                             const isDel = app.is_deleted === true;
                             const isBooked = app.patient_name && app.patient_name.trim() !== "";

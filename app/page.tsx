@@ -3795,7 +3795,7 @@ export default function Home() {
                               : isWaitingList 
                                 ? `bg-orange-50/50 hover:bg-orange-100/60 ${statusBorder}`
                                 : isOnlineSlot
-                                  ? `bg-blue-50/70 hover:bg-blue-100/60 ${statusBorder || "border-l-4 border-l-transparent"}`
+                                  ? `bg-blue-100 hover:bg-blue-200/60 ${statusBorder || "border-l-4 border-l-transparent"}`
                                   : isBooked 
                                     ? `bg-red-50/70 hover:bg-red-100/60 ${statusBorder}`
                                     : "bg-emerald-50/70 hover:bg-emerald-100/60 border-l-4 border-l-transparent";
@@ -3811,7 +3811,7 @@ export default function Home() {
                                       <div className="flex flex-col items-start">
                                         <span className={`font-bold text-sm ${printingDate ? 'text-black' : isDel ? "text-slate-500 line-through" : isBooked ? "text-red-950" : "text-emerald-950"}`}>{displayTime}</span>
                                         {isOnlineSlot && !printingDate && !isDel && (
-                                          <span className="bg-blue-100 text-blue-700 text-[6px] font-extrabold uppercase px-0.5 py-0 rounded border border-blue-200 leading-tight mt-0.5" title="Online előjegyzési sáv">Online</span>
+                                          <span className="bg-blue-100 text-blue-700 text-[7px] font-extrabold uppercase px-1 py-0.5 rounded border border-blue-200 leading-tight mt-0.5" title="Online előjegyzési sáv">Online</span>
                                         )}
                                       </div>
                                    )}
@@ -3979,7 +3979,7 @@ export default function Home() {
                               app.status === "Nem jelent meg" ? "border-l-4 border-l-slate-800" :
                               "border-l-4 border-l-slate-200";
 
-                            const rowBg = isDel ? "bg-slate-100/50" : isWaitingList ? "bg-orange-50/50" : isOnlineSlot ? "bg-blue-50/70" : isBooked ? "bg-white" : "bg-emerald-50/50";
+                            const rowBg = isDel ? "bg-slate-100/50" : isWaitingList ? "bg-orange-50/50" : isOnlineSlot ? "bg-blue-100" : isBooked ? "bg-white" : "bg-emerald-50/50";
 
                             return (
                               <div key={app.id} className={`${rowBg} ${statusBorder} rounded-xl p-3 shadow-sm border border-slate-100 relative overflow-hidden min-w-0`}>

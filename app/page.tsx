@@ -3794,9 +3794,11 @@ export default function Home() {
                               ? "bg-slate-100/40 opacity-70 print-hidden" 
                               : isWaitingList 
                                 ? `bg-orange-50/50 hover:bg-orange-100/60 ${statusBorder}`
-                                : isBooked 
-                                  ? `bg-red-50/70 hover:bg-red-100/60 ${statusBorder}`
-                                  : "bg-emerald-50/70 hover:bg-emerald-100/60 border-l-4 border-l-transparent";
+                                : isOnlineSlot
+                                  ? `bg-blue-50/70 hover:bg-blue-100/60 ${statusBorder || "border-l-4 border-l-transparent"}`
+                                  : isBooked 
+                                    ? `bg-red-50/70 hover:bg-red-100/60 ${statusBorder}`
+                                    : "bg-emerald-50/70 hover:bg-emerald-100/60 border-l-4 border-l-transparent";
 
                             return (
                               <tr key={app.id} className={`transition-colors group relative ${printingDate ? '' : rowStyle}`}>
@@ -3965,6 +3967,7 @@ export default function Home() {
                             const isDel = app.is_deleted === true;
                             const isBooked = app.patient_name && app.patient_name.trim() !== "";
                             const isWaitingList = app.time_slot === "VÁRÓLISTA";
+                            const isOnlineSlot = app.time_slot?.includes("(Online)") ?? false;
                             const displayTime = app.time_slot.replace(" (Online)", "");
                             const canShowHistory = isBooked && !isDel && app.taj_szam && app.taj_szam.trim() !== "";
                             
@@ -3976,7 +3979,7 @@ export default function Home() {
                               app.status === "Nem jelent meg" ? "border-l-4 border-l-slate-800" :
                               "border-l-4 border-l-slate-200";
 
-                            const rowBg = isDel ? "bg-slate-100/50" : isWaitingList ? "bg-orange-50/50" : isBooked ? "bg-white" : "bg-emerald-50/50";
+                            const rowBg = isDel ? "bg-slate-100/50" : isWaitingList ? "bg-orange-50/50" : isOnlineSlot ? "bg-blue-50/70" : isBooked ? "bg-white" : "bg-emerald-50/50";
 
                             return (
                               <div key={app.id} className={`${rowBg} ${statusBorder} rounded-xl p-3 shadow-sm border border-slate-100 relative overflow-hidden min-w-0`}>

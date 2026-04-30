@@ -138,7 +138,7 @@ export function PatientAutocomplete({
 
   return (
     <div onClick={() => { setIsEditing(true); setCurrentValue(value || ""); }}
-      className={`cursor-pointer min-h-[28px] px-1 py-0.5 rounded-md transition-all border border-transparent hover:bg-white/80 hover:border-slate-200 font-medium text-sm break-words overflow-hidden
+      className={`cursor-pointer min-h-[28px] px-1 py-0.5 rounded-md transition-all border border-transparent hover:bg-white/80 hover:border-slate-200 font-medium text-[15px] break-words overflow-hidden
         ${highlight ? "text-red-950 font-bold" : "text-emerald-950"}`}
       title="Kattints a kereséshez vagy szerkesztéshez"
     >

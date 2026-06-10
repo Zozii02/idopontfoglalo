@@ -9,7 +9,7 @@ import {
   ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, EraserIcon, DownloadIcon, 
   HistoryIcon, ArrowUpIcon, MailIcon, LockIcon, TagIcon, InfoIcon, 
   RefreshIcon, CheckCircleIcon, XCircleIcon, BellIcon, SettingsIcon, 
-  FeedbackIcon, CalculatorIcon, DocumentIcon 
+  FeedbackIcon, CalculatorIcon, DocumentIcon, EyeOpenIcon, EyeClosedIcon
 } from "../components/icons";
 
 const ChartPieIcon = ({ size = 20 }: { size?: number }) => (
@@ -144,6 +144,7 @@ export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [needsProfileName, setNeedsProfileName] = useState(false);
   const [profileNameInput, setProfileNameInput] = useState("");
   

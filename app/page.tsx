@@ -1136,6 +1136,7 @@ export default function Home() {
 
   const handleLogout = async () => await supabase.auth.signOut();
   const getDisplayName = () => userName || userEmail;
+  const canDeleteDays = userEmail === "kovacs.zoltan1998@gmail.com";
 
   // --- ÚJRAGONDOLT, BIZTONSÁGOS MENTÉSI METÓDUS ---
   const updateAppointment = async (id: number, field: string, newValue: string) => {
@@ -2999,9 +3000,11 @@ export default function Home() {
                                    <span className="bg-red-100 text-red-800 px-2.5 py-1 rounded-lg text-xs font-bold border border-red-200">Foglalt: {bookedCount}</span>
                                  </div>
                               </div>
+                              {canDeleteDays && (
                               <button onClick={() => deleteLabDay(date)} className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5">
                                  <TrashIcon size={16} /> Nap törlése
                               </button>
+                              )}
                            </div>
 
                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 mb-4">
@@ -3735,7 +3738,7 @@ export default function Home() {
                               <PrintIcon /> <span className="hidden sm:inline">Nyomtatás</span>
                             </button>
                             
-                            {!isArchiveView && (
+                            {!isArchiveView && canDeleteDays && (
                               <button onClick={() => deleteEntireDay(date)} className="bg-red-50 text-red-600 px-2 py-1 rounded-lg text-[11px] font-bold hover:bg-red-600 hover:text-white transition-all flex items-center gap-1 shadow-sm border border-red-200 cursor-pointer">
                                 <TrashIcon /> <span className="hidden sm:inline">Törlés</span>
                               </button>
